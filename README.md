@@ -91,8 +91,7 @@ To inference the models, run:
 # LibriTTS
 python3 test.py -a <algorithm> -e <experiment_id> -c <checkpoint_file_name>
 # VCTK
-python3 test.py -p config/VCTK/preprocess.yaml -t config/VCTK/train.yaml -m
-config/VCTK/model.yaml\
+python3 test.py -p config/VCTK/preprocess.yaml -t config/VCTK/train.yaml -m config/VCTK/model.yaml \
                 -a <algorithm> -e <experiment_id> -c <checkpoint_file_name>
 ```
 and the results would be under
