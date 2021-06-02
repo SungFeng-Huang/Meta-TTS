@@ -67,6 +67,7 @@ To train the model(s) in the paper, run this command:
 ```bash
 python3 train.py -a <algorithm>
 ```
+
 Available algorithms:
 - base_emb_vad
 - base_emb_va
@@ -84,6 +85,7 @@ Available algorithms:
 - meta_emb1_va
 - meta_emb1_d
 - meta_emb1
+
 (*_emb_* for embedding table, and *_emb1_* for shared embedding)
 (base_* for baseline models, where the training is the same and only different
 in fine-tuning different modules)
