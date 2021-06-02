@@ -1,4 +1,5 @@
 pytorch-lightning
+comet-ml
 g2p-en
 inflect
 librosa

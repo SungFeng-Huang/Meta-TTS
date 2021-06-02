@@ -8,6 +8,7 @@ This repository is the official implementation of "Meta-TTS: Meta-Learning for F
 ## Requirements
 
 This is how I build my environment, which is not exactly needed to be the same:
+- Sign up for [Comet.ml](https://www.comet.ml/), find out your workspace and API key via [www.comet.ml/api/my/settings](www.comet.ml/api/my/settings) and fill them in `.comet.config`. Comet logger is used throughout train/val/test stages.
 - [Optional] Install [pyenv](https://github.com/pyenv/pyenv.git) for Python version
   control, change to Python 3.8.6.
 ```bash
@@ -63,11 +64,34 @@ python3 preprocess.py config/VCTK/preprocess.yaml
 
 To train the model(s) in the paper, run this command:
 
-```train
-python train.py --input-data <path_to_data> --alpha 10 --beta 20
+```bash
+python3 train.py -a <algorithm>
 ```
-
->📋  Describe how to train the models, with example commands on how to train the models in your paper, including the full training procedure and appropriate hyperparameters.
+Available algorithms:
+- base_emb_vad
+- base_emb_va
+- base_emb_d
+- base_emb
+- meta_emb_vad
+- meta_emb_va
+- meta_emb_d
+- meta_emb
+- base_emb1_vad
+- base_emb1_va
+- base_emb1_d
+- base_emb1
+- meta_emb1_vad
+- meta_emb1_va
+- meta_emb1_d
+- meta_emb1
+(*_emb_* for embedding table, and *_emb1_* for shared embedding)
+(base_* for baseline models, where the training is the same and only different
+in fine-tuning different modules)
+(meta_* for Meta-TTS models)
+(*_vad: fine-tune embedding + variance adaptor + decoder)
+(*_va: fine-tune embedding + variance adaptor)
+(*_d: fine-tune embedding + decoder)
+(without *_vad/*_va/*_d: fine-tune embedding only)
 
 ## Evaluation
 
