@@ -62,7 +62,7 @@ python3 preprocess.py config/VCTK/preprocess.yaml
 
 ## Training
 
-To train the model(s) in the paper, run this command:
+To train the models in the paper, run this command:
 
 ```bash
 python3 train.py -a <algorithm>
@@ -78,13 +78,25 @@ Available algorithms:
 - meta_emb1_vad / meta_emb1_va / meta_emb1_d / meta_emb1
   - Meta-TTS with shared embedding.
 
-(\*\_vad: fine-tune embedding + variance adaptor + decoder)
+Note:
+- \*\_vad: fine-tune embedding + variance adaptor + decoder
+- \*\_va: fine-tune embedding + variance adaptor
+- \*\_d: fine-tune embedding + decoder
+- without \*\_vad/\*\_va/\*\_d: fine-tune embedding only
 
-(\*\_va: fine-tune embedding + variance adaptor)
-
-(\*\_d: fine-tune embedding + decoder)
-
-(without \*\_vad/\*\_va/\*\_d: fine-tune embedding only)
+After training, you can find your checkpoints under
+`output/ckpt/LibriTTS/<project_name>/<experiment_id>/checkpoints/`.
+To inference the models, run:
+```bash
+# LibriTTS
+python3 test.py -a <algorithm> -e <experiment_id> -c <checkpoint_file_name>
+# VCTK
+python3 test.py -p config/VCTK/preprocess.yaml -t config/VCTK/train.yaml -m
+config/VCTK/model.yaml\
+                -a <algorithm> -e <experiment_id> -c <checkpoint_file_name>
+```
+and the results would be under
+`output/result/<corpus>/<experiment_id>/<algorithm>/`.
 
 ## Evaluation
 
