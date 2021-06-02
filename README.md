@@ -70,13 +70,13 @@ python3 train.py -a <algorithm>
 
 Available algorithms:
 - base_emb_vad, base_emb_va, base_emb_d, base_emb
-    Baseline with embedding table.
+  - Baseline with embedding table.
 - meta_emb_vad, meta_emb_va, meta_emb_d, meta_emb
-    Meta-TTS with embedding table.
+  - Meta-TTS with embedding table.
 - base_emb1_vad, base_emb1_va, base_emb1_d, base_emb1
-    Baseline with shared embedding.
+  - Baseline with shared embedding.
 - meta_emb1_vad, meta_emb1_va, meta_emb1_d, meta_emb1
-    Meta-TTS with shared embedding.
+  - Meta-TTS with shared embedding.
 
 (\*\_vad: fine-tune embedding + variance adaptor + decoder)
 
