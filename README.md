@@ -86,14 +86,16 @@ Available algorithms:
 - meta_emb1_d
 - meta_emb1
 
-(*_emb_* for embedding table, and *_emb1_* for shared embedding)
-(base_* for baseline models, where the training is the same and only different
+(\*\_emb\_\* for embedding table, and \*\_emb1\_\* for shared embedding)
+
+(base\_\* for baseline models, where the training is the same and only different
 in fine-tuning different modules)
-(meta_* for Meta-TTS models)
-(*_vad: fine-tune embedding + variance adaptor + decoder)
-(*_va: fine-tune embedding + variance adaptor)
-(*_d: fine-tune embedding + decoder)
-(without *_vad/*_va/*_d: fine-tune embedding only)
+
+(meta\_\* for Meta-TTS models)
+(\*\_vad: fine-tune embedding + variance adaptor + decoder)
+(\*\_va: fine-tune embedding + variance adaptor)
+(\*\_d: fine-tune embedding + decoder)
+(without \*\_vad/\*\_va/\*\_d: fine-tune embedding only)
 
 ## Evaluation
 
