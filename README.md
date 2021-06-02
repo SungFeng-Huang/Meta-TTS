@@ -92,9 +92,13 @@ Available algorithms:
 in fine-tuning different modules)
 
 (meta\_\* for Meta-TTS models)
+
 (\*\_vad: fine-tune embedding + variance adaptor + decoder)
+
 (\*\_va: fine-tune embedding + variance adaptor)
+
 (\*\_d: fine-tune embedding + decoder)
+
 (without \*\_vad/\*\_va/\*\_d: fine-tune embedding only)
 
 ## Evaluation
