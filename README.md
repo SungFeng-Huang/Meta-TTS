@@ -85,19 +85,19 @@ Note:
 - without \*\_vad/\*\_va/\*\_d: fine-tune embedding only
 
 After training, you can find your checkpoints under
-`output/ckpt/LibriTTS/<project_name>/<experiment_id>/checkpoints/`, where the
-project_name is set in `.comet.config`.
+`output/ckpt/LibriTTS/<project_name>/<experiment_key>/checkpoints/`, where the
+project name is set in `.comet.config`.
 
 To inference the models, run:
 ```bash
 # LibriTTS
-python3 test.py -a <algorithm> -e <experiment_id> -c <checkpoint_file_name>
+python3 test.py -a <algorithm> -e <experiment_key> -c <checkpoint_file_name>
 # VCTK
 python3 test.py -p config/VCTK/preprocess.yaml -t config/VCTK/train.yaml -m config/VCTK/model.yaml \
-                -a <algorithm> -e <experiment_id> -c <checkpoint_file_name>
+                -a <algorithm> -e <experiment_key> -c <checkpoint_file_name>
 ```
 and the results would be under
-`output/result/<corpus>/<experiment_id>/<algorithm>/`.
+`output/result/<corpus>/<experiment_key>/<algorithm>/`.
 
 ## Evaluation
 
