@@ -85,7 +85,9 @@ Note:
 - without \*\_vad/\*\_va/\*\_d: fine-tune embedding only
 
 After training, you can find your checkpoints under
-`output/ckpt/LibriTTS/<project_name>/<experiment_id>/checkpoints/`.
+`output/ckpt/LibriTTS/<project_name>/<experiment_id>/checkpoints/`, where the
+project_name is set in `.comet.config`.
+
 To inference the models, run:
 ```bash
 # LibriTTS
