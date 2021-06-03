@@ -126,7 +126,8 @@ def main(args, configs):
     )
 
     # Training
-    grad_acc_step = train_config["optimizer"]["grad_acc_step"] * args.meta_batch_size / torch.cuda.device_count()
+    meta_batch_size = train_config["meta"]["meta_batch_size"]
+    grad_acc_step = train_config["optimizer"]["grad_acc_step"]
     grad_clip_thresh = train_config["optimizer"]["grad_clip_thresh"]
     total_step = train_config["step"]["total_step"]
     log_step = train_config["step"]["log_step"]
@@ -195,10 +196,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "-t", "--train_config", type=str, help="path to train.yaml",
         default='config/LibriTTS/train.yaml',
-    )
-    parser.add_argument(
-        "-s", "--meta_batch_size", type=int, help="meta batch size",
-        default=8,
     )
     parser.add_argument(
         "-e", "--exp_key", type=str, help="experiment key",

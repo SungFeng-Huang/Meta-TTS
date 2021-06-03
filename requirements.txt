@@ -1,5 +1,6 @@
 pytorch-lightning
 comet-ml
+resemblyzer
 g2p-en
 inflect
 librosa
@@ -17,3 +18,5 @@ tgt
 torch
 tqdm
 unidecode
+torchaudio
+seaborn

@@ -1,0 +1,196 @@
+recon:
+threshold:0.6604	EER:0.1110
+real:
+threshold:0.6593	EER:0.0925
+base_emb_vad_step0:
+threshold:0.5873	EER:0.5021
+base_emb_vad_step5:
+threshold:0.5876	EER:0.4725
+base_emb_vad_step10:
+threshold:0.5955	EER:0.4309
+base_emb_vad_step20:
+threshold:0.6034	EER:0.3795
+base_emb_vad_step50:
+threshold:0.6194	EER:0.2734
+base_emb_vad_step100:
+threshold:0.6249	EER:0.2171
+base_emb_va_step0:
+threshold:0.5876	EER:0.5012
+base_emb_va_step5:
+threshold:0.5892	EER:0.5053
+base_emb_va_step10:
+threshold:0.5906	EER:0.4918
+base_emb_va_step20:
+threshold:0.5931	EER:0.4893
+base_emb_va_step50:
+threshold:0.5950	EER:0.4650
+base_emb_va_step100:
+threshold:0.5997	EER:0.4371
+base_emb_d_step0:
+threshold:0.5873	EER:0.5021
+base_emb_d_step5:
+threshold:0.5859	EER:0.4659
+base_emb_d_step10:
+threshold:0.5910	EER:0.4375
+base_emb_d_step20:
+threshold:0.5978	EER:0.3931
+base_emb_d_step50:
+threshold:0.6051	EER:0.3203
+base_emb_d_step100:
+threshold:0.6144	EER:0.2656
+base_emb_step0:
+threshold:0.5876	EER:0.5012
+base_emb_step5:
+threshold:0.5876	EER:0.5004
+base_emb_step10:
+threshold:0.5874	EER:0.5000
+base_emb_step20:
+threshold:0.5873	EER:0.4967
+base_emb_step50:
+threshold:0.5874	EER:0.4959
+base_emb_step100:
+threshold:0.5893	EER:0.4918
+meta_emb_vad_step0:
+threshold:0.5858	EER:0.4683
+meta_emb_vad_step5:
+threshold:0.6229	EER:0.2130
+meta_emb_vad_step10:
+threshold:0.6254	EER:0.1776
+meta_emb_vad_step20:
+threshold:0.6262	EER:0.1600
+meta_emb_vad_step50:
+threshold:0.6272	EER:0.1468
+meta_emb_vad_step100:
+threshold:0.6286	EER:0.1353
+meta_emb_va_step0:
+threshold:0.5901	EER:0.4959
+meta_emb_va_step5:
+threshold:0.6068	EER:0.3910
+meta_emb_va_step10:
+threshold:0.6076	EER:0.3766
+meta_emb_va_step20:
+threshold:0.6047	EER:0.3729
+meta_emb_va_step50:
+threshold:0.6048	EER:0.3713
+meta_emb_va_step100:
+threshold:0.6057	EER:0.3734
+meta_emb_d_step0:
+threshold:0.5908	EER:0.4782
+meta_emb_d_step5:
+threshold:0.6087	EER:0.2673
+meta_emb_d_step10:
+threshold:0.6140	EER:0.2299
+meta_emb_d_step20:
+threshold:0.6173	EER:0.2056
+meta_emb_d_step50:
+threshold:0.6203	EER:0.1896
+meta_emb_d_step100:
+threshold:0.6219	EER:0.1846
+meta_emb_step0:
+threshold:0.5909	EER:0.4774
+meta_emb_step5:
+threshold:0.5913	EER:0.4774
+meta_emb_step10:
+threshold:0.5908	EER:0.4749
+meta_emb_step20:
+threshold:0.5916	EER:0.4774
+meta_emb_step50:
+threshold:0.5909	EER:0.4782
+meta_emb_step100:
+threshold:0.5918	EER:0.4762
+base_emb1_vad_step0:
+threshold:0.5820	EER:0.4877
+base_emb1_vad_step5:
+threshold:0.5854	EER:0.4609
+base_emb1_vad_step10:
+threshold:0.5880	EER:0.4457
+base_emb1_vad_step20:
+threshold:0.5931	EER:0.4112
+base_emb1_vad_step50:
+threshold:0.6006	EER:0.3475
+base_emb1_vad_step100:
+threshold:0.6046	EER:0.3039
+base_emb1_va_step0:
+threshold:0.5828	EER:0.4864
+base_emb1_va_step5:
+threshold:0.5837	EER:0.4831
+base_emb1_va_step10:
+threshold:0.5846	EER:0.4811
+base_emb1_va_step20:
+threshold:0.5862	EER:0.4679
+base_emb1_va_step50:
+threshold:0.5868	EER:0.4576
+base_emb1_va_step100:
+threshold:0.5902	EER:0.4482
+base_emb1_d_step0:
+threshold:0.5821	EER:0.4860
+base_emb1_d_step5:
+threshold:0.5842	EER:0.4675
+base_emb1_d_step10:
+threshold:0.5871	EER:0.4470
+base_emb1_d_step20:
+threshold:0.5916	EER:0.4223
+base_emb1_d_step50:
+threshold:0.5927	EER:0.3882
+base_emb1_d_step100:
+threshold:0.5993	EER:0.3470
+base_emb1_step0:
+threshold:0.5828	EER:0.4864
+base_emb1_step5:
+threshold:0.5828	EER:0.4844
+base_emb1_step10:
+threshold:0.5821	EER:0.4840
+base_emb1_step20:
+threshold:0.5829	EER:0.4868
+base_emb1_step50:
+threshold:0.5822	EER:0.4753
+base_emb1_step100:
+threshold:0.5840	EER:0.4725
+meta_emb1_vad_step0:
+threshold:0.5835	EER:0.5037
+meta_emb1_vad_step5:
+threshold:0.5919	EER:0.2233
+meta_emb1_vad_step10:
+threshold:0.5924	EER:0.2048
+meta_emb1_vad_step20:
+threshold:0.5933	EER:0.2035
+meta_emb1_vad_step50:
+threshold:0.5938	EER:0.1994
+meta_emb1_vad_step100:
+threshold:0.5949	EER:0.1949
+meta_emb1_va_step0:
+threshold:0.5856	EER:0.5086
+meta_emb1_va_step5:
+threshold:0.6111	EER:0.3047
+meta_emb1_va_step10:
+threshold:0.6095	EER:0.3022
+meta_emb1_va_step20:
+threshold:0.6114	EER:0.2915
+meta_emb1_va_step50:
+threshold:0.6117	EER:0.2993
+meta_emb1_va_step100:
+threshold:0.6115	EER:0.2985
+meta_emb1_d_step0:
+threshold:0.5527	EER:0.4914
+meta_emb1_d_step5:
+threshold:0.6187	EER:0.2122
+meta_emb1_d_step10:
+threshold:0.6189	EER:0.2002
+meta_emb1_d_step20:
+threshold:0.6193	EER:0.1928
+meta_emb1_d_step50:
+threshold:0.6200	EER:0.1904
+meta_emb1_d_step100:
+threshold:0.6221	EER:0.1834
+meta_emb1_step0:
+threshold:0.5812	EER:0.4827
+meta_emb1_step5:
+threshold:0.5809	EER:0.4823
+meta_emb1_step10:
+threshold:0.5816	EER:0.4819
+meta_emb1_step20:
+threshold:0.5811	EER:0.4815
+meta_emb1_step50:
+threshold:0.5821	EER:0.4819
+meta_emb1_step100:
+threshold:0.5825	EER:0.4766

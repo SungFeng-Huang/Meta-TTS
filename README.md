@@ -9,6 +9,7 @@ This repository is the official implementation of "Meta-TTS: Meta-Learning for F
 
 This is how I build my environment, which is not exactly needed to be the same:
 - Sign up for [Comet.ml](https://www.comet.ml/), find out your workspace and API key via [www.comet.ml/api/my/settings](www.comet.ml/api/my/settings) and fill them in `.comet.config`. Comet logger is used throughout train/val/test stages.
+  - Check my training logs [here](https://www.comet.ml/b02901071/meta-tts/view/Zvh3Lz3Wvy2AiWcinD06TaS0G).
 - [Optional] Install [pyenv](https://github.com/pyenv/pyenv.git) for Python version
   control, change to Python 3.8.6.
 ```bash
@@ -79,10 +80,16 @@ Available algorithms:
   - Meta-TTS with shared embedding.
 
 Note:
-- \*\_vad: fine-tune embedding + variance adaptor + decoder
-- \*\_va: fine-tune embedding + variance adaptor
-- \*\_d: fine-tune embedding + decoder
-- without \*\_vad/\*\_va/\*\_d: fine-tune embedding only
+- **\*\_vad**: fine-tune embedding + variance adaptor + decoder
+- **\*\_va**: fine-tune embedding + variance adaptor
+- **\*\_d**: fine-tune embedding + decoder
+- **without \*\_vad/\*\_va/\*\_d**: fine-tune embedding only
+
+Please use 8 V100 GPUs for meta models, and 1 V100 GPU for baseline models, or
+else you might need to tune gradient accumulation step (grad_acc_step) setting in
+`config/*/train.yaml` to get the correct meta batch size.
+Note that each GPU has its own random seed, so even the meta batch size is the
+same, different number of GPUs is equivalent to different random seed.
 
 After training, you can find your checkpoints under
 `output/ckpt/LibriTTS/<project_name>/<experiment_key>/checkpoints/`, where the

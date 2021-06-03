@@ -116,4 +116,6 @@ learn2learn/
 # data, checkpoint, and models
 raw_data/
 output/
+evaluation/speechmetrics/
+evaluation/Pytorch_MBNet/
 *.npy
