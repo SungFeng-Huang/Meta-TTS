@@ -109,15 +109,15 @@ class SpeakerVerification:
         # 5. set axis limit
         plt.xlim((xmin,xmax))
 
-        suffix = ""
         plt.savefig(f"images/{self.corpus}/eer{suffix}.png", format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-        plt.show()
+        # plt.show()
+        plt.close()
         from PIL import Image
         im = Image.open(f"images/{self.corpus}/eer{suffix}.png")
         im.show()
 
 
-    def get_det(self):
+    def get_det(self, suffix=""):
         fig, ax = plt.subplots(figsize=(6.30, 4.18))
         # fig, ax = plt.subplots(figsize=(5.30, 5.18))
         self.threshold_dict = dict()
@@ -188,14 +188,15 @@ class SpeakerVerification:
                         borderaxespad  = 0.)
         axes.add_artist(color_leg)
         plt.tight_layout()
-        plt.savefig(f"images/{self.corpus}/det.png", format='png', bbox_extra_artists=(color_leg, sizes_leg), bbox_inches='tight')
-        plt.show()
+        plt.savefig(f"images/{self.corpus}/det{suffix}.png", format='png', bbox_extra_artists=(color_leg, sizes_leg), bbox_inches='tight')
+        # plt.show()
+        plt.close()
         from PIL import Image
-        im = Image.open(f"images/{self.corpus}/det.png")
+        im = Image.open(f"images/{self.corpus}/det{suffix}.png")
         im.show()
 
 
-    def get_roc(self):
+    def get_roc(self, suffix=""):
         # fig, ax = plt.subplots(figsize=(5.30, 5.18))
         fig, ax = plt.subplots(figsize=(6.30, 4.18))
         fprs = []
@@ -262,22 +263,90 @@ class SpeakerVerification:
                         borderaxespad  = 0.)
         axes.add_artist(color_leg)
         plt.tight_layout()
-        plt.savefig(f"images/{self.corpus}/roc.png", format='png', bbox_extra_artists=(color_leg, sizes_leg), bbox_inches='tight')
-        plt.show()
+        plt.savefig(f"images/{self.corpus}/roc{suffix}.png", format='png', bbox_extra_artists=(color_leg, sizes_leg), bbox_inches='tight')
+        # plt.show()
+        plt.close()
         from PIL import Image
-        im = Image.open(f"images/{self.corpus}/roc.png")
+        im = Image.open(f"images/{self.corpus}/roc{suffix}.png")
         im.show()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_path', type=str, default='eer.txt')
+    parser.add_argument('--suffix', type=str, default='')
     args = parser.parse_args()
     main = SpeakerVerification(args)
     main.load_pair_similarity()
     main.get_eer()
-    main.plot_eer()
-    # main.plot_eer("_share_emb")
-    # main.plot_eer("_emb_table")
-    # main.get_det()
-    # main.get_roc()
+    if args.suffix == '_base_emb':
+        main.eer_plot_mode_list = [
+            'real',
+            'recon', 
+            'base_emb_vad',
+            'base_emb_va',
+            'base_emb_d',
+            'base_emb',
+        ]
+        main.eer_plot_legend_list = [
+            'Real',
+            'Reconstructed',
+            'Baseline (Emb, VA, D)',
+            'Baseline (Emb, VA)',
+            'Baseline (Emb, D)',
+            'Baseline (Emb)',
+        ]
+    if args.suffix == '_base_emb1':
+        main.eer_plot_mode_list = [
+            'real',
+            'recon', 
+            'base_emb1_vad',
+            'base_emb1_va',
+            'base_emb1_d',
+            'base_emb1',
+        ]
+        main.eer_plot_legend_list = [
+            'Real',
+            'Reconstructed',
+            'Baseline (Emb, VA, D)',
+            'Baseline (Emb, VA)',
+            'Baseline (Emb, D)',
+            'Baseline (Emb)',
+        ]
+    if args.suffix == '_meta_emb':
+        main.eer_plot_mode_list = [
+            'real',
+            'recon', 
+            'meta_emb_vad',
+            'meta_emb_va',
+            'meta_emb_d',
+            'meta_emb',
+        ]
+        main.eer_plot_legend_list = [
+            'Real',
+            'Reconstructed',
+            'Meta-TTS (Emb, VA, D)',
+            'Meta-TTS (Emb, VA)',
+            'Meta-TTS (Emb, D)',
+            'Meta-TTS (Emb)',
+        ]
+    if args.suffix == '_meta_emb1':
+        main.eer_plot_mode_list = [
+            'real',
+            'recon', 
+            'meta_emb1_vad',
+            'meta_emb1_va',
+            'meta_emb1_d',
+            'meta_emb1',
+        ]
+        main.eer_plot_legend_list = [
+            'Real',
+            'Reconstructed',
+            'Meta-TTS (Emb, VA, D)',
+            'Meta-TTS (Emb, VA)',
+            'Meta-TTS (Emb, D)',
+            'Meta-TTS (Emb)',
+        ]
+    main.plot_eer(args.suffix)
+    main.get_det(args.suffix)
+    main.get_roc(args.suffix)

@@ -19,10 +19,10 @@ import config
 class SimilarityPlot:
     def __init__(self, args):
         self.corpus = config.corpus
-        self.sim_plot_mode_list = config.sim_plot_mode_list
         self.plot_type = config.plot_type
         assert(self.plot_type in ['errorbar', 'box_ver', 'box_hor'])
         self.step_list = config.step_list
+        self.sim_plot_mode_list = config.sim_plot_mode_list
         self.sim_plot_color_list = config.sim_plot_color_list
         self.sim_plot_legend_list = config.sim_plot_legend_list
         self.output_path = f"images/{self.corpus}/{args.output_path}"
@@ -30,21 +30,21 @@ class SimilarityPlot:
     def load_centroid_similarity(self):
         self.similarity_list_dict = np.load(f'npy/{self.corpus}/centroid_similarity_dict.npy', allow_pickle=True)[()]
 
-    def sim_plot(self):
+    def sim_plot(self, suffix=''):
         if self.plot_type == 'errorbar':
-            self.errorbar_plot()
+            self.errorbar_plot(suffix)
         elif self.plot_type == 'box_ver':
-            self.box_ver_plot()
+            self.box_ver_plot(suffix)
         elif self.plot_type == 'box_hor':
-            self.box_hor_plot()
+            self.box_hor_plot(suffix)
 
 
-    def box_ver_plot(self):
+    def box_ver_plot(self, suffix=''):
         pass
-    def box_hor_plot(self):
+    def box_hor_plot(self, suffix=''):
         pass
 
-    def errorbar_plot(self):
+    def errorbar_plot(self, suffix=""):
         # 1. preprocessing the data
         t = np.array(self.step_list)
 
@@ -111,15 +111,77 @@ class SimilarityPlot:
         # 5. set axis limit
         plt.xlim((xmin,xmax))
 
-        plt.savefig(self.output_path, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
-        plt.show()
+        plt.savefig(f"images/{self.corpus}/errorbar_plot{suffix}.png", format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        print(f"images/{self.corpus}/errorbar_plot{suffix}.png")
+        # plt.show()
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--output_path', type=str, default='errorbar_plot.png')
+    parser.add_argument('--suffix', type=str, default='')
     args = parser.parse_args()
     main = SimilarityPlot(args)
     main.load_centroid_similarity()
-    main.sim_plot()
+    if args.suffix == '_base_emb':
+        main.sim_plot_mode_list = [
+            'recon', 'recon_random',
+            'base_emb_vad',
+            'base_emb_va',
+            'base_emb_d',
+            'base_emb',
+        ]
+        main.sim_plot_legend_list = [
+            'Same spk', 'Different spk',
+            'Baseline (Emb, VA, D)',
+            'Baseline (Emb, VA)',
+            'Baseline (Emb, D)',
+            'Baseline (Emb)',
+        ]
+    if args.suffix == '_base_emb1':
+        main.sim_plot_mode_list = [
+            'recon', 'recon_random',
+            'base_emb1_vad',
+            'base_emb1_va',
+            'base_emb1_d',
+            'base_emb1',
+        ]
+        main.sim_plot_legend_list = [
+            'Same spk', 'Different spk',
+            'Baseline (Emb, VA, D)',
+            'Baseline (Emb, VA)',
+            'Baseline (Emb, D)',
+            'Baseline (Emb)',
+        ]
+    if args.suffix == '_meta_emb':
+        main.sim_plot_mode_list = [
+            'recon', 'recon_random',
+            'meta_emb_vad',
+            'meta_emb_va',
+            'meta_emb_d',
+            'meta_emb',
+        ]
+        main.sim_plot_legend_list = [
+            'Same spk', 'Different spk',
+            'Meta-TTS (Emb, VA, D)',
+            'Meta-TTS (Emb, VA)',
+            'Meta-TTS (Emb, D)',
+            'Meta-TTS (Emb)',
+        ]
+    if args.suffix == '_meta_emb1':
+        main.sim_plot_mode_list = [
+            'recon', 'recon_random',
+            'meta_emb1_vad',
+            'meta_emb1_va',
+            'meta_emb1_d',
+            'meta_emb1',
+        ]
+        main.sim_plot_legend_list = [
+            'Same spk', 'Different spk',
+            'Meta-TTS (Emb, VA, D)',
+            'Meta-TTS (Emb, VA)',
+            'Meta-TTS (Emb, D)',
+            'Meta-TTS (Emb)',
+        ]
+    main.sim_plot(args.suffix)
 

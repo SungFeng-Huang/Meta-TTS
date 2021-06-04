@@ -10,7 +10,10 @@ To get the code, please contact its authors.
 ```bash
 git clone https://github.com/aliutkus/speechmetrics.git
 cd speechmetrics
-pip install -e .
+# bash
+pip install -e .[gpu]
+# zsh
+pip install -e .\[gpu\]
 ```
 - Download [Pytorch_MBNet](https://github.com/sky1456723/Pytorch-MBNet.git) for MBNet:
 ```bash

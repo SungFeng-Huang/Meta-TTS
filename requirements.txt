@@ -6,7 +6,7 @@ inflect
 librosa
 matplotlib
 numba
-numpy
+numpy==1.19.2
 pypinyin
 pyworld
 PyYAML

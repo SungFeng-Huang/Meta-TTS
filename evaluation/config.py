@@ -1,6 +1,6 @@
 root_dir = '../'
 corpus = 'VCTK'
-corpus = 'LibriTTS'
+# corpus = 'LibriTTS'
 
 data_dir_dict = dict()
 if corpus == 'LibriTTS':
@@ -107,19 +107,3 @@ eer_plot_legend_list = [
     'Meta-TTS (emb table)',
 ]
 eer_plot_color_list = ['purple', 'grey', 'orange', 'red', 'green', 'blue']
-# eer_plot_mode_list = [
-    # 'real',
-    # 'recon', 
-    # 'meta_emb_vad',
-    # 'meta_emb_va',
-    # 'meta_emb_d',
-    # 'meta_emb',
-# ]
-# eer_plot_legend_list = [
-    # 'Real',
-    # 'Reconstructed',
-    # 'Meta-TTS (Emb, VA, D)',
-    # 'Meta-TTS (Emb, VA)',
-    # 'Meta-TTS (Emb, D)',
-    # 'Meta-TTS (Emb)',
-# ]

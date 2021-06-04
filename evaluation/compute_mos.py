@@ -149,6 +149,53 @@ class NeuralMOS:
                 print(mode, mean, ci)
                 fo.write(f"{mode}, {mean}, {ci}\n")
 
+    def plot(self, mode_name):
+        if mode_name == 'base_emb':
+            xtitle = 'Baseline (emb table)'
+        elif mode_name == 'base_emb1':
+            xtitle = 'Baseline (share emb)'
+        elif mode_name == 'meta_emb':
+            xtitle = 'Meta-TTS (emb table)'
+        elif mode_name == 'meta_emb1':
+            xtitle = 'Meta-TTS (share emb)'
+        import matplotlib
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        import pandas as pd
+        models = ['mosnet', 'mbnet', 'wav2vec2', 'tera', 'cpc']
+        modes = ['real', 'recon'] + [f'{mode_name}{j}_step{i}' for j in ['_vad','_va','_d',''] for i in [0,5,10,20,50,100]]
+        xticks = ['Real', 'Reconstructed'] + [f'{j}, step {i}' for j in ['Emb, VA, D','Emb, VA','Emb, D','Emb'] for i in [0,5,10,20,50,100]]
+        data = {}
+        dfs = []
+        for i, mode in tenumerate(modes, desc='mode'):
+            for model in tqdm(models, desc='mos_type', leave=False):
+                filename = f'csv/{self.corpus}/{model}_{mode}.csv'
+                df = pd.read_csv(filename)
+                if model in ['mosnet','mbnet']:
+                    df = df.rename(columns={' mos': "MOS"})
+                else:
+                    df = df.rename(columns={'score': "MOS"})
+                df['MOS_type'] = model
+                df[xtitle] = xticks[i]
+                dfs.append(df)
+        dfs = pd.concat(dfs, ignore_index=True)
+        ax = sns.barplot(x=xtitle, y='MOS', hue='MOS_type', data=dfs)
+        ax.grid()
+        plt.ylim((1.5,5))
+        plt.setp(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
+        fig = matplotlib.pyplot.gcf()
+        fig.set_size_inches(12, 3)
+
+        handles, labels = ax.get_legend_handles_labels()
+        leg = ax.legend(*ax.get_legend_handles_labels(),
+                        bbox_to_anchor = (1.01, 0.5),
+                        loc            = 'center left',
+                        borderaxespad  = 0.)
+
+        plt.tight_layout()
+        plt.savefig(f'images/{self.corpus}/MOS_{mode_name}.png', format='png', bbox_extra_artists=(leg, ), bbox_inches='tight')
+        # plt.show()
+
 class MBNetDataset(Dataset):
     def __init__(self, filelist):
         self.wav_name = filelist
@@ -178,6 +225,7 @@ class MBNetDataset(Dataset):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--net', type=str, choices=['mosnet', 'mbnet'], default=False)
+    parser.add_argument('--plot', type=str, default=False)
     args = parser.parse_args()
     main = NeuralMOS(args)
     if args.net == 'mosnet':
@@ -186,3 +234,5 @@ if __name__ == '__main__':
     if args.net == 'mbnet':
         main.compute_mbnet()
         main.add_up('mbnet')
+    if args.plot:
+        main.plot(args.plot)
