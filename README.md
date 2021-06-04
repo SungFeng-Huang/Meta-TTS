@@ -3,7 +3,12 @@
 This repository is the official implementation of "Meta-TTS: Meta-Learning for Few-shot SpeakerAdaptive Text-to-Speech".
 <!--This repository is the official implementation of [Meta-TTS: Meta-Learning for Few-shot SpeakerAdaptive Text-to-Speech](https://arxiv.org/abs/2030.12345). -->
 
->📋  Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials
+<!-->📋  Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials-->
+- multi-task v.s. meta
+![image](evaluation/images/meta-TTS-multi-task.png)
+![image](evaluation/images/meta-TTS-meta-task.png)
+- meta-TTS
+![image](evaluation/images/meta-FastSpeech2.png)
 
 ## Requirements
 
@@ -134,7 +139,7 @@ Speaker verification:
   - ROC ![image](evaluation/images/roc.png)
 
 
-## Contributing
+<!--## Contributing-->
 
->📋  Pick a licence and describe how to contribute to your code repository. 
+<!-->📋  Pick a licence and describe how to contribute to your code repository. -->
 
