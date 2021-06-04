@@ -5,12 +5,10 @@ This repository is the official implementation of "Meta-TTS: Meta-Learning for F
 
 <!--📋  Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials-->
 - multi-task v.s. meta
-<div id="fig:subfigures" class="subfigures" data-caption="Caption for figure">
-![image](evaluation/images/meta-TTS-multi-task.png){width=40%}
 
-![image](evaluation/images/meta-TTS-meta-task.png){width=40%}
-</div>
+![image](evaluation/images/meta-TTS-meta-task.png)
 - meta-TTS
+
 ![image](evaluation/images/meta-FastSpeech2.png)
 
 ## Requirements
