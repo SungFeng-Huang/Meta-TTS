@@ -6,8 +6,8 @@ This repository is the official implementation of "Meta-TTS: Meta-Learning for F
 <!--📋  Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials-->
 - multi-task v.s. meta
 multi             |  meta
-:-------------------------:|:-------------------------:
-!![image](evaluation/images/meta-TTS-multi-task.png)  |  ![image](evaluation/images/meta-TTS-meta-task.png)
+---|---
+![](evaluation/images/meta-TTS-multi-task.png)  |  ![](evaluation/images/meta-TTS-meta-task.png)
 
 - meta-TTS
 ![image](evaluation/images/meta-FastSpeech2.png)
