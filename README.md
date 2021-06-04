@@ -4,9 +4,8 @@ This repository is the official implementation of "Meta-TTS: Meta-Learning for F
 <!--This repository is the official implementation of [Meta-TTS: Meta-Learning for Few-shot SpeakerAdaptive Text-to-Speech](https://arxiv.org/abs/2030.12345). -->
 
 <!--📋  Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials-->
-- multi-task v.s. meta
 
-| multi | meta |
+| multi-task learning | meta learning |
 | --- | --- |
 | ![](evaluation/images/meta-TTS-multi-task.png) | ![](evaluation/images/meta-TTS-meta-task.png) |
 
