@@ -17,7 +17,13 @@ pip install -e .
 git clone https://github.com/sky1456723/Pytorch-MBNet.git
 ```
 - Fix paths and configurations in `config.py`
-
+- Prepare output directories
+```bash
+mkdir -p npy/LibriTTS
+mkdir -p npy/VCTK
+mkdir -p csv/LibriTTS
+mkdir -p csv/VCTK
+```
 
 ## MOS prediction
 ```bash
