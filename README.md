@@ -9,7 +9,7 @@ This repository is the official implementation of "Meta-TTS: Meta-Learning for F
 | --- | --- |
 | ![](evaluation/images/meta-TTS-multi-task.png) | ![](evaluation/images/meta-TTS-meta-task.png) |
 
-- meta-TTS
+### Meta-TTS
 
 ![image](evaluation/images/meta-FastSpeech2.png)
 
