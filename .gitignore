@@ -119,3 +119,4 @@ output/
 evaluation/speechmetrics/
 evaluation/Pytorch_MBNet/
 *.npy
+*.csv
