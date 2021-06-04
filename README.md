@@ -108,33 +108,30 @@ and the results would be under
 
 ## Evaluation
 
-To evaluate my model on ImageNet, run:
-
-```eval
-python eval.py --model-file mymodel.pth --benchmark imagenet
-```
-
->📋  Describe how to evaluate the trained models on benchmarks reported in the paper, give commands that produce the results (section below).
+`cd evaluation/` and check [README.md](evaluation/README.md)
 
 ## Pre-trained Models
 
-You can download pretrained models here:
+Since our codes are using Comet logger, you might need to create a dummy
+experiment by running:
+```Python
+from comet_ml import Experiment
+experiment = Experiment()
+```
+then put the checkpoint files under
+`output/ckpt/LibriTTS/<project_name>/<experiment_key>/checkpoints/`.
 
-- [My awesome model](https://drive.google.com/mymodel.pth) trained on ImageNet using parameters x,y,z. 
-
->📋  Give a link to where/how the pretrained models can be downloaded and how they were trained (if applicable).  Alternatively you can have an additional column in your results table with a link to the models.
+You can download pretrained models [here](https://drive.google.com/drive/folders/1Av7afSMcHX6pp2_ZmpHqfJNx6ONM7N8d?usp=sharing).
 
 ## Results
 
-Our model achieves the following performance on :
-
-### [Image Classification on ImageNet](https://paperswithcode.com/sota/image-classification-on-imagenet)
-
-| Model name         | Top 1 Accuracy  | Top 5 Accuracy |
-| ------------------ |---------------- | -------------- |
-| My awesome model   |     85%         |      95%       |
-
->📋  Include a table of results from your paper, and link back to the leaderboard for clarity and context. If your main result is a figure, include that figure and link to the command or notebook to reproduce it. 
+Speaker verification:
+- same speaker v.s. different speaker
+  - EER ![image](evaluation/images/eer.png)
+  - DET ![image](evaluation/images/det.png)
+- real v.s. synthesized
+  - Cosine similarity ![image](evaluation/images/errorbar_plot.png)
+  - ROC ![image](evaluation/images/roc.png)
 
 
 ## Contributing
