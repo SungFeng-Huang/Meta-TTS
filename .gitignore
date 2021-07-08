@@ -116,7 +116,10 @@ learn2learn/
 # data, checkpoint, and models
 raw_data/
 output/
+preprocessed_data/LibriTTS/
+preprocessed_data/VCTK/
 evaluation/speechmetrics/
 evaluation/Pytorch_MBNet/
+evaluation/images/._*
 *.npy
 *.csv
