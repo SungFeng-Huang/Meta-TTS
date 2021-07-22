@@ -6,8 +6,11 @@ from contextlib import contextmanager
 
 
 class LightningMelGAN(pl.LightningModule):
-    def __init__(self, vocoder):
+    def __init__(self):
         super().__init__()
+        vocoder = torch.hub.load(
+            "descriptinc/melgan-neurips", "load_melgan", "multi_speaker"
+        )
         self.mel2wav = vocoder.mel2wav
 
     def inverse(self, mel):
@@ -55,3 +58,34 @@ class EpisodicInfiniteWrapper:
 
     def __len__(self):
         return self.epoch_length
+
+def loss2str(loss):
+    return dict2str(loss2dict(loss))
+
+def loss2dict(loss):
+    tblog_dict = {
+        "Total Loss"       : loss[0].item(),
+        "Mel Loss"         : loss[1].item(),
+        "Mel-Postnet Loss" : loss[2].item(),
+        "Pitch Loss"       : loss[3].item(),
+        "Energy Loss"      : loss[4].item(),
+        "Duration Loss"    : loss[5].item(),
+    }
+    return tblog_dict
+
+def dict2loss(tblog_dict):
+    loss = (
+        tblog_dict["Total Loss"],
+        tblog_dict["Mel Loss"],
+        tblog_dict["Mel-Postnet Loss"],
+        tblog_dict["Pitch Loss"],
+        tblog_dict["Energy Loss"],
+        tblog_dict["Duration Loss"],
+    )
+    return loss
+
+def dict2str(tblog_dict):
+    message = ", ".join([f"{k}: {v:.4f}" for k, v in tblog_dict.items()])
+    return message
+
+

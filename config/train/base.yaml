@@ -1,9 +1,5 @@
-path:
-  ckpt_path: "./output/ckpt/VCTK"
-  log_path: "./output/log/VCTK"
-  result_path: "./output/result/VCTK"
 optimizer:
-  batch_size: 16
+  batch_size: 80  # meta_batch_size * (shots + query)
   betas: [0.9, 0.98]
   eps: 0.000000001
   weight_decay: 0.0
@@ -18,11 +14,3 @@ step:
   synth_step: 1000
   val_step: 1000
   save_step: 1000
-meta:
-  ways: 1
-  shots: 5
-  queries: 5
-  meta_batch_size: 8
-  adaptation_steps: 5
-  adaptation_lr: 0.001
-  data_parallel: False
