@@ -114,6 +114,7 @@ montreal-forced-aligner/
 learn2learn/
 
 # data, checkpoint, and models
+.comet.config
 raw_data/
 output/
 preprocessed_data/LibriTTS/
