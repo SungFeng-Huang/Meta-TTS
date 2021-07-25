@@ -124,3 +124,4 @@ evaluation/Pytorch_MBNet/
 evaluation/images/._*
 *.npy
 *.csv
+*.swp
