@@ -15,7 +15,7 @@ from argparse import Namespace
 from pytorch_lightning.callbacks.progress import ProgressBar
 from pytorch_lightning.callbacks import LearningRateMonitor, GPUStatsMonitor, ModelCheckpoint
 
-from model import FastSpeech2Loss, FastSpeech2
+from lightning.model import FastSpeech2Loss, FastSpeech2
 from lightning.callbacks import GlobalProgressBar, Saver
 from lightning.optimizer import get_optimizer
 from lightning.scheduler import get_scheduler
@@ -35,7 +35,7 @@ class System(pl.LightningModule):
         self.algorithm_config = algorithm_config
         self.save_hyperparameters()
 
-        self.model = FastSpeech2(preprocess_config, model_config)
+        self.model = FastSpeech2(algorithm_config["adapt"]["speaker_emb"], preprocess_config, model_config)
         self.loss_func = FastSpeech2Loss(preprocess_config, model_config)
 
         self.log_dir = log_dir
@@ -109,38 +109,24 @@ class System(pl.LightningModule):
 
     def on_save_checkpoint(self, checkpoint):
         """Overwrite if you want to save more things in the checkpoint."""
-        # checkpoint["preprocess_config"] = self.preprocess_config
-        # checkpoint["train_config"] = self.train_config
-        # checkpoint["model_config"] = self.model_config
-        # checkpoint["log_dir"] = self.log_dir
         return checkpoint
 
     def on_load_checkpoint(self, checkpoint: dict) -> None:
         self.test_global_step = checkpoint["global_step"]
-        # self.preprocess_config = checkpoint["preprocess_config"]
-        # self.train_config = checkpoint["train_config"]
-        # self.model_config = checkpoint["model_config"]
-        # self.log_dir = checkpoint["log_dir"]
         state_dict = checkpoint["state_dict"]
         model_state_dict = self.state_dict()
         is_changed = False
         for k in state_dict:
             if k in model_state_dict:
                 if state_dict[k].shape != model_state_dict[k].shape:
-                    try:
-                        self.print(f"Skip loading parameter: {k}, "
-                                    f"required shape: {model_state_dict[k].shape}, "
-                                    f"loaded shape: {state_dict[k].shape}")
-                    except:
+                    if self.local_rank == 0:
                         print(f"Skip loading parameter: {k}, "
                                     f"required shape: {model_state_dict[k].shape}, "
                                     f"loaded shape: {state_dict[k].shape}")
                     state_dict[k] = model_state_dict[k]
                     is_changed = True
             else:
-                try:
-                    self.print(f"Dropping parameter {k}")
-                except:
+                if self.local_rank == 0:
                     print(f"Dropping parameter {k}")
                 is_changed = True
 

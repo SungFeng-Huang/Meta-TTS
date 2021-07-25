@@ -17,19 +17,20 @@ class BaseDataModule(pl.LightningDataModule):
         self.result_dir = result_dir
 
     def setup(self, stage=None):
+        refer_wav = self.algorithm_config["adapt"]["speaker_emb"] == "encoder"
         if stage in (None, 'fit', 'validate'):
             self.train_dataset = Dataset(
                 f"{self.preprocess_config['subsets']['train']}.txt",
-                self.preprocess_config, self.train_config, sort=True, drop_last=True
+                self.preprocess_config, self.train_config, sort=True, drop_last=True, refer_wav=refer_wav
             )
             self.val_dataset = Dataset(
                 f"{self.preprocess_config['subsets']['val']}.txt",
-                self.preprocess_config, self.train_config, sort=False, drop_last=False
+                self.preprocess_config, self.train_config, sort=False, drop_last=False, refer_wav=refer_wav
             )
         if stage in (None, 'test', 'predict'):
             self.test_dataset = Dataset(
                 f"{self.preprocess_config['subsets']['test']}.txt",
-                self.preprocess_config, self.train_config, sort=False, drop_last=False
+                self.preprocess_config, self.train_config, sort=False, drop_last=False, refer_wav=refer_wav
             )
 
     def train_dataloader(self):

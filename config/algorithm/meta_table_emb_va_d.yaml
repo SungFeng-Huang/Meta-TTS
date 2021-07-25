@@ -1,9 +1,10 @@
-name: dvec_va_d
-type: baseline  # meta/baseline
+name: meta_emb_va_d table
+type: meta  # meta/baseline
 
 adapt:
-  speaker_emb: encoder # shared/table/encoder
+  speaker_emb: table # shared/table/encoder
   modules:
+    - speaker_emb
     - variance_adaptor
     - decoder
     - mel_linear

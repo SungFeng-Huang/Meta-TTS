@@ -8,6 +8,7 @@ import pytorch_lightning as pl
 import learn2learn as l2l
 
 from tqdm import tqdm
+from resemblyzer import VoiceEncoder
 
 from utils.tools import get_mask_from_lengths
 from lightning.systems.system import System
@@ -20,13 +21,6 @@ class BaseAdaptorSystem(System):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.algorithm_config["adapt"]["speaker_emb"] == "shared":
-            if self.model_config["multi_speaker"]:
-                del self.model.speaker_emb
-                self.model.speaker_emb = torch.nn.Embedding(
-                    1,
-                    self.model_config["transformer"]["encoder_hidden"],
-                )
 
         # All of the settings below are for few-shot validation
         adaptation_lr = self.algorithm_config["adapt"]["lr"]
@@ -41,19 +35,19 @@ class BaseAdaptorSystem(System):
         assert self.test_adaptation_steps % self.adaptation_steps == 0
 
     def forward_learner(
-        self, learner, speakers, texts, src_lens, max_src_len,
+        self, learner, speaker_args, texts, src_lens, max_src_len,
         mels=None, mel_lens=None, max_mel_len=None,
         p_targets=None, e_targets=None, d_targets=None,
         p_control=1.0, e_control=1.0, d_control=1.0,
+        average_spk_emb=False,
     ):
-
-        _get_module = lambda name: getattr(learner.module, name, getattr(self.model, name))
-        encoder             = _get_module('encoder')
-        variance_adaptor    = _get_module('variance_adaptor')
-        decoder             = _get_module('decoder')
-        mel_linear          = _get_module('mel_linear')
-        postnet             = _get_module('postnet')
-        speaker_emb         = _get_module('speaker_emb')
+        _get_module = lambda name: getattr(learner.module, name, getattr(self.model, name, None))
+        encoder          = _get_module('encoder')
+        variance_adaptor = _get_module('variance_adaptor')
+        decoder          = _get_module('decoder')
+        mel_linear       = _get_module('mel_linear')
+        postnet          = _get_module('postnet')
+        speaker_emb      = _get_module('speaker_emb')
 
         src_masks = get_mask_from_lengths(src_lens, max_src_len)
 
@@ -64,24 +58,24 @@ class BaseAdaptorSystem(System):
         )
 
         if speaker_emb is not None:
-            output = output + speaker_emb(speakers).unsqueeze(1).expand(
-                -1, max_src_len, -1
-            )
+            spk_emb = speaker_emb(speaker_args)
+            if average_spk_emb:
+                spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
+            output += spk_emb.unsqueeze(1).expand(-1, max_src_len, -1)
 
         (
-            output,
-            p_predictions, e_predictions, log_d_predictions, d_rounded,
+            output, p_predictions, e_predictions, log_d_predictions, d_rounded,
             mel_lens, mel_masks,
         ) = variance_adaptor(
-            output,
-            src_masks, mel_masks, max_mel_len,
+            output, src_masks, mel_masks, max_mel_len,
             p_targets, e_targets, d_targets, p_control, e_control, d_control,
         )
 
         if speaker_emb is not None:
-            output = output + speaker_emb(speakers).unsqueeze(1).expand(
-                -1, max(mel_lens), -1
-            )
+            spk_emb = speaker_emb(speaker_args)
+            if average_spk_emb:
+                spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
+            output += spk_emb.unsqueeze(1).expand(-1, max(mel_lens), -1)
 
         output, mel_masks = decoder(output, mel_masks)
         output = mel_linear(output)
@@ -104,7 +98,7 @@ class BaseAdaptorSystem(System):
         sup_batch = batch[0][0][0]
         first_order = not train
         for step in range(adaptation_steps):
-            preds = self.forward_learner(learner, *(sup_batch[2:]))
+            preds = self.forward_learner(learner, *sup_batch[2:])
             train_error = self.loss_func(sup_batch, preds)
             learner.adapt(train_error[0], first_order=first_order, allow_unused=False, allow_nograd=True)
         return learner
@@ -112,29 +106,24 @@ class BaseAdaptorSystem(System):
     def meta_learn(self, batch, batch_idx, train=True):
         learner = self.adapt(batch, self.adaptation_steps, train=train)
 
-        # Evaluating the adapted model
+        sup_batch = batch[0][0][0]
         qry_batch = batch[0][1][0]
-        predictions = self.forward_learner(learner, *(qry_batch[2:]))
+
+        # Evaluating the adapted model
+        # Use speaker embedding of support set
+        predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
         valid_error = self.loss_func(qry_batch, predictions)
         return valid_error, predictions
 
-    def _on_meta_batch_start(self, batch, batch_idx, dataloader_idx):
+    def _on_meta_batch_start(self, batch):
         """ Check meta-batch data """
         assert len(batch) == 1, "meta_batch_per_gpu"
         assert len(batch[0]) == 2, "sup + qry"
         assert len(batch[0][0]) == 1, "n_batch == 1"
         assert len(batch[0][0][0]) == 12, "data with 12 elements"
 
-    def _on_shared_speaker_emb(self, batch):
-        """ Turn all speaker_id into 0 """
-        with torch.no_grad():
-            batch[2].zero_()
-
     def on_test_batch_start(self, batch, batch_idx, dataloader_idx):
         self._on_meta_batch_start(batch, batch_idx, dataloader_idx)
-        if self.algorithm_config["adapt"]["speaker_emb"] == "shared":
-            self._on_shared_speaker_emb(batch[0][0][0])
-            self._on_shared_speaker_emb(batch[0][1][0])
 
     def test_step(self, batch, batch_idx):
         outputs = {}
@@ -144,12 +133,12 @@ class BaseAdaptorSystem(System):
         outputs['_batch'] = qry_batch
 
         # Evaluating the initial model
-        predictions = self.forward_learner(self.learner, *(qry_batch[2:]))
+        predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
         valid_error = self.loss_func(qry_batch, predictions)
         outputs[f"step_0"] = {"recon": {"losses": valid_error, "output": predictions}}
 
         # synth_samples & save & log
-        predictions = self.forward_learner(self.learner, *(qry_batch[2:6]))
+        predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
         outputs[f"step_0"].update({"synth": {"output": predictions}})
 
         # Adapt
@@ -158,13 +147,13 @@ class BaseAdaptorSystem(System):
             learner = self.adapt(batch, self.adaptation_steps, learner=learner, train=False)
 
             # Evaluating the adapted model
-            predictions = self.forward_learner(learner, *(qry_batch[2:]))
+            predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
             valid_error = self.loss_func(qry_batch, predictions)
             outputs[f"step_{ft_step}"] = {"recon": {"losses": valid_error, "output": predictions}}
 
             if ft_step in [5, 10, 20, 50, 100]:
                 # synth_samples & save & log
-                predictions = self.forward_learner(learner, *(qry_batch[2:6]))
+                predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
                 outputs[f"step_{ft_step}"].update({"synth": {"output": predictions}})
         del learner
 

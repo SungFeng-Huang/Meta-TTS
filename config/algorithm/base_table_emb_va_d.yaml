@@ -1,8 +1,8 @@
-name: meta_emb_va_d
-type: meta  # meta/baseline
+name: base_emb_va_d table
+type: baseline  # meta/baseline
 
 adapt:
-  speaker_emb: shared # shared/table/encoder
+  speaker_emb: table # shared/table/encoder
   modules:
     - speaker_emb
     - variance_adaptor

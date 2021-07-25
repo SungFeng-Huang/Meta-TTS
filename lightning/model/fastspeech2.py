@@ -4,16 +4,18 @@ import json
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import pytorch_lightning as pl
 
 from transformer import Encoder, Decoder, PostNet
 from .modules import VarianceAdaptor
+from .speaker_encoder import SpeakerEncoder
 from utils.tools import get_mask_from_lengths
 
 
-class FastSpeech2(nn.Module):
+class FastSpeech2(pl.LightningModule):
     """ FastSpeech2 """
 
-    def __init__(self, preprocess_config, model_config):
+    def __init__(self, spk_emb_type, preprocess_config, model_config):
         super(FastSpeech2, self).__init__()
         self.model_config = model_config
 
@@ -28,21 +30,11 @@ class FastSpeech2(nn.Module):
 
         self.speaker_emb = None
         if model_config["multi_speaker"]:
-            with open(
-                os.path.join(
-                    preprocess_config["path"]["preprocessed_path"], "speakers.json"
-                ),
-                "r",
-            ) as f:
-                n_speaker = len(json.load(f))
-            self.speaker_emb = nn.Embedding(
-                n_speaker,
-                model_config["transformer"]["encoder_hidden"],
-            )
+            self.speaker_emb = SpeakerEncoder(spk_emb_type, preprocess_config, model_config)
 
     def forward(
         self,
-        speakers,
+        speaker_args,
         texts,
         src_lens,
         max_src_len,
@@ -66,7 +58,7 @@ class FastSpeech2(nn.Module):
         output = self.encoder(texts, src_masks)
 
         if self.speaker_emb is not None:
-            output = output + self.speaker_emb(speakers).unsqueeze(1).expand(
+            output = output + self.speaker_emb(speaker_args).unsqueeze(1).expand(
                 -1, max_src_len, -1
             )
 
@@ -92,7 +84,7 @@ class FastSpeech2(nn.Module):
         )
 
         if self.speaker_emb is not None:
-            output = output + self.speaker_emb(speakers).unsqueeze(1).expand(
+            output = output + self.speaker_emb(speaker_args).unsqueeze(1).expand(
                 -1, max(mel_lens), -1
             )
 

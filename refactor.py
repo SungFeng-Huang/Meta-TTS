@@ -11,8 +11,6 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from pytorch_lightning.profiler import AdvancedProfiler
 
-from utils.model import get_model, get_vocoder, get_param_num
-from utils.tools import to_device, log, synth_one_sample
 from lightning.datamodules import get_datamodule
 from lightning.systems import get_system
 
@@ -25,7 +23,7 @@ COMET_CONFIG = {
 }
 TRAINER_CONFIG = {
     "gpus"                  : -1 if torch.cuda.is_available() else None,
-    "distributed_backend"   : "ddp" if torch.cuda.is_available() else None,
+    "accelerator"           : "ddp" if torch.cuda.is_available() else None,
     "auto_select_gpus"      : True,
     "limit_train_batches"   : 1.0,  # Useful for fast experiment
     "deterministic"         : True,

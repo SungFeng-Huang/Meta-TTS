@@ -20,8 +20,7 @@ class BaselineSystem(BaseAdaptorSystem):
         super().__init__(*args, **kwargs)
 
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
-        if self.algorithm_config["adapt"]["speaker_emb"] == "shared":
-            self._on_shared_speaker_emb(batch)
+        assert len(batch) == 12, "data with 12 elements"
 
     def training_step(self, batch, batch_idx):
         """ Normal forwarding.
@@ -37,10 +36,7 @@ class BaselineSystem(BaseAdaptorSystem):
         return {'loss': loss[0], 'losses': loss, 'output': output, '_batch': batch}
 
     def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
-        self._on_meta_batch_start(batch, batch_idx, dataloader_idx)
-        if self.algorithm_config["adapt"]["speaker_emb"] == "shared":
-            self._on_shared_speaker_emb(batch[0][0][0])
-            self._on_shared_speaker_emb(batch[0][1][0])
+        self._on_meta_batch_start(batch)
 
     def validation_step(self, batch, batch_idx):
         """ Adapted forwarding.

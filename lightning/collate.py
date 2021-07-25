@@ -24,10 +24,28 @@ def reprocess(data, idxs):
     energies = pad_1D(energies)
     durations = pad_1D(durations)
 
+    if "ref_mel_slices" in data[0]:
+        ref_mels = [data[idx]["ref_mel_slices"] for idx in idxs]
+        # ref_mel_lens = np.array([len(ref_mel) for ref_mel in ref_mels])
+        start = 0
+        ref_slices = []
+        for ref_mel in ref_mels:
+            end = start + len(ref_mel)
+            ref_slices.append(slice(start, end))
+            start = end
+
+        ref_mels = np.array(sum(ref_mels, []))
+        speaker_args = (
+            torch.from_numpy(ref_mels).float(),
+            ref_slices
+        )
+    else:
+        speaker_args = torch.from_numpy(speakers).long()
+
     return (
         ids,
         raw_texts,
-        torch.from_numpy(speakers).long(),
+        speaker_args,
         torch.from_numpy(texts).long(),
         torch.from_numpy(text_lens),
         max(text_lens),

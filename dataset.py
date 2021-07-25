@@ -4,6 +4,8 @@ import os
 
 import numpy as np
 from torch.utils.data import Dataset
+import resemblyzer
+from resemblyzer.audio import preprocess_wav, wav_to_mel_spectrogram
 
 from text import text_to_sequence
 from utils.tools import pad_1D, pad_2D
@@ -11,12 +13,17 @@ from utils.tools import pad_1D, pad_2D
 
 class Dataset(Dataset):
     def __init__(
-        self, filename, preprocess_config, train_config, sort=False, drop_last=False
+        self, filename, preprocess_config, train_config, sort=False, drop_last=False, refer_wav=False
     ):
         self.dataset_name = preprocess_config["dataset"]
         self.preprocessed_path = preprocess_config["path"]["preprocessed_path"]
         self.cleaners = preprocess_config["preprocessing"]["text"]["text_cleaners"]
         self.batch_size = train_config["optimizer"]["batch_size"]
+
+        self.refer_wav = refer_wav
+        if refer_wav:
+            dset = filename.split('.')[0]
+            self.raw_path = os.path.join(preprocess_config["path"]["raw_path"], dset)
 
         self.basename, self.speaker, self.text, self.raw_text = self.process_meta(
             filename
@@ -70,6 +77,22 @@ class Dataset(Dataset):
             "energy": energy,
             "duration": duration,
         }
+
+        if self.refer_wav:
+            wav = preprocess_wav(os.path.join(self.raw_path, speaker, f"{basename}.wav"))
+
+            # Compute where to split the utterance into partials and pad the waveform with zeros if
+            # the partial utterances cover a larger range.
+            wav_slices, mel_slices = resemblyzer.VoiceEncoder.compute_partial_slices(len(wav), rate=1.3, min_coverage=0.75)
+            max_wave_length = wav_slices[-1].stop
+            if max_wave_length >= len(wav):
+                wav = np.pad(wav, (0, max_wave_length - len(wav)), "constant")
+
+            # Split the utterance into partials and forward them through the model
+            ref_mel = wav_to_mel_spectrogram(wav)
+            ref_mel_slices = [ref_mel[s] for s in mel_slices]
+
+            sample.update({"ref_mel_slices": ref_mel_slices})
 
         return sample
 

@@ -22,10 +22,7 @@ class MetaSystem(BaseAdaptorSystem):
         super().__init__(*args, **kwargs)
 
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
-        self._on_meta_batch_start(batch, batch_idx, dataloader_idx)
-        if self.algorithm_config["adapt"]["speaker_emb"] == "shared":
-            self._on_shared_speaker_emb(batch[0][0][0])
-            self._on_shared_speaker_emb(batch[0][1][0])
+        self._on_meta_batch_start(batch)
 
     def training_step(self, batch, batch_idx):
         """ Normal forwarding.
@@ -42,10 +39,7 @@ class MetaSystem(BaseAdaptorSystem):
         return {'loss': train_loss[0], 'losses': train_loss, 'output': predictions, '_batch': qry_batch}
 
     def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
-        self._on_meta_batch_start(batch, batch_idx, dataloader_idx)
-        if self.algorithm_config["adapt"]["speaker_emb"] == "shared":
-            self._on_shared_speaker_emb(batch[0][0][0])
-            self._on_shared_speaker_emb(batch[0][1][0])
+        self._on_meta_batch_start(batch)
 
     def validation_step(self, batch, batch_idx):
         """ Adapted forwarding.
