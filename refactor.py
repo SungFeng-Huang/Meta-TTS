@@ -86,6 +86,7 @@ def main(args, configs):
         )
         # Train
         trainer = pl.Trainer(logger=loggers, **TRAINER_CONFIG, **trainer_training_config)
+        pl.seed_everything(43, True)
         trainer.fit(model, datamodule=datamodule)
 
     elif args.stage == 'test' or args.stage == 'predict':
@@ -105,11 +106,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-m", "--model_config", type=str, help="path to model.yaml",
-        default='config/model/dev.yaml',
+        default='config/model/base.yaml',
     )
     parser.add_argument(
         "-t", "--train_config", type=str, nargs='+', help="path to train.yaml",
-        default=['config/train/dev.yaml', 'config/train/LibriTTS.yaml'],
+        default=['config/train/base.yaml', 'config/train/LibriTTS.yaml'],
     )
     parser.add_argument(
         "-a", "--algorithm_config", type=str, help="path to algorithm.yaml",

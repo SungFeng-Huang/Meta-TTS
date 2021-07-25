@@ -57,7 +57,7 @@ class BaselineDataModule(BaseDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             drop_last=True,
-            num_workers=8,
+            num_workers=4,
             collate_fn=get_single_collate(False),
         )
         return self.train_loader
@@ -68,7 +68,7 @@ class BaselineDataModule(BaseDataModule):
             self.val_task_dataset,
             batch_size=1,
             shuffle=False,
-            num_workers=8,
+            num_workers=4,
             collate_fn=lambda batch: batch,
         )
         return self.val_loader
@@ -79,7 +79,7 @@ class BaselineDataModule(BaseDataModule):
             self.test_task_dataset,
             batch_size=1,
             shuffle=False,
-            num_workers=8,
+            num_workers=4,
             collate_fn=lambda batch: batch,
         )
         return self.test_loader

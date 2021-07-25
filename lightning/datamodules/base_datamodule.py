@@ -39,7 +39,7 @@ class BaseDataModule(pl.LightningDataModule):
         self.train_loader = DataLoader(
             self.train_dataset,
             batch_size=batch_size, shuffle=True, drop_last=True,
-            num_workers=8, collate_fn=get_single_collate(False),
+            num_workers=4, collate_fn=get_single_collate(False),
         )
         return self.train_loader
 
@@ -49,6 +49,6 @@ class BaseDataModule(pl.LightningDataModule):
         self.val_loader = DataLoader(
             self.val_dataset,
             batch_size=batch_size, shuffle=False, drop_last=False,
-            num_workers=8, collate_fn=get_single_collate(False),
+            num_workers=4, collate_fn=get_single_collate(False),
         )
         return self.val_loader

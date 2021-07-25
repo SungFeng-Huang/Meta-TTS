@@ -1,5 +1,5 @@
 optimizer:
-  batch_size: 80  # meta_batch_size * (shots + query)
+  batch_size: 80  # meta_batch_size * (shots + query) # Only used by baseline model
   betas: [0.9, 0.98]
   eps: 0.000000001
   weight_decay: 0.0
