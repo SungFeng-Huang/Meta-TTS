@@ -17,7 +17,7 @@ class BaseDataModule(pl.LightningDataModule):
         self.result_dir = result_dir
 
     def setup(self, stage=None):
-        refer_wav = self.algorithm_config["adapt"]["speaker_emb"] in ["dvec", "encoder"]
+        refer_wav = self.algorithm_config["adapt"]["speaker_emb"] in ["dvec", "encoder", "scratch_encoder"]
         if stage in (None, 'fit', 'validate'):
             self.train_dataset = Dataset(
                 f"{self.preprocess_config['subsets']['train']}.txt",

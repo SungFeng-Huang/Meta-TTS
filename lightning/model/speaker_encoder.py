@@ -7,6 +7,29 @@ from torch import nn
 from resemblyzer import VoiceEncoder
 
 
+class GE2E(VoiceEncoder):
+    """ VoiceEncoder from scratch """
+    mel_n_channels = 40
+    model_hidden_size = 256
+    model_embedding_size = 256
+    model_num_layers = 3
+
+    def __init__(self, device: Union[str, torch.device]=None):
+        super(VoiceEncoder, self).__init__()
+
+        # Define the network
+        self.lstm = nn.LSTM(mel_n_channels, model_hidden_size, model_num_layers, batch_first=True)
+        self.linear = nn.Linear(model_hidden_size, model_embedding_size)
+        self.relu = nn.ReLU()
+
+        # Get the target device
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        elif isinstance(device, str):
+            device = torch.device(device)
+        self.device = device
+
+
 class SpeakerEncoder(pl.LightningModule):
     """ Could be a NN encoder or an embedding. """
     def __init__(self, emb_type, preprocess_config, model_config):
@@ -24,6 +47,8 @@ class SpeakerEncoder(pl.LightningModule):
         elif emb_type == "dvec":
             self.model = VoiceEncoder('cpu')
             self.freeze()
+        elif emb_type == "scratch_encoder":
+            self.model = GE2E('cpu')
 
     def forward(self, args):
         if self.emb_type == "table":
@@ -34,7 +59,7 @@ class SpeakerEncoder(pl.LightningModule):
             speaker = args
             return self.model(torch.zeros_like(speaker))
 
-        elif self.emb_type == "encoder" or self.emb_type == "dvec":
+        elif self.emb_type == "encoder" or self.emb_type == "dvec" or self.emb_type == "scratch_encoder":
             ref_mels, ref_slices = args
             partial_embeds = self.model(ref_mels)
             speaker_embeds = [partial_embeds[ref_slice].mean(dim=0) for ref_slice in ref_slices]

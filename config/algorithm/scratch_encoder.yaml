@@ -1,0 +1,17 @@
+name: scratch encoder
+type: baseline  # meta/baseline
+
+adapt:
+  speaker_emb: scratch_encoder # shared/table/encoder/dvec/scratch_encoder
+  modules: []
+
+  ways: 1
+  shots: 5
+  queries: 5
+  steps: 5
+  lr: 0.001
+  meta_batch_size: 8
+
+  test:
+    queries: 1
+    steps: 0 # max adaptation steps for testing
