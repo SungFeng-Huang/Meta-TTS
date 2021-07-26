@@ -79,18 +79,12 @@ class Dataset(Dataset):
         }
 
         if self.refer_wav:
-            wav = preprocess_wav(os.path.join(self.raw_path, speaker, f"{basename}.wav"))
-
-            # Compute where to split the utterance into partials and pad the waveform with zeros if
-            # the partial utterances cover a larger range.
-            wav_slices, mel_slices = resemblyzer.VoiceEncoder.compute_partial_slices(len(wav), rate=1.3, min_coverage=0.75)
-            max_wave_length = wav_slices[-1].stop
-            if max_wave_length >= len(wav):
-                wav = np.pad(wav, (0, max_wave_length - len(wav)), "constant")
-
-            # Split the utterance into partials and forward them through the model
-            ref_mel = wav_to_mel_spectrogram(wav)
-            ref_mel_slices = [ref_mel[s] for s in mel_slices]
+            ref_mel_slices_path = os.path.join(
+                self.preprocessed_path,
+                "ref_mel_slices",
+                "{}-mel-{}.npy".format(speaker, basename),
+            )
+            ref_mel_slices = np.load(ref_mel_slices_path)
 
             sample.update({"ref_mel_slices": ref_mel_slices})
 

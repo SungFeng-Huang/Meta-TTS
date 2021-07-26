@@ -15,7 +15,7 @@ adapt:
   queries: 5
   steps: 5
   lr: 0.001
-  meta_batch_size: 1
+  meta_batch_size: 8
 
   test:
     queries: 1

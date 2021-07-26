@@ -78,6 +78,16 @@ def write_descriptions(tasks, filename):
         json.dump(descriptions, f, indent=4)
 
 
+def load_SQids2Tid(SQids_filename, tag):
+    with open(SQids_filename, 'r') as f:
+        SQids = json.load(f)
+    SQids2Tid = {}
+    for i, SQids_dict in enumerate(SQids):
+        sup_ids, qry_ids = SQids_dict['sup_id'], SQids_dict['qry_id']
+        SQids2Tid[f"{'-'.join(sup_ids)}.{'-'.join(qry_ids)}"] = f"{tag}_{i:03d}"
+    return SQids, SQids2Tid
+
+
 def get_SQids2Tid(tasks, tag):
     SQids = []
     SQids2Tid = {}
@@ -89,21 +99,19 @@ def get_SQids2Tid(tasks, tag):
 
 
 def prefetch_tasks(tasks, tag='val', log_dir=''):
-    if os.path.exists(os.path.join(log_dir, f'{tag}_descriptions.json')):
+    if os.path.exists(os.path.join(log_dir, f'{tag}_descriptions.json')) \
+            and os.path.exists(os.path.join(log_dir, f'{tag}_SQids.json')):
         # Recover descriptions
         load_descriptions(tasks, os.path.join(log_dir, f'{tag}_descriptions.json'))
+        SQids, SQids2Tid = load_SQids2Tid(os.path.join(log_dir, f'{tag}_SQids.json'), tag)
 
-    # Check whether loaded successfully
-    SQids, SQids2Tid = get_SQids2Tid(tasks, tag)
-    if os.path.exists(os.path.join(log_dir, f"{tag}_SQids.json")):
-        with open(os.path.join(log_dir, f"{tag}_SQids.json"), 'r') as f:
-            origin_SQids = json.load(f)
-        assert origin_SQids == SQids
     else:
+        os.makedirs(log_dir, exist_ok=True)
+
+        # Run through tasks to get descriptions
+        SQids, SQids2Tid = get_SQids2Tid(tasks, tag)
         with open(os.path.join(log_dir, f"{tag}_SQids.json"), 'w') as f:
             json.dump(SQids, f, indent=4)
-
-    if not os.path.exists(os.path.join(log_dir, f'{tag}_descriptions.json')):
         write_descriptions(tasks, os.path.join(log_dir, f"{tag}_descriptions.json"))
 
     return SQids2Tid

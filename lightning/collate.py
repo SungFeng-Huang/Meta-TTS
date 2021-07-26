@@ -30,11 +30,11 @@ def reprocess(data, idxs):
         start = 0
         ref_slices = []
         for ref_mel in ref_mels:
-            end = start + len(ref_mel)
+            end = start + ref_mel.shape[0]
             ref_slices.append(slice(start, end))
             start = end
 
-        ref_mels = np.array(sum(ref_mels, []))
+        ref_mels = np.concatenate(ref_mels, axis=0)
         speaker_args = (
             torch.from_numpy(ref_mels).float(),
             ref_slices
