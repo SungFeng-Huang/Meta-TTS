@@ -21,6 +21,8 @@ class SpeakerEncoder(pl.LightningModule):
             self.model = nn.Embedding(1, model_config["transformer"]["encoder_hidden"])
         elif emb_type == "encoder":
             self.model = VoiceEncoder('cpu')
+        elif emb_type == "dvec":
+            self.model = VoiceEncoder('cpu')
             self.freeze()
 
     def forward(self, args):
@@ -32,7 +34,7 @@ class SpeakerEncoder(pl.LightningModule):
             speaker = args
             return self.model(torch.zeros_like(speaker))
 
-        elif self.emb_type == "encoder":
+        elif self.emb_type == "encoder" or self.emb_type == "dvec":
             ref_mels, ref_slices = args
             partial_embeds = self.model(ref_mels)
             speaker_embeds = [partial_embeds[ref_slice].mean(dim=0) for ref_slice in ref_slices]

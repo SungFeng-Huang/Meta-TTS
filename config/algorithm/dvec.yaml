@@ -1,13 +1,9 @@
-name: dvec_va_d
+name: dvec
 type: baseline  # meta/baseline
 
 adapt:
-  speaker_emb: encoder # shared/table/encoder
-  modules:
-    - variance_adaptor
-    - decoder
-    - mel_linear
-    - postnet
+  speaker_emb: dvec # shared/table/encoder/dvec
+  modules: []
 
   ways: 1
   shots: 5
