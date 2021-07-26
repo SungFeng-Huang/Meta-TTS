@@ -18,4 +18,4 @@ adapt:
 
   test:
     queries: 1
-    steps: 100 # max adaptation steps for testing
+    steps: 0 # max adaptation steps for testing
