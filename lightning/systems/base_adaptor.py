@@ -88,6 +88,8 @@ class BaseAdaptorSystem(System):
             src_masks, mel_masks, src_lens, mel_lens,
         )
 
+    # Second order gradients for RNNs
+    @torch.backends.cudnn.flags(enabled=False)
     @torch.enable_grad()
     def adapt(self, batch, adaptation_steps=5, learner=None, train=True):
         if learner is None:

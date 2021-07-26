@@ -44,9 +44,7 @@ class BaselineSystem(BaseAdaptorSystem):
         Function:
             meta_learn(): Defined in `lightning.systems.base_adaptor.BaseAdaptorSystem`
         """
-        # Second order gradients for RNNs
-        with torch.backends.cudnn.flags(enabled=False):
-            val_loss, predictions = self.meta_learn(batch, batch_idx, train=False)
+        val_loss, predictions = self.meta_learn(batch, batch_idx, train=False)
         qry_batch = batch[0][1][0]
 
         # Log metrics to CometLogger
