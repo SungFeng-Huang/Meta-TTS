@@ -106,7 +106,7 @@ class BaseAdaptorSystem(System):
         return learner
 
     def meta_learn(self, batch, batch_idx, train=True):
-        learner = self.adapt(batch, self.adaptation_steps, train=train)
+        learner = self.adapt(batch, min(self.adaptation_steps, self.test_adaptation_steps), train=train)
 
         sup_batch = batch[0][0][0]
         qry_batch = batch[0][1][0]

@@ -38,7 +38,7 @@ class BaseDataModule(pl.LightningDataModule):
         batch_size = self.train_config["optimizer"]["batch_size"]
         self.train_loader = DataLoader(
             self.train_dataset,
-            batch_size=batch_size,
+            batch_size=batch_size//torch.cuda.device_count(),
             shuffle=True,
             drop_last=True,
             num_workers=4,
@@ -51,7 +51,7 @@ class BaseDataModule(pl.LightningDataModule):
         batch_size = self.train_config["optimizer"]["batch_size"]
         self.val_loader = DataLoader(
             self.val_dataset,
-            batch_size=batch_size,
+            batch_size=batch_size//torch.cuda.device_count(),
             shuffle=False,
             drop_last=False,
             num_workers=4,

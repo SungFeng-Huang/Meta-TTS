@@ -31,7 +31,6 @@ class BaselineDataModule(BaseDataModule):
         if stage in (None, 'fit', 'validate'):
             # Train set
             if not isinstance(self.train_dataset, EpisodicInfiniteWrapper):
-                assert torch.cuda.device_count() == 1
                 self.batch_size = self.train_ways * (self.train_shots + self.train_queries) * self.meta_batch_size
                 self.train_dataset = EpisodicInfiniteWrapper(self.train_dataset, self.val_step*self.batch_size)
 
@@ -54,7 +53,7 @@ class BaselineDataModule(BaseDataModule):
         """Training dataloader"""
         self.train_loader = DataLoader(
             self.train_dataset,
-            batch_size=self.batch_size,
+            batch_size=self.batch_size//torch.cuda.device_count(),
             shuffle=True,
             drop_last=True,
             num_workers=4,

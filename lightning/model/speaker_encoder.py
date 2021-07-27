@@ -7,14 +7,14 @@ from torch import nn
 from resemblyzer import VoiceEncoder
 
 
+mel_n_channels = 40
+model_hidden_size = 256
+model_embedding_size = 256
+model_num_layers = 3
 class GE2E(VoiceEncoder):
     """ VoiceEncoder from scratch """
-    mel_n_channels = 40
-    model_hidden_size = 256
-    model_embedding_size = 256
-    model_num_layers = 3
 
-    def __init__(self, device: Union[str, torch.device]=None):
+    def __init__(self, device=None):
         super(VoiceEncoder, self).__init__()
 
         # Define the network

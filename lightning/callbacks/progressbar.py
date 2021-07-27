@@ -22,30 +22,33 @@ class GlobalProgressBar(Callback):
         self.process_position = process_position
 
     def on_train_start(self, trainer, pl_module):
-        desc = self.global_desc.format(steps=pl_module.global_step + 1, max_steps=trainer.max_steps)
+        if pl_module.local_rank == 0:
+            desc = self.global_desc.format(steps=pl_module.global_step + 1, max_steps=trainer.max_steps)
 
-        self.global_pb = tqdm(
-            desc=desc,
-            dynamic_ncols=True,
-            total=trainer.max_steps,
-            initial=pl_module.global_step,
-            leave=self.leave_global_progress,
-            disable=not self.global_progress,
-            position=self.process_position,
-            file=sys.stdout,
-        )
+            self.global_pb = tqdm(
+                desc=desc,
+                dynamic_ncols=True,
+                total=trainer.max_steps,
+                initial=pl_module.global_step,
+                leave=self.leave_global_progress,
+                disable=not self.global_progress,
+                position=self.process_position,
+                file=sys.stdout,
+            )
 
     def on_train_end(self, trainer, pl_module):
-        self.global_pb.close()
-        self.global_pb = None
+        if pl_module.local_rank == 0:
+            self.global_pb.close()
+            self.global_pb = None
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+        if pl_module.local_rank == 0:
 
-        # Set description
-        desc = self.global_desc.format(steps=pl_module.global_step + 1, max_steps=trainer.max_steps)
-        self.global_pb.set_description(desc)
+            # Set description
+            desc = self.global_desc.format(steps=pl_module.global_step + 1, max_steps=trainer.max_steps)
+            self.global_pb.set_description(desc)
 
-        # Update progress
-        if (pl_module.global_step+1) % trainer.accumulate_grad_batches == 0:
-            self.global_pb.update(1)
+            # Update progress
+            if (pl_module.global_step+1) % trainer.accumulate_grad_batches == 0:
+                self.global_pb.update(1)
 
