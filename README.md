@@ -16,7 +16,7 @@ This repository is the official implementation of "Meta-TTS: Meta-Learning for F
 ## Requirements
 
 This is how I build my environment, which is not exactly needed to be the same:
-- Sign up for [Comet.ml](https://www.comet.ml/), find out your workspace and API key via [www.comet.ml/api/my/settings](www.comet.ml/api/my/settings) and fill them in `.comet.config`. Comet logger is used throughout train/val/test stages.
+- Sign up for [Comet.ml](https://www.comet.ml/), find out your workspace and API key via [www.comet.ml/api/my/settings](www.comet.ml/api/my/settings) and fill them in `config/comet.py`. Comet logger is used throughout train/val/test stages.
   - Check my training logs [here](https://www.comet.ml/b02901071/meta-tts/view/Zvh3Lz3Wvy2AiWcinD06TaS0G).
 - [Optional] Install [pyenv](https://github.com/pyenv/pyenv.git) for Python version
   control, change to Python 3.8.6.

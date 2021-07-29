@@ -11,22 +11,19 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from pytorch_lightning.profiler import AdvancedProfiler
 
+from config.comet import COMET_CONFIG
 from lightning.datamodules import get_datamodule
 from lightning.systems import get_system
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-COMET_CONFIG = {
-    "log_code": True,           "log_graph": True,          "parse_args": True,
-    "log_env_details": True,    "log_git_metadata": True,   "log_git_patch": True,
-    "log_env_gpu": True,        "log_env_cpu": True,        "log_env_host": True,
-}
 TRAINER_CONFIG = {
     "gpus"                  : -1 if torch.cuda.is_available() else None,
     "accelerator"           : "ddp" if torch.cuda.is_available() else None,
     "auto_select_gpus"      : True,
     "limit_train_batches"   : 1.0,  # Useful for fast experiment
     "deterministic"         : True,
+    "process_position"      : 1,
     "profiler"              : 'simple',
 }
 
@@ -39,29 +36,14 @@ def main(args, configs):
     for p in train_config["path"].values():
         os.makedirs(p, exist_ok=True)
 
-    # Init logger
-    comet_logger = pl.loggers.CometLogger(
-        save_dir=os.path.join(train_config["path"]["log_path"], "meta"),
-        experiment_key=args.exp_key,
-        experiment_name=algorithm_config["name"],
-        **COMET_CONFIG
-    )
-    comet_logger.log_hyperparams({
-        "preprocess_config": preprocess_config,
-        "model_config": model_config,
-        "train_config": train_config,
-        "algorithm_config": algorithm_config,
-    })
-    loggers = [comet_logger]
-    profiler = AdvancedProfiler(train_config["path"]["log_path"], 'profile.log')
-
-    # Trainer
+    # Checkpoint for resume training or testing
     ckpt_file = None
     if args.exp_key is not None:
         ckpt_file = os.path.join(
-            './output/ckpt/LibriTTS', comet_logger.experiment.project_name,
+            './output/ckpt/LibriTTS', COMET_CONFIG["project_name"],
             args.exp_key, 'checkpoints', args.ckpt_file
         )
+
     trainer_training_config = {
         'max_steps'                 : train_config["step"]["total_step"],
         'log_every_n_steps'         : train_config["step"]["log_step"],
@@ -71,9 +53,29 @@ def main(args, configs):
         'resume_from_checkpoint'    : ckpt_file,
     }
 
+    if args.stage == 'train':
+        # Init logger
+        comet_logger = pl.loggers.CometLogger(
+            save_dir=os.path.join(train_config["path"]["log_path"], "meta"),
+            experiment_key=args.exp_key,
+            experiment_name=algorithm_config["name"],
+            **COMET_CONFIG
+        )
+        comet_logger.log_hyperparams({
+            "preprocess_config": preprocess_config,
+            "model_config": model_config,
+            "train_config": train_config,
+            "algorithm_config": algorithm_config,
+        })
+        loggers = [comet_logger]
+        log_dir = os.path.join(comet_logger._save_dir, comet_logger.version)
+        result_dir = os.path.join(train_config['path']['result_path'], comet_logger.version)
+    else:
+        assert args.exp_key is not None
+        log_dir = os.path.join(train_config["path"]["log_path"], "meta", args.exp_key)
+        result_dir = os.path.join(train_config['path']['result_path'], args.exp_key)
+
     # Get dataset
-    log_dir = os.path.join(comet_logger._save_dir, comet_logger.version)
-    result_dir = os.path.join(train_config['path']['result_path'], comet_logger.version)
     datamodule = get_datamodule(algorithm_config["type"])(
         preprocess_config, train_config, algorithm_config, log_dir, result_dir
     )
@@ -92,10 +94,18 @@ def main(args, configs):
     elif args.stage == 'test' or args.stage == 'predict':
         # Get model
         system = get_system(algorithm_config["type"])
-        model = system.load_from_checkpoint(ckpt_file)
+        model = system.load_from_checkpoint(ckpt_file, log_dir=log_dir, result_dir=result_dir)
         # Test
-        trainer = pl.Trainer(logger=loggers, **TRAINER_CONFIG)
+        trainer = pl.Trainer(**TRAINER_CONFIG)
         trainer.test(model, datamodule=datamodule)
+    elif args.stage == 'debug':
+        del datamodule
+        datamodule = get_datamodule("base")(
+            preprocess_config, train_config, algorithm_config, log_dir, result_dir
+        )
+        datamodule.setup('test')
+        for _ in tqdm(datamodule.test_dataset, desc="test_dataset"):
+            pass
 
 
 if __name__ == "__main__":
@@ -122,7 +132,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-c", "--ckpt_file", type=str, help="ckpt file name",
-        default=None,
+        default="last.ckpt",
     )
     parser.add_argument(
         "-s", "--stage", type=str, help="stage (train/val/test/predict)",

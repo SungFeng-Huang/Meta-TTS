@@ -125,7 +125,7 @@ class BaseAdaptorSystem(System):
         assert len(batch[0][0][0]) == 12, "data with 12 elements"
 
     def on_test_batch_start(self, batch, batch_idx, dataloader_idx):
-        self._on_meta_batch_start(batch, batch_idx, dataloader_idx)
+        self._on_meta_batch_start(batch)
 
     def test_step(self, batch, batch_idx):
         outputs = {}
