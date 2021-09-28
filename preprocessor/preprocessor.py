@@ -6,6 +6,8 @@ import tgt
 import librosa
 import numpy as np
 import pyworld as pw
+from resemblyzer import VoiceEncoder, preprocess_wav
+from pathlib import Path
 from scipy.interpolate import interp1d
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
@@ -15,6 +17,8 @@ import audio as Audio
 
 class Preprocessor:
     def __init__(self, config):
+        self.ssl_extractor = None
+        self.dvector_extractor = VoiceEncoder()
         self.config = config
         self.in_dir = config["path"]["raw_path"]
         self.out_dir = config["path"]["preprocessed_path"]
@@ -60,6 +64,9 @@ class Preprocessor:
         os.makedirs((os.path.join(self.out_dir, "pitch")), exist_ok=True)
         os.makedirs((os.path.join(self.out_dir, "energy")), exist_ok=True)
         os.makedirs((os.path.join(self.out_dir, "duration")), exist_ok=True)
+        os.makedirs((os.path.join(self.out_dir, "dvector")), exist_ok=True)
+        os.makedirs((os.path.join(self.out_dir, "representation")),
+                    exist_ok=True)
 
         print("Processing Data ...")
         n_frames = 0
@@ -67,39 +74,45 @@ class Preprocessor:
         energy_scaler = StandardScaler()
 
         # Compute pitch, energy, duration, and mel-spectrogram
-        speakers = {}
+        speakers, dvectors = {}, {}
         i = 0   # index of total speakers (train + val + test)
         outs = {}
-        for dset in [self.test_set]:
-        # for dset in [self.train_set, self.val_set, self.test_set]:
+        # for dset in [self.test_set]:
+        for dset in [self.train_set, self.val_set, self.test_set]:
             if dset is None:
                 continue
             dset_dir = os.path.join(self.in_dir, dset)
             out = list()
             for speaker in tqdm(os.listdir(dset_dir), desc=dset):
                 speakers[speaker] = i
+                if speaker not in dvectors:
+                    dvectors[speaker] = []
                 for wav_name in os.listdir(os.path.join(dset_dir, speaker)):
                     if ".wav" not in wav_name:
                         continue
 
                     basename = wav_name.split(".")[0]
                     tg_path = os.path.join(
-                        self.out_dir, "TextGrid", speaker, "{}.TextGrid".format(basename)
+                        self.out_dir, "TextGrid", speaker, "{}.TextGrid".format(
+                            basename)
                     )
-                    if os.path.exists(tg_path):
-                        ret = self.process_utterance(dset_dir, speaker, basename)
+                    if os.path.isfile(tg_path):
+                        ret = self.process_utterance(
+                            dset_dir, speaker, basename)
                         if ret is None:
                             continue
                         else:
-                            info, pitch, energy, n = ret
+                            info, pitch, energy, dvector, n = ret
                         out.append(info)
 
-                    if len(pitch) > 0:
-                        pitch_scaler.partial_fit(pitch.reshape((-1, 1)))
-                    if len(energy) > 0:
-                        energy_scaler.partial_fit(energy.reshape((-1, 1)))
+                        # dvector shape is (256,)
+                        dvectors[speaker].append(dvector)
+                        if len(pitch) > 0:
+                            pitch_scaler.partial_fit(pitch.reshape((-1, 1)))
+                        if len(energy) > 0:
+                            energy_scaler.partial_fit(energy.reshape((-1, 1)))
 
-                    n_frames += n
+                        n_frames += n
                 i += 1
             outs[dset] = out
 
@@ -108,7 +121,8 @@ class Preprocessor:
         if self.pitch_normalization:
             # For additional testing corpus/set
             if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
-                stats = json.load(open(os.path.join(self.out_dir, "stats.json"), 'r'))
+                stats = json.load(
+                    open(os.path.join(self.out_dir, "stats.json"), 'r'))
                 pitch_mean = stats['pitch'][2]
                 pitch_std = stats['pitch'][3]
             else:
@@ -120,7 +134,8 @@ class Preprocessor:
             pitch_std = 1
         if self.energy_normalization:
             if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
-                stats = json.load(open(os.path.join(self.out_dir, "stats.json"), 'r'))
+                stats = json.load(
+                    open(os.path.join(self.out_dir, "stats.json"), 'r'))
                 energy_mean = stats['energy'][2]
                 energy_std = stats['energy'][3]
             else:
@@ -139,7 +154,15 @@ class Preprocessor:
 
         # Save files
         with open(os.path.join(self.out_dir, "speakers.json"), "w") as f:
-            f.write(json.dumps(speakers))
+            json.dump(speakers, f, indent=4)
+
+        for spk, all_dvectors in dvectors.items():
+            dvector = np.mean(np.stack(all_dvectors, axis=0), axis=0)
+            print(spk)
+            print(dvector.shape)
+            dvector_filename = "{}-dvector.npy".format(spk)
+            np.save(os.path.join(self.out_dir,
+                    "dvector", dvector_filename), dvector)
 
         with open(os.path.join(self.out_dir, "stats.json"), "w") as f:
             stats = {
@@ -173,7 +196,6 @@ class Preprocessor:
 
         return outs
 
-
     def process_utterance(self, in_dir, speaker, basename):
         wav_path = os.path.join(in_dir, speaker, "{}.wav".format(basename))
         text_path = os.path.join(in_dir, speaker, "{}.lab".format(basename))
@@ -183,7 +205,7 @@ class Preprocessor:
 
         # Get alignments
         textgrid = tgt.io.read_textgrid(tg_path)
-        phone, duration, start, end = self.get_alignment(
+        phone, duration, ssl_duration, start, end = self.get_alignment(
             textgrid.get_tier_by_name("phones")
         )
         text = "{" + " ".join(phone) + "}"
@@ -193,8 +215,21 @@ class Preprocessor:
         # Read and trim wav files
         wav, _ = librosa.load(wav_path)
         wav = wav[
-            int(self.sampling_rate * start) : int(self.sampling_rate * end)
+            int(self.sampling_rate * start): int(self.sampling_rate * end)
         ].astype(np.float32)
+
+        # SSL representation
+        # wav1, _ = librosa.load(wav_path, sr=16000)
+        # wav1 = wav1[
+        #     int(16000 * start): int(16000 * end)
+        # ].astype(np.float32)
+        # with torch.no_grad():
+        #     representation = self.ssl_extractor(wavs)["last_hidden_state"]
+        representation = None
+
+        # Speaker dvector extraction
+        wav2 = preprocess_wav(Path(wav_path))
+        dvector = self.dvector_extractor.embed_utterance(wav2)
 
         # Read raw text
         with open(text_path, "r") as f:
@@ -206,7 +241,8 @@ class Preprocessor:
             self.sampling_rate,
             frame_period=self.hop_length / self.sampling_rate * 1000,
         )
-        pitch = pw.stonemask(wav.astype(np.float64), pitch, t, self.sampling_rate)
+        pitch = pw.stonemask(wav.astype(np.float64),
+                             pitch, t, self.sampling_rate)
 
         pitch = pitch[: sum(duration)]
         if np.sum(pitch != 0) <= 1:
@@ -232,7 +268,7 @@ class Preprocessor:
             pos = 0
             for i, d in enumerate(duration):
                 if d > 0:
-                    pitch[i] = np.mean(pitch[pos : pos + d])
+                    pitch[i] = np.mean(pitch[pos: pos + d])
                 else:
                     pitch[i] = 0
                 pos += d
@@ -243,11 +279,21 @@ class Preprocessor:
             pos = 0
             for i, d in enumerate(duration):
                 if d > 0:
-                    energy[i] = np.mean(energy[pos : pos + d])
+                    energy[i] = np.mean(energy[pos: pos + d])
                 else:
                     energy[i] = 0
                 pos += d
             energy = energy[: len(duration)]
+
+        # SSL representation Phoneme-level average
+        # pos = 0
+        # for i, d in enumerate(ssl_duration):
+        #     if d > 0:
+        #         representation[i] = np.mean(representation[pos: pos + d])
+        #     else:
+        #         representation[i] =  # zero vector
+        #     pos += d
+        # representation = representation[: len(ssl_duration)]
 
         # Save files
         dur_filename = "{}-duration-{}.npy".format(speaker, basename)
@@ -259,6 +305,9 @@ class Preprocessor:
         energy_filename = "{}-energy-{}.npy".format(speaker, basename)
         np.save(os.path.join(self.out_dir, "energy", energy_filename), energy)
 
+        # representation_filename = "{}-representation-{}.npy".format(speaker, basename)
+        # np.save(os.path.join(self.out_dir, "representation", energy_filename), representation)
+
         mel_filename = "{}-mel-{}.npy".format(speaker, basename)
         np.save(
             os.path.join(self.out_dir, "mel", mel_filename),
@@ -269,6 +318,7 @@ class Preprocessor:
             "|".join([basename, speaker, text, raw_text]),
             self.remove_outlier(pitch),
             self.remove_outlier(energy),
+            dvector,
             mel_spectrogram.shape[1],
         )
 
@@ -276,7 +326,7 @@ class Preprocessor:
         sil_phones = ["sil", "sp", "spn"]
 
         phones = []
-        durations = []
+        durations, ssl_durations = [], []
         start_time = 0
         end_time = 0
         end_idx = 0
@@ -305,12 +355,19 @@ class Preprocessor:
                     - np.round(s * self.sampling_rate / self.hop_length)
                 )
             )
+            ssl_durations.append(
+                int(
+                    np.round(e * 50)  # Hubert use 20ms window
+                    - np.round(s * 50)
+                )
+            )
 
         # Trim tailing silences
         phones = phones[:end_idx]
         durations = durations[:end_idx]
+        ssl_durations = ssl_durations[:end_idx]
 
-        return phones, durations, start_time, end_time
+        return phones, durations, ssl_durations, start_time, end_time
 
     def remove_outlier(self, values):
         values = np.array(values)

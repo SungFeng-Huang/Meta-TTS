@@ -120,6 +120,7 @@ raw_data/
 output/
 preprocessed_data/LibriTTS/
 preprocessed_data/VCTK/
+temp/
 evaluation/speechmetrics/
 evaluation/Pytorch_MBNet/
 evaluation/images/._*

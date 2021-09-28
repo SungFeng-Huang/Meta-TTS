@@ -1,6 +1,6 @@
 
 COMET_CONFIG = {
-    "api_key": "API_KEY",
+    "api_key": "V5R3R7HktQwVnmjkF66ZBCVCU",
     "workspace": "WORKSPACE",
     "project_name": "PROJECT_NAME",
     "log_code": True,
