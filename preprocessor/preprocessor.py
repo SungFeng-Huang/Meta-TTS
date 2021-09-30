@@ -7,7 +7,7 @@ import librosa
 import numpy as np
 import pyworld as pw
 import torch
-import s3prl
+import s3prl.hub as hub
 from resemblyzer import VoiceEncoder, preprocess_wav
 from pathlib import Path
 from scipy.interpolate import interp1d
@@ -19,7 +19,7 @@ import audio as Audio
 
 class Preprocessor:
     def __init__(self, config):
-        self.ssl_extractor = None
+        self.ssl_extractor = getattr(hub, 'hubert_large_ll60k')().cuda()
         self.dvector_extractor = VoiceEncoder()
         self.config = config
         self.in_dir = config["path"]["raw_path"]
@@ -79,8 +79,8 @@ class Preprocessor:
         speakers, dvectors = {}, {}
         i = 0   # index of total speakers (train + val + test)
         outs = {}
-        # for dset in [self.test_set]:
-        for dset in [self.train_set, self.val_set, self.test_set]:
+        for dset in [self.test_set]:
+        #for dset in [self.train_set, self.val_set, self.test_set]:
             if dset is None:
                 continue
             dset_dir = os.path.join(self.in_dir, dset)
@@ -225,9 +225,10 @@ class Preprocessor:
         wav1 = wav1[
             int(16000 * start): int(16000 * end)
         ].astype(np.float32)
+        wav1 = torch.from_numpy(wav1).float()
         with torch.no_grad():
-            representation = self.ssl_extractor([wav1])["last_hidden_state"][0]
-        #representation = None
+            representation = self.ssl_extractor([wav1.cuda()])["last_hidden_state"][0]
+        representation = representation.detach().cpu().numpy()
 
         # Speaker dvector extraction
         wav2 = preprocess_wav(Path(wav_path))
