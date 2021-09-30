@@ -1,7 +1,7 @@
 dataset: "VCTK"
 
 path:
-  corpus_path: "/home/r06942045/myData/VCTK-Corpus"
+  corpus_path: "./data/VCTK-Corpus"
   lexicon_path: "lexicon/librispeech-lexicon.txt"
   raw_path: "./raw_data/VCTK"
   preprocessed_path: "./preprocessed_data/VCTK"

@@ -6,6 +6,8 @@ import tgt
 import librosa
 import numpy as np
 import pyworld as pw
+import torch
+import s3prl
 from resemblyzer import VoiceEncoder, preprocess_wav
 from pathlib import Path
 from scipy.interpolate import interp1d
@@ -219,13 +221,13 @@ class Preprocessor:
         ].astype(np.float32)
 
         # SSL representation
-        # wav1, _ = librosa.load(wav_path, sr=16000)
-        # wav1 = wav1[
-        #     int(16000 * start): int(16000 * end)
-        # ].astype(np.float32)
-        # with torch.no_grad():
-        #     representation = self.ssl_extractor(wavs)["last_hidden_state"]
-        representation = None
+        wav1, _ = librosa.load(wav_path, sr=16000)
+        wav1 = wav1[
+            int(16000 * start): int(16000 * end)
+        ].astype(np.float32)
+        with torch.no_grad():
+            representation = self.ssl_extractor([wav1])["last_hidden_state"][0]
+        #representation = None
 
         # Speaker dvector extraction
         wav2 = preprocess_wav(Path(wav_path))
@@ -286,14 +288,14 @@ class Preprocessor:
             energy = energy[: len(duration)]
 
         # SSL representation Phoneme-level average
-        # pos = 0
-        # for i, d in enumerate(ssl_duration):
-        #     if d > 0:
-        #         representation[i] = np.mean(representation[pos: pos + d])
-        #     else:
-        #         representation[i] =  # zero vector
-        #     pos += d
-        # representation = representation[: len(ssl_duration)]
+        pos = 0
+        for i, d in enumerate(ssl_duration):
+            if d > 0:
+                representation[i] = np.mean(representation[pos: pos + d])
+            else:
+                representation[i] =  np.zeros(1024)
+            pos += d
+        representation = representation[: len(ssl_duration)]
 
         # Save files
         dur_filename = "{}-duration-{}.npy".format(speaker, basename)
@@ -305,8 +307,8 @@ class Preprocessor:
         energy_filename = "{}-energy-{}.npy".format(speaker, basename)
         np.save(os.path.join(self.out_dir, "energy", energy_filename), energy)
 
-        # representation_filename = "{}-representation-{}.npy".format(speaker, basename)
-        # np.save(os.path.join(self.out_dir, "representation", energy_filename), representation)
+        representation_filename = "{}-representation-{}.npy".format(speaker, basename)
+        np.save(os.path.join(self.out_dir, "representation", representation_filename), representation)
 
         mel_filename = "{}-mel-{}.npy".format(speaker, basename)
         np.save(

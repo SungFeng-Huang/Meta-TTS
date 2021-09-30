@@ -1,7 +1,7 @@
 dataset: "LibriTTS"
 
 path:
-    corpus_path: "../Dataset/LibriTTS"
+    corpus_path: "./data/LibriTTS"
     lexicon_path: "lexicon/librispeech-lexicon.txt"
     raw_path: "./raw_data/LibriTTS"
     preprocessed_path: "./preprocessed_data/LibriTTS"
