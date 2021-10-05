@@ -194,3 +194,9 @@ meta_emb1_step50:
 threshold:0.5821	EER:0.4819
 meta_emb1_step100:
 threshold:0.5825	EER:0.4766
+scratch_encoder_step0:
+threshold:0.5769	EER:0.3910
+encoder_step0:
+threshold:0.5867	EER:0.3598
+dvec_step0:
+threshold:0.5819	EER:0.3540

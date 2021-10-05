@@ -26,6 +26,8 @@ class PairSimilarity:
             self.dvector_list_dict[mode] = np.load(f'npy/{self.corpus}/{mode}_dvector.npy', allow_pickle=True)
         for mode in tqdm(self.mode_list, desc='mode'):
             for step in tqdm(self.step_list, leave=False):
+                if mode in ['scratch_encoder', 'encoder', 'dvec'] and step != 0:
+                    continue
                 self.dvector_list_dict[f'{mode}_step{step}'] = np.load(
                     f'npy/{self.corpus}/{mode}_step{step}_dvector.npy', allow_pickle=True
                 )

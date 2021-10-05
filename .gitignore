@@ -122,7 +122,8 @@ preprocessed_data/LibriTTS/
 preprocessed_data/VCTK/
 evaluation/speechmetrics/
 evaluation/Pytorch_MBNet/
-evaluation/images/._*
+evaluation/images/**/._*
+evaluation/images/**/*.png
 *.npy
 *.csv
 *.swp

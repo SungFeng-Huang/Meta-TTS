@@ -30,6 +30,9 @@ data_dir_dict['meta_emb1_vad'] = f'{root_dir}/output/result/{corpus}/8f1d5e4c2db
 data_dir_dict['meta_emb1_va'] = f'{root_dir}/output/result/{corpus}/76d5bf2e9c044908bf7122d350488cff/meta_emb1_va'
 data_dir_dict['meta_emb1_d'] = f'{root_dir}/output/result/{corpus}/c0e9e6a6f5984cb28fa05522b830cfec/meta_emb1_d'
 data_dir_dict['meta_emb1'] = f'{root_dir}/output/result/{corpus}/eaca69ba824b45bfb8d6e1f663bc6c51/meta_emb1'
+data_dir_dict['scratch_encoder'] = f'{root_dir}/output/result/{corpus}/064fdd9ccfa94ca190d0dcccead456ce'
+data_dir_dict['encoder'] = f'{root_dir}/output/result/{corpus}/b40400015bac4dfd8a8aaffec7d3db9f'
+data_dir_dict['dvec'] = f'{root_dir}/output/result/{corpus}/fdf55e6b33434922b758d034e839f000'
 n_sample = 16
 mode_list = [
     'base_emb_vad',
@@ -47,7 +50,10 @@ mode_list = [
     'meta_emb1_vad',
     'meta_emb1_va',
     'meta_emb1_d',
-    'meta_emb1'
+    'meta_emb1',
+    'scratch_encoder',
+    'encoder',
+    'dvec',
 ]
 step_list = [0, 5, 10, 20, 50, 100]
 
@@ -72,20 +78,20 @@ centroid_sim_mode_list = ['centroid', 'recon_random','recon'] + mode_list
 plot_type = 'errorbar'   # ['errorbar', 'box_ver', 'box_hor']
 sim_plot_mode_list = [
     'recon', 'recon_random',
-    'base_emb_vad',
-    'meta_emb_vad',
     'base_emb1_vad',
+    'base_emb_vad',
     'meta_emb1_vad',
+    'meta_emb_vad',
 ]
 # length of color_list should be same as len(sim_plot_mode_list)
-sim_plot_color_list = ['purple', 'grey', 'red', 'blue', 'orange', 'green']         
+sim_plot_color_list = ['purple', 'grey', 'orange', 'red', 'green', 'blue']
 # length of legend_list should be same as len(sim_plot_mode_list)
 sim_plot_legend_list = [
     'Same spk', 'Different spk',
-    'Baseline (emb table)',
-    'Meta-TTS (emb table)',
     'Baseline (share emb)',
+    'Baseline (emb table)',
     'Meta-TTS (share emb)',
+    'Meta-TTS (emb table)',
 ]
 
 

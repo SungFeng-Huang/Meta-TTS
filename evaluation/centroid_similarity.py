@@ -36,6 +36,8 @@ class CentroidSimilarity:
             self.dvector_list_dict[mode] = np.load(f'npy/{self.corpus}/{mode}_dvector.npy', allow_pickle=True)
         for mode in self.mode_list:
             for step in self.step_list:
+                if mode in ['scratch_encoder', 'encoder', 'dvec'] and step != 0:
+                    continue
                 self.dvector_list_dict[f'{mode}_step{step}'] = np.load(f'npy/{self.corpus}/{mode}_step{step}_dvector.npy', allow_pickle=True)
 
     # get the cosine similarity between the centroid and the dvectors of sample utterances
@@ -54,6 +56,8 @@ class CentroidSimilarity:
         self.dvector_list_dict_tensor['recon'] = torch.from_numpy(self.dvector_list_dict['recon'])
         for mode in self.mode_list:
             for step in self.step_list:
+                if mode in ['scratch_encoder', 'encoder', 'dvec'] and step != 0:
+                    continue
                 self.dvector_list_dict_tensor[f'{mode}_step{step}'] = torch.from_numpy(
                     self.dvector_list_dict[f'{mode}_step{step}']
                 )
@@ -74,6 +78,8 @@ class CentroidSimilarity:
             for mode in self.mode_list:
                 print(f'processing the similarity of mode: {mode}')
                 for step in self.step_list:
+                    if mode in ['scratch_encoder', 'encoder', 'dvec'] and step != 0:
+                        continue
                     print(f'    step{step}')
                     self.similarity_list_dict[f'{mode}_step{step}'] = cos(
                         self.dvector_list_dict_tensor['centroid'],
@@ -81,6 +87,8 @@ class CentroidSimilarity:
                     ).detach().cpu().numpy()
    
     def save_centroid_similarity(self):
+        for key in self.similarity_list_dict:
+            print(key, np.mean(self.similarity_list_dict[key]), np.std(self.similarity_list_dict[key]))
         np.save(f'npy/{self.corpus}/centroid_similarity_dict.npy', self.similarity_list_dict, allow_pickle=True)
 
     def load_centroid_similarity(self):

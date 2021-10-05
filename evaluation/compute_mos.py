@@ -6,6 +6,11 @@ import glob
 from tqdm import trange, tqdm
 from tqdm.contrib import tenumerate
 
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
 import numpy as np
 import scipy
 import torch
@@ -15,6 +20,33 @@ import librosa
 import speechmetrics
 
 import config
+
+
+class MBNetDataset(Dataset):
+    def __init__(self, filelist):
+        self.wav_name = filelist
+        self.length = len(self.wav_name)
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        wav, _ = librosa.load(self.wav_name[idx], sr=16000)
+        wav = np.abs(librosa.stft(wav, n_fft=512)).T
+        return wav
+
+    def collate_fn(self, wavs):
+        max_len = max(wavs, key = lambda x: x.shape[0]).shape[0]
+        output_wavs = []
+        for i, wav in enumerate(wavs):
+            wav_len = wav.shape[0]
+            dup_times = max_len//wav_len
+            remain = max_len - wav_len*dup_times
+            to_dup = [wav for t in range(dup_times)]
+            to_dup.append(wav[:remain, :])
+            output_wavs.append(torch.Tensor(np.concatenate(to_dup, axis = 0)))
+        output_wavs = torch.stack(output_wavs, dim = 0)
+        return output_wavs
 
 
 class NeuralMOS:
@@ -42,12 +74,23 @@ class NeuralMOS:
             file_list['recon'].append(candidate[0])
 
         for mode in self.mode_list:
+            # if mode in ['scratch_encoder', 'encoder', 'dvec'] and step > 0:
+            if mode in ['scratch_encoder', 'encoder', 'dvec']:
+                continue
             mode_dir = os.path.join(self.data_dir_dict[mode], 'audio/Testing')
             for step in self.step_list:
                 file_list[f'{mode}_step{step}'] = []
                 for _id in range(self.n_speaker * self.n_sample):
-                    candidate = glob.glob(f"{mode_dir}/test_{_id:03}/*FTstep_{step}.synth.wav")
-                    assert len(candidate) == 1
+                    try:
+                        candidate = glob.glob(f"{mode_dir}/test_{_id:03}/*FTstep_{step}.synth.wav")
+                        if self.corpus == "LibriTTS":
+                            candidate = [name for name in candidate if name.split('/')[-1][0].isdigit()]
+                        assert len(candidate) == 1, mode_dir + ' / ' + ' - '.join(candidates) + f" / test_{_id:03} / {step}"
+                    except:
+                        candidate = glob.glob(f"{mode_dir}/*/test_{_id:03}/*FTstep_{step}.synth.wav")
+                        if self.corpus == "LibriTTS":
+                            candidate = [name for name in candidate if name.split('/')[-1][0].isdigit()]
+                        assert len(candidate) == 1, mode_dir + ' / ' + ' - '.join(candidates) + f" / test_{_id:03} / {step}"
                     file_list[f'{mode}_step{step}'].append(candidate[0])
 
         return file_list
@@ -149,7 +192,8 @@ class NeuralMOS:
                 print(mode, mean, ci)
                 fo.write(f"{mode}, {mean}, {ci}\n")
 
-    def plot(self, mode_name):
+
+    def bar_plot(self, mode_name):
         if mode_name == 'base_emb':
             xtitle = 'Baseline (emb table)'
         elif mode_name == 'base_emb1':
@@ -158,10 +202,6 @@ class NeuralMOS:
             xtitle = 'Meta-TTS (emb table)'
         elif mode_name == 'meta_emb1':
             xtitle = 'Meta-TTS (share emb)'
-        import matplotlib
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-        import pandas as pd
         models = ['mosnet', 'mbnet', 'wav2vec2', 'tera', 'cpc']
         modes = ['real', 'recon'] + [f'{mode_name}{j}_step{i}' for j in ['_vad','_va','_d',''] for i in [0,5,10,20,50,100]]
         xticks = ['Real', 'Reconstructed'] + [f'{j}, step {i}' for j in ['Emb, VA, D','Emb, VA','Emb, D','Emb'] for i in [0,5,10,20,50,100]]
@@ -196,43 +236,100 @@ class NeuralMOS:
         plt.savefig(f'images/{self.corpus}/MOS_{mode_name}.png', format='png', bbox_extra_artists=(leg, ), bbox_inches='tight')
         # plt.show()
 
-class MBNetDataset(Dataset):
-    def __init__(self, filelist):
-        self.wav_name = filelist
-        self.length = len(self.wav_name)
 
-    def __len__(self):
-        return self.length
+    def plot(self, mode_name):
+        title_map = {
+            'base_emb': 'Baseline (emb table)',
+            'base_emb1': 'Baseline (share emb)',
+            'meta_emb': 'Meta-TTS (emb table)',
+            'meta_emb1': 'Meta-TTS (share emb)',
+        }
+        xtitle = title_map[mode_name]
 
-    def __getitem__(self, idx):
-        wav, _ = librosa.load(self.wav_name[idx], sr=16000)
-        wav = np.abs(librosa.stft(wav, n_fft=512)).T
-        return wav
+        palette = sns.color_palette(n_colors=8)
+        palette_color = ['blue', 'orange', 'green', 'red', 'purple', 'brown', 'pink', 'grey', 'olive', 'cyan']
+        fig, ax = plt.subplots(figsize=(4.8, 4.2))
 
-    def collate_fn(self, wavs):
-        max_len = max(wavs, key = lambda x: x.shape[0]).shape[0]
-        output_wavs = []
-        for i, wav in enumerate(wavs):
-            wav_len = wav.shape[0]
-            dup_times = max_len//wav_len
-            remain = max_len - wav_len*dup_times
-            to_dup = [wav for t in range(dup_times)]
-            to_dup.append(wav[:remain, :])
-            output_wavs.append(torch.Tensor(np.concatenate(to_dup, axis = 0)))
-        output_wavs = torch.stack(output_wavs, dim = 0)
-        return output_wavs
+        models = ['mosnet', 'mbnet', 'wav2vec2', 'tera', 'cpc']
+
+        # Horizontal lines with bands
+        dfs = []
+        for mode, xtick in zip(['real', 'recon'], ['Real', 'Reconstructed']):
+            for model in tqdm(models, desc='mos_type', leave=False):
+                filename = f'csv/{self.corpus}/{model}_{mode}.csv'
+                df = pd.read_csv(filename)
+                if model in ['mosnet','mbnet']:
+                    df = df.rename(columns={' mos': "MOS"})
+                else:
+                    df = df.rename(columns={'score': "MOS"})
+                df['MOS_type'] = model
+                df[xtitle] = xtick
+                dfs.append(df)
+        dfs = pd.concat(dfs, ignore_index=True)
+        dfs = dfs.groupby([xtitle, "test_id"]).mean().groupby(xtitle).agg(self.get_mean_confidence_interval)
+        print(dfs)
+        for (xtick, row), color in zip(dfs.iterrows(), ['purple', 'grey']):
+            mean, ci = row["MOS"]
+            rgb_color = palette[palette_color.index(color)]
+            ax.axhspan(mean-ci, mean+ci, facecolor=rgb_color, alpha=0.15)
+            ax.axhline(mean, linestyle='--', alpha=0.5, color=rgb_color, label=xtick)
+        del dfs
+
+        # Curves
+        dfs = []
+        modes = [f'{mode_name}{j}_step{i}' for j in ['_vad','_va','_d',''] for i in [0,5,10,20,50,100]]
+        xticks = [f'{j}, step {i}' for j in ['Emb, VA, D','Emb, VA','Emb, D','Emb'] for i in [0,5,10,20,50,100]]
+        for i, mode in tenumerate(modes, desc='mode', leave=False):
+            for model in tqdm(models, desc='mos_type', leave=False):
+                filename = f'csv/{self.corpus}/{model}_{mode}.csv'
+                df = pd.read_csv(filename)
+                if model in ['mosnet','mbnet']:
+                    df = df.rename(columns={' mos': "MOS"})
+                else:
+                    df = df.rename(columns={'score': "MOS"})
+                df['MOS_type'] = model
+                df[xtitle] = xticks[i].rsplit(',', 1)[0]
+                df['Adaptation Steps'] = int(mode.rsplit('_', 1)[1][4:])
+                dfs.append(df)
+        dfs = pd.concat(dfs, ignore_index=True)
+        print(dfs.groupby([xtitle, "test_id"]).mean().groupby(xtitle).agg(self.get_mean_confidence_interval))
+        ax = sns.lineplot(x='Adaptation Steps', y='MOS', hue=xtitle, data=dfs, ax=ax, err_style='bars')
+        del dfs
+
+        h, l = ax.get_legend_handles_labels()
+        print(l)
+        # Usually seaborn treat hue label as the first legend label with empty
+        # artist(handle). In such case, we should remove the first handles/labels.
+        # But with unknown reason, the hue label is correctly treated as legent
+        # title, so we do not need to remove the first handle/label.
+        ax.legend(handles=h, labels=l, ncol=2, title=xtitle, title_fontsize='large')
+        plt.ylim((2.6,4.2))
+        plt.tight_layout()
+
+        savefile = f"images/{self.corpus}/MOS_{mode_name}.png"
+        plt.savefig(savefile, format='png')
+        print(savefile)
+        plt.close()
+        from PIL import Image
+        im = Image.open(savefile)
+        im.show()
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--net', type=str, choices=['mosnet', 'mbnet'], default=False)
+    parser.add_argument('--net', type=str, choices=['mosnet', 'mbnet', 'wav2vec2', 'tera', 'cpc'], default=False)
     parser.add_argument('--plot', type=str, default=False)
     args = parser.parse_args()
     main = NeuralMOS(args)
-    if args.net == 'mosnet':
-        main.compute_mosnet()
-        main.add_up('mosnet')
-    if args.net == 'mbnet':
-        main.compute_mbnet()
-        main.add_up('mbnet')
-    if args.plot:
-        main.plot(args.plot)
+    if args.net:
+        if args.net == 'mosnet':
+            main.compute_mosnet()
+        elif args.net == 'mbnet':
+            main.compute_mbnet()
+        main.add_up(args.net)
+    # if args.plot:
+        # main.plot(args.plot)
+    # for suffix in ['', '_base_emb', '_base_emb1', '_meta_emb', '_meta_emb1']:
+    for plot in ['base_emb', 'base_emb1', 'meta_emb', 'meta_emb1']:
+        main.plot(plot)
+    plt.show()

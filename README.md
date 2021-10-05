@@ -133,13 +133,11 @@ You can download pretrained models [here](https://drive.google.com/drive/folders
 
 ## Results
 
-Speaker verification:
-- same speaker v.s. different speaker
-  - EER ![image](evaluation/images/eer.png)
-  - DET ![image](evaluation/images/det.png)
-- real v.s. synthesized
-  - Cosine similarity ![image](evaluation/images/errorbar_plot.png)
-  - ROC ![image](evaluation/images/roc.png)
+| Corpus | LibriTTS | VCTK |
+| --- | --- | --- |
+| Speaker Similarity | ![](evaluation/images/LibriTTS/errorbar_plot_encoder.png) | ![](evaluation/images/VCTK/errorbar_plot_encoder.png) |
+| Speaker Verification | ![](evaluation/images/LibriTTS/eer_encoder.png) | ![](evaluation/images/VCTK/eer_encoder.png) |
+| Synthesized Speech Detection | ![](evaluation/images/LibriTTS/roc_encoder.png) | ![](evaluation/images/VCTK/roc_encoder.png) |
 
 
 <!--## Contributing-->

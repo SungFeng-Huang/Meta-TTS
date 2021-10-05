@@ -24,7 +24,8 @@ class WavsToDvector:
         self.n_speaker = config.n_speaker # number of speakers ex: 39
         self.mode_list = config.mode_list
         self.step_list = config.step_list
-        self.use_new_pair = args.new_pair
+        # self.use_new_pair = args.new_pair
+        self.use_new_pair = False
 
         with open(os.path.join(self.data_dir_dict['recon'], 'test_SQids.json'), 'r+') as F:
             self.sq_list = json.load(F)
@@ -64,6 +65,8 @@ class WavsToDvector:
                 np.save(f'npy/{self.corpus}/{mode}_dvector.npy', dvector_list_dict[mode], allow_pickle=True)
         for mode in self.mode_list:
             for step in self.step_list:
+                if mode in ['scratch_encoder', 'encoder', 'dvec'] and step != 0:
+                    continue
                 if os.path.exists(f'npy/{self.corpus}/{mode}_step{step}_dvector.npy'):
                     print(f'Getting dvector of mode: {mode}, step: {step}')
                     print(f'\tLoading from: \n\t\tnpy/{self.corpus}/{mode}_step{step}_dvector.npy')
@@ -239,7 +242,10 @@ class WavsToDvector:
         # output: [<dvector of utterance 0>, <dvector of utterance 1>,....]
         ###############
         print(f'Getting dvector of mode: recon')
-        data_dir = os.path.join(data_dir, 'audio/Testing')
+        if os.path.exists(os.path.join(data_dir, 'audio/Testing/step_100000')):
+            data_dir = os.path.join(data_dir, 'audio/Testing/step_100000')
+        else:
+            data_dir = os.path.join(data_dir, 'audio/Testing')
         emb_tensor_list = []
         for speaker_id in trange(self.n_speaker, desc='Speaker', leave=False):
             for sample_id in trange(self.n_sample, desc='Sample', leave=False):
@@ -261,7 +267,10 @@ class WavsToDvector:
         ###############
         mode = data_dir.split('/')[-1]
         print(f'Getting dvector of mode: {mode}, step: {step}')
-        data_dir = os.path.join(data_dir, 'audio/Testing')
+        if os.path.exists(os.path.join(data_dir, 'audio/Testing/step_100000')):
+            data_dir = os.path.join(data_dir, 'audio/Testing/step_100000')
+        else:
+            data_dir = os.path.join(data_dir, 'audio/Testing')
         emb_tensor_list = []
         for speaker_id in trange(self.n_speaker, desc='Speaker', leave=False):
             for sample_id in trange(self.n_sample, desc='Sample', leave=False):
