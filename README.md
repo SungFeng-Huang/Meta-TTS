@@ -129,10 +129,8 @@ You can download pretrained models [here](https://drive.google.com/drive/folders
 | Corpus | LibriTTS | VCTK |
 | --- | --- | --- |
 | Speaker Similarity | ![](evaluation/images/LibriTTS/errorbar_plot_encoder.png) | ![](evaluation/images/VCTK/errorbar_plot_encoder.png) |
-| Speaker Verification | ![](evaluation/images/LibriTTS/eer_encoder.png)<br>![](evaluation/images/LibriTTS/det_encoder.png) | ![](evaluation/images/VCTK/eer_encoder.png) |
-| | ![](evaluation/images/LibriTTS/det_encoder.png) | ![](evaluation/images/VCTK/det_encoder.png) |
-| Synthesized Speech Detection | ![](evaluation/images/LibriTTS/auc_encoder.png) | ![](evaluation/images/VCTK/auc_encoder.png) |
-| | ![](evaluation/images/LibriTTS/roc_encoder.png) | ![](evaluation/images/VCTK/roc_encoder.png) |
+| Speaker Verification | ![](evaluation/images/LibriTTS/eer_encoder.png)<br>![](evaluation/images/LibriTTS/det_encoder.png) | ![](evaluation/images/VCTK/eer_encoder.png)<br>![](evaluation/images/VCTK/det_encoder.png) |
+| Synthesized Speech Detection | ![](evaluation/images/LibriTTS/auc_encoder.png)<br>![](evaluation/images/LibriTTS/roc_encoder.png) | ![](evaluation/images/VCTK/auc_encoder.png)<br>![](evaluation/images/VCTK/roc_encoder.png) |
 
 
 <!--## Contributing-->
