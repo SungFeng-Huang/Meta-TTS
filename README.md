@@ -74,51 +74,44 @@ python3 preprocess.py config/VCTK/preprocess.yaml
 To train the models in the paper, run this command:
 
 ```bash
-python3 train.py -a <algorithm>
+python3 main.py -s train \
+                -p config/preprocess/<corpus>.yaml \
+                -m config/model/base.yaml \
+                -t config/train/base.yaml config/train/<corpus>.yaml \
+                -a config/algorithm/<algorithm>.yaml
 ```
 
-Available algorithms:
-- base_emb_vad / base_emb_va / base_emb_d / base_emb
-  - Baseline with embedding table.
-- meta_emb_vad / meta_emb_va / meta_emb_d / meta_emb
-  - Meta-TTS with embedding table.
-- base_emb1_vad / base_emb1_va / base_emb1_d / base_emb1
-  - Baseline with shared embedding.
-- meta_emb1_vad / meta_emb1_va / meta_emb1_d / meta_emb1
-  - Meta-TTS with shared embedding.
-
-Note:
-- **\*\_vad**: fine-tune embedding + variance adaptor + decoder
-- **\*\_va**: fine-tune embedding + variance adaptor
-- **\*\_d**: fine-tune embedding + decoder
-- **without \*\_vad/\*\_va/\*\_d**: fine-tune embedding only
-
-Please use 8 V100 GPUs for meta models, and 1 V100 GPU for baseline models, or
-else you might need to tune gradient accumulation step (grad_acc_step) setting in
-`config/*/train.yaml` to get the correct meta batch size.
+To reproduce, please use 8 V100 GPUs for meta models, and 1 V100 GPU for baseline
+models, or else you might need to tune gradient accumulation step (grad_acc_step)
+setting in `config/train/base.yaml` to get the correct meta batch size.
 Note that each GPU has its own random seed, so even the meta batch size is the
 same, different number of GPUs is equivalent to different random seed.
 
 After training, you can find your checkpoints under
-`output/ckpt/LibriTTS/<project_name>/<experiment_key>/checkpoints/`, where the
-project name is set in `.comet.config`.
+`output/ckpt/<corpus>/<project_name>/<experiment_key>/checkpoints/`, where the
+project name is set in `config/comet.py`.
 
 To inference the models, run:
 ```bash
-# LibriTTS
-python3 test.py -a <algorithm> -e <experiment_key> -c <checkpoint_file_name>
-# VCTK
-python3 test.py -p config/VCTK/preprocess.yaml -t config/VCTK/train.yaml -m config/VCTK/model.yaml \
-                -a <algorithm> -e <experiment_key> -c <checkpoint_file_name>
+python3 main.py -s test \
+                -p config/preprocess/<corpus>.yaml \
+                -m config/model/base.yaml \
+                -t config/train/base.yaml config/train/<corpus>.yaml \
+                -a config/algorithm/<algorithm>.yaml \
+                -e <experiment_key> -c <checkpoint_file_name>
 ```
 and the results would be under
 `output/result/<corpus>/<experiment_key>/<algorithm>/`.
 
 ## Evaluation
 
+> **Note:** The evaluation code is not well-refactored yet.
 `cd evaluation/` and check [README.md](evaluation/README.md)
 
 ## Pre-trained Models
+
+> **Note:** The checkpoints are with older version, might not capatiable with
+> the current code. We would fix the problem in the future.
 
 Since our codes are using Comet logger, you might need to create a dummy
 experiment by running:
@@ -137,7 +130,9 @@ You can download pretrained models [here](https://drive.google.com/drive/folders
 | --- | --- | --- |
 | Speaker Similarity | ![](evaluation/images/LibriTTS/errorbar_plot_encoder.png) | ![](evaluation/images/VCTK/errorbar_plot_encoder.png) |
 | Speaker Verification | ![](evaluation/images/LibriTTS/eer_encoder.png) | ![](evaluation/images/VCTK/eer_encoder.png) |
-| Synthesized Speech Detection | ![](evaluation/images/LibriTTS/roc_encoder.png) | ![](evaluation/images/VCTK/roc_encoder.png) |
+| | ![](evaluation/images/LibriTTS/det_encoder.png) | ![](evaluation/images/VCTK/det_encoder.png) |
+| Synthesized Speech Detection | ![](evaluation/images/LibriTTS/auc_encoder.png) | ![](evaluation/images/VCTK/auc_encoder.png) |
+| | ![](evaluation/images/LibriTTS/roc_encoder.png) | ![](evaluation/images/VCTK/roc_encoder.png) |
 
 
 <!--## Contributing-->
