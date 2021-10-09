@@ -7,6 +7,11 @@ import numpy as np
 
 from tqdm import tqdm
 
+#------------
+# This file requires a new folder named "p-embeddings" to be created in the folder "..../preprocessed_data/[DatasetName]"
+# The saved embeddings should be at "../preprocessed_data/LibriTTS/p-embeddings/task-0.npy"
+#------------
+
 class Generator:
     def __init__(self, config,
      task_size = 500, 
