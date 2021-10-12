@@ -49,15 +49,13 @@ class Generator:
 
         # Create phoneme coverage sets
         phoneme_sets = [set() for _ in range(self.task_size)]
-        index = 0
         print("Creating phoneme coverage sets")
-        for support_set in tqdm(support_sets) :
+        for i, support_set in enumerate(tqdm(support_sets)) :
             for ind in support_set :
                 phonemes = preprocessed_txt[ind].split("|")[2]
                 phonemes = phonemes[1:-1].split(" ")
                 for ph in phonemes :
-                    phoneme_sets[index].add(ph)
-            index = index + 1
+                    phoneme_sets[i].add(ph)
         
         # Save support sets
         print("Saving support sets")
@@ -94,9 +92,8 @@ class Generator:
             query_sets.append(sample_list)
         
         # Delete out of coverage samples
-        index = 0
         print("Deleting out of coverage samples")
-        for query_set in tqdm(query_sets) :
+        for i, query_set in enumerate(tqdm(query_sets)) :
             covered_list = []
             for ind in query_set :
                 sentence_phonemes = set() # The set of phonemes that exist in a single sentence
@@ -106,34 +103,29 @@ class Generator:
                 for ph in phonemes :
                     sentence_phonemes.add(ph)
                 for ph in sentence_phonemes :
-                    if ph not in phoneme_sets[index] : 
+                    if ph not in phoneme_sets[i] : 
                         illegal = True
                 if not illegal :
                     covered_list.append(ind)
-            query_sets[index] = covered_list
-            index = index + 1
+            query_sets[i] = covered_list
         
         # Create phoneme coverage sets (I think this is optional?)
         query_phoneme_sets = [set() for _ in range(len(support_list))]
-        index = 0
         print("Creating phoneme coverage sets")
-        for query_set in tqdm(query_sets) :
+        for i, query_set in enumerate(tqdm(query_sets)) :
             for ind in query_set :
                 phonemes = preprocessed_txt[ind].split("|")[2]
                 phonemes = phonemes[1:-1].split(" ")
                 for ph in phonemes :
-                    query_phoneme_sets[index].add(ph)
-            index = index + 1
+                    query_phoneme_sets[i].add(ph)
         
         # Assert phoneme coverage. The phonemes of the query set should be a subset of that of the corresponding support set.
         print("Checking phoneme coverage...")
         illegal = False
-        index = 0
-        for phonemes in query_phoneme_sets :
+        for i, phonemes in enumerate(query_phoneme_sets) :
             for ph in phonemes :
-                if ph not in phoneme_sets[index] :
+                if ph not in phoneme_sets[i] :
                     illegal = True
-            index = index + 1
         assert illegal == False
         print("Test passed")
 
@@ -176,9 +168,8 @@ class Generator:
         # --This part is hard to understand since the naming is chaotic and the operations aren't really optimized. Could be improved but it works, I think--
         #Calculate and save the average representation of every phoneme
         print("Calculating and saving the average representation of every phoneme")
-        index = 0 # Index of sets
         print("Final shape of phoneme embeddings : " + "(" + str(len(self.valid_symbols)) + ", " + str(self.embedding_size) + ")")
-        for file_list in tqdm(file_names) :
+        for k, file_list in enumerate(tqdm(file_names)) :
             table = dict()
             table_count = dict()
             table_save = []
@@ -187,18 +178,17 @@ class Generator:
                 table_count[s] = 0
             for i, file_name in enumerate(file_list) :
                 representation = np.load(os.path.join(self.in_dir, "representation", file_name))
-                id_in_preprocessed_text = indexes[index][i]
+                id_in_preprocessed_text = indexes[k][i]
                 appeared_phonemes = preprocessed_txt[int(id_in_preprocessed_text)].split("|")[2][1:-1].split(" ")
-                for ph in appeared_phonemes :
-                    table[ph] = table[ph] + representation[appeared_phonemes.index(ph)]
+                for i, ph in enumerate(appeared_phonemes) :
+                    table[ph] = table[ph] + representation[i] # Can't use index function since it always chooses the first occurance.
                     table_count[ph] = table_count[ph] + 1
             for key in table.keys() :
                 if table_count[key] != 0 :
                     table[key] = table[key] / table_count[key]
                 table_save.append(table[key])
             table_save = np.array(table_save)
-            np.save(os.path.join(self.out_dir, "p-embeddings", "task-" + str(index)), table_save)
-            index = index + 1
+            np.save(os.path.join(self.out_dir, "p-embeddings", "task-" + str(k)), table_save)
         print("All embeddings saved at", os.path.join(self.out_dir, "p-embeddings"))
         
 
@@ -220,6 +210,6 @@ if __name__ == "__main__":
 
     generator = Generator(config, valid_symbols=valid_symbols)
 
-    #generator.build_support_sets() # Uncomment this line to generate the support set first.
-    #generator.build_query_sets() # Build the query set based on the generated support set
-    #generator.build_p_embeddings() # Build the embeddings based on the support sets. Doesn't require query set(aka build_query_sets).
+    generator.build_support_sets() # Uncomment this line to generate the support set first.
+    generator.build_query_sets() # Build the query set based on the generated support set
+    generator.build_p_embeddings() # Build the embeddings based on the support sets. Doesn't require query set(aka build_query_sets).
