@@ -92,6 +92,10 @@ class BaseAdaptorSystem(System):
 
         emb_texts = embedding_generator(texts)
         output = encoder(emb_texts, src_masks)
+        print("After encoder")
+        print(output.shape)
+        print("mnl")
+        print(max_mel_len)
 
         mel_masks = (
             get_mask_from_lengths(
@@ -112,13 +116,15 @@ class BaseAdaptorSystem(System):
             output, src_masks, mel_masks, max_mel_len,
             p_targets, e_targets, d_targets, p_control, e_control, d_control,
         )
+        print("After variance adaptor")
+        print(output.shape)
 
         if speaker_emb is not None:
             spk_emb = speaker_emb(speaker_args)
             if average_spk_emb:
                 spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(
                     output.shape[0], -1)
-            output += spk_emb.unsqueeze(1).expand(-1, max(mel_lens), -1)
+            output += spk_emb.unsqueeze(1).expand(-1, max_mel_len, -1)
 
         output, mel_masks = decoder(output, mel_masks)
         output = mel_linear(output)
@@ -146,8 +152,14 @@ class BaseAdaptorSystem(System):
         sup_batch = batch[0][0][0]
         first_order = not train
         for step in range(adaptation_steps):
-            preds = self.forward_learner(learner, *sup_batch[2:])
-            train_error = self.loss_func(sup_batch, preds)
+            mini_batch = []
+            for i, feat in enumerate(sup_batch):
+                if i == 5 or i == 8:
+                    mini_batch.append(feat)
+                else:
+                    mini_batch.append(feat[step:step+2])
+            preds = self.forward_learner(learner, *mini_batch[2:])
+            train_error = self.loss_func(mini_batch, preds)
             learner.adapt(
                 train_error[0], first_order=first_order, allow_unused=False, allow_nograd=True)
         return learner
