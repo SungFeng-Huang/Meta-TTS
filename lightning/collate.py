@@ -229,6 +229,8 @@ class MultiLingualCollate(object):
         return filtered_qry_idxs
 
     def calc_p_embedding(self, data, idxs):
+        print(len(data))
+        print(idxs)
         lang_id = data[idxs[0]]["language"]
         n_symbols = len(self.lang_id2symbols[lang_id])
         texts = [data[idx]["text"] for idx in idxs]

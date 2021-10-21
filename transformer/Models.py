@@ -179,7 +179,7 @@ class EmbeddingGenerator(nn.Module):
         n_banks = config["codebook_size"]
         d_word_vec_orig = config["representation_dim"]
         d_word_vec = config["transformer"]["encoder_hidden"]
-        self.banks = nn.Parameter(n_banks, d_word_vec_orig)
+        self.banks = nn.Parameter(torch.randn(n_banks, d_word_vec_orig))
         self.proj = nn.Linear(d_word_vec_orig, d_word_vec)
         self.quantize_matrix = None
 
@@ -190,7 +190,7 @@ class EmbeddingGenerator(nn.Module):
         """
         with torch.no_grad():
             similarity = dot_product_similarity(
-                ref, self.banks.T)  # (vocab_size, n_banks)
+                torch.tensor(ref, dtype=torch.float32).cuda(), self.banks.T)  # (vocab_size, n_banks)
             self.quantize_matrix = torch.zeros_like(similarity)
             self.quantize_matrix[torch.arange(
                 len(similarity)), similarity.argmax(1)] = 1

@@ -1,8 +1,8 @@
 
 COMET_CONFIG = {
-    "api_key": "V5R3R7HktQwVnmjkF66ZBCVCU",
-    "workspace": "WORKSPACE",
-    "project_name": "PROJECT_NAME",
+    "api_key": "ApllJxm8SpHpC0v9OLMw1EECB",
+    "workspace": "jc0316",
+    "project_name": "Meta-TTS",
     "log_code": True,
     "log_graph": True,
     "parse_args": True,

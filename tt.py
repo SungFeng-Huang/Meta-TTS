@@ -6,7 +6,7 @@ if __name__ == "__main__":
     import time
     preprocess_configs = ['config/preprocess/LibriTTS.yaml']
     train_configs = ['config/train/base.yaml', 'config/train/LibriTTS.yaml']
-    algorithm_config = 'config/algorithm/ml_meta_dotsim_va_d_yaml'
+    algorithm_config = 'config/algorithm/ml_meta_dotsim_va_d.yaml'
     log_dir, result_dir = "./logs", "./results"
 
     st = time.time()

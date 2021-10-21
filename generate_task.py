@@ -210,6 +210,6 @@ if __name__ == "__main__":
 
     generator = Generator(config, valid_symbols=valid_symbols)
 
-    generator.build_support_sets() # Uncomment this line to generate the support set first.
-    generator.build_query_sets() # Build the query set based on the generated support set
+    #generator.build_support_sets() # Uncomment this line to generate the support set first.
+    #generator.build_query_sets() # Build the query set based on the generated support set
     generator.build_p_embeddings() # Build the embeddings based on the support sets. Doesn't require query set(aka build_query_sets).

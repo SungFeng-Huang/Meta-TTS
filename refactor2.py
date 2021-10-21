@@ -87,7 +87,7 @@ def main(args, configs):
         # Get model
         system = get_system(algorithm_config["type"])
         model = system(
-            preprocess_configs, model_config, train_config, algorithm_config, log_dir, result_dir
+            preprocess_configs[0], model_config, train_config, algorithm_config, log_dir, result_dir
         )
         # Train
         trainer = pl.Trainer(

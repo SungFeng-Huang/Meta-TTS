@@ -35,6 +35,42 @@ class BaseAdaptorSystem(System):
         self.test_adaptation_steps = self.algorithm_config["adapt"]["test"]["steps"]
         assert self.test_adaptation_steps % self.adaptation_steps == 0
 
+    def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
+        self._on_meta_batch_start(batch)
+
+    def training_step(self, batch, batch_idx):
+        """ Normal forwarding.
+
+        Function:
+            common_step(): Defined in `lightning.systems.system.System`
+        """
+
+        train_loss, predictions = self.meta_learn(batch, batch_idx, train=True)
+        qry_batch = batch[0][1][0]
+
+        # Log metrics to CometLogger
+        loss_dict = {f"Train/{k}": v for k, v in loss2dict(train_loss).items()}
+        self.log_dict(loss_dict, sync_dist=True)
+        return {'loss': train_loss[0], 'losses': train_loss, 'output': predictions, '_batch': qry_batch}
+
+    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
+        self._on_meta_batch_start(batch)
+
+    def validation_step(self, batch, batch_idx):
+        """ Adapted forwarding.
+
+        Function:
+            meta_learn(): Defined in `lightning.systems.base_adaptor.BaseAdaptorSystem`
+        """
+        val_loss, predictions = self.meta_learn(batch, batch_idx)
+        qry_batch = batch[0][1][0]
+
+        # Log metrics to CometLogger
+        loss_dict = {f"Val/{k}": v for k, v in loss2dict(val_loss).items()}
+        self.log_dict(loss_dict, sync_dist=True)
+        return {'losses': val_loss, 'output': predictions, '_batch': qry_batch}
+    
+
     def forward_learner(
         self, learner, speaker_args, texts, src_lens, max_src_len,
         mels=None, mel_lens=None, max_mel_len=None,
@@ -101,7 +137,7 @@ class BaseAdaptorSystem(System):
     def adapt(self, batch, adaptation_steps=5, learner=None, train=True):
         ref_p_embedding = batch[0][2][0]
         if learner is None:
-            self.learner.embedding_generator.calc_quantize_matrix(
+            self.learner.module.emb_generator.calcQuantizeMatrix(
                 ref_p_embedding)
             learner = self.learner.clone()
             learner.train()
