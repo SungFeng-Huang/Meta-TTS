@@ -80,7 +80,7 @@ class Preprocessor:
         i = 0   # index of total speakers (train + val + test)
         outs = {}
         for dset in [self.test_set]:
-        #for dset in [self.train_set, self.val_set, self.test_set]:
+            # for dset in [self.train_set, self.val_set, self.test_set]:
             if dset is None:
                 continue
             dset_dir = os.path.join(self.in_dir, dset)
@@ -227,7 +227,8 @@ class Preprocessor:
         ].astype(np.float32)
         wav1 = torch.from_numpy(wav1).float()
         with torch.no_grad():
-            representation = self.ssl_extractor([wav1.cuda()])["last_hidden_state"][0]
+            representation = self.ssl_extractor(
+                [wav1.cuda()])["last_hidden_state"][0]
         representation = representation.detach().cpu().numpy()
 
         # Speaker dvector extraction
@@ -292,9 +293,10 @@ class Preprocessor:
         pos = 0
         for i, d in enumerate(ssl_duration):
             if d > 0:
-                representation[i] = np.mean(representation[pos: pos + d])
+                representation[i] = np.mean(
+                    representation[pos: pos + d], axis=0)
             else:
-                representation[i] =  np.zeros(1024)
+                representation[i] = np.zeros(1024)
             pos += d
         representation = representation[: len(ssl_duration)]
 
@@ -308,8 +310,10 @@ class Preprocessor:
         energy_filename = "{}-energy-{}.npy".format(speaker, basename)
         np.save(os.path.join(self.out_dir, "energy", energy_filename), energy)
 
-        representation_filename = "{}-representation-{}.npy".format(speaker, basename)
-        np.save(os.path.join(self.out_dir, "representation", representation_filename), representation)
+        representation_filename = "{}-representation-{}.npy".format(
+            speaker, basename)
+        np.save(os.path.join(self.out_dir, "representation",
+                representation_filename), representation)
 
         mel_filename = "{}-mel-{}.npy".format(speaker, basename)
         np.save(

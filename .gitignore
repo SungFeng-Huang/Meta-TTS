@@ -116,6 +116,8 @@ learn2learn/
 # data, checkpoint, and models
 .comet.config
 lightning_logs/
+logs/
+preprocessed_data/
 raw_data/
 output/
 preprocessed_data/LibriTTS/

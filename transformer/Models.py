@@ -1,10 +1,12 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 
 import transformer.Constants as Constants
 from .Layers import FFTBlock
 from text.symbols import symbols
+from utils.similarity import *
 
 
 def get_sinusoid_encoding_table(n_position, d_hid, padding_idx=None):
@@ -169,3 +171,96 @@ class Decoder(nn.Module):
                 dec_slf_attn_list += [dec_slf_attn]
 
         return dec_output, mask
+
+
+class EmbeddingGenerator(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        n_banks = config["codebook_size"]
+        d_word_vec_orig = config["representation_dim"]
+        d_word_vec = config["transformer"]["encoder_hidden"]
+        self.banks = nn.Parameter(n_banks, d_word_vec_orig)
+        self.proj = nn.Linear(d_word_vec_orig, d_word_vec)
+        self.quantize_matrix = None
+
+    def calcQuantizeMatrix(self, ref):
+        r""" Compute binary quantize matrix from reference representations
+        Args:
+            ref: Reference representations with size (vocab_size, embed_dim).
+        """
+        with torch.no_grad():
+            similarity = dot_product_similarity(
+                ref, self.banks.T)  # (vocab_size, n_banks)
+            self.quantize_matrix = torch.zeros_like(similarity)
+            self.quantize_matrix[torch.arange(
+                len(similarity)), similarity.argmax(1)] = 1
+
+    def forward(self, x):
+        return self.proj(F.embedding(x, self.quantize_matrix @ self.banks, padding_idx=Constants.PAD))
+
+
+class MultiLingualEncoder(nn.Module):
+    """ MultiLingual Encoder """
+
+    def __init__(self, config):
+        super().__init__()
+
+        n_position = config["max_seq_len"] + 1
+        # n_src_vocab = len(symbols) + 1  vocab size is determined by EmbeddingGenerator
+        d_word_vec = config["transformer"]["encoder_hidden"]
+        n_layers = config["transformer"]["encoder_layer"]
+        n_head = config["transformer"]["encoder_head"]
+        d_k = d_v = (
+            config["transformer"]["encoder_hidden"]
+            // config["transformer"]["encoder_head"]
+        )
+        d_model = config["transformer"]["encoder_hidden"]
+        d_inner = config["transformer"]["conv_filter_size"]
+        kernel_size = config["transformer"]["conv_kernel_size"]
+        dropout = config["transformer"]["encoder_dropout"]
+
+        self.max_seq_len = config["max_seq_len"]
+        self.d_model = d_model
+
+        self.position_enc = nn.Parameter(
+            get_sinusoid_encoding_table(n_position, d_word_vec).unsqueeze(0),
+            requires_grad=False,
+        )
+
+        self.layer_stack = nn.ModuleList(
+            [
+                FFTBlock(
+                    d_model, n_head, d_k, d_v, d_inner, kernel_size, dropout=dropout
+                )
+                for _ in range(n_layers)
+            ]
+        )
+
+    def forward(self, emb_seq, mask, return_attns=False):
+
+        enc_slf_attn_list = []
+        batch_size, max_len = emb_seq.shape[0], emb_seq.shape[1]
+
+        # -- Prepare masks
+        slf_attn_mask = mask.unsqueeze(1).expand(-1, max_len, -1)
+
+        # -- Forward
+        if not self.training and emb_seq.shape[1] > self.max_seq_len:
+            enc_output = emb_seq + get_sinusoid_encoding_table(
+                emb_seq.shape[1], self.d_model
+            )[: emb_seq.shape[1], :].unsqueeze(0).expand(batch_size, -1, -1).to(
+                emb_seq.device
+            )
+        else:
+            enc_output = emb_seq + self.position_enc[
+                :, :max_len, :
+            ].expand(batch_size, -1, -1)
+
+        for enc_layer in self.layer_stack:
+            enc_output, enc_slf_attn = enc_layer(
+                enc_output, mask=mask, slf_attn_mask=slf_attn_mask
+            )
+            if return_attns:
+                enc_slf_attn_list += [enc_slf_attn]
+
+        return enc_output

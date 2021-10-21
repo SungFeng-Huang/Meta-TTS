@@ -9,6 +9,7 @@ import learn2learn as l2l
 
 from tqdm import tqdm
 from resemblyzer import VoiceEncoder
+from transformer.Models import EmbeddingGenerator
 
 from utils.tools import get_mask_from_lengths
 from lightning.systems.system import System
@@ -43,6 +44,7 @@ class BaseAdaptorSystem(System):
     ):
         def _get_module(name): return getattr(
             learner.module, name, getattr(self.model, name, None))
+        embedding_generator = _get_module('emb_generator')
         encoder = _get_module('encoder')
         variance_adaptor = _get_module('variance_adaptor')
         decoder = _get_module('decoder')
@@ -52,7 +54,8 @@ class BaseAdaptorSystem(System):
 
         src_masks = get_mask_from_lengths(src_lens, max_src_len)
 
-        output = encoder(texts, src_masks)
+        emb_texts = embedding_generator(texts)
+        output = encoder(emb_texts, src_masks)
 
         mel_masks = (
             get_mask_from_lengths(
@@ -96,7 +99,10 @@ class BaseAdaptorSystem(System):
     @torch.backends.cudnn.flags(enabled=False)
     @torch.enable_grad()
     def adapt(self, batch, adaptation_steps=5, learner=None, train=True):
+        ref_p_embedding = batch[0][2][0]
         if learner is None:
+            self.learner.embedding_generator.calc_quantize_matrix(
+                ref_p_embedding)
             learner = self.learner.clone()
             learner.train()
 
@@ -127,7 +133,7 @@ class BaseAdaptorSystem(System):
     def _on_meta_batch_start(self, batch):
         """ Check meta-batch data """
         assert len(batch) == 1, "meta_batch_per_gpu"
-        assert len(batch[0]) == 2, "sup + qry"
+        assert len(batch[0]) == 3, "sup + qry + ref_p_embedding"
         assert len(batch[0][0]) == 1, "n_batch == 1"
         assert len(batch[0][0][0]) == 12, "data with 12 elements"
 

@@ -6,7 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
-from transformer import Encoder, Decoder, PostNet
+from transformer import Encoder, Decoder, PostNet, EmbeddingGenerator, MultiLingualEncoder
+from transformer.Models import EmbeddingGenerator
 from .modules import VarianceAdaptor
 from .speaker_encoder import SpeakerEncoder
 from utils.tools import get_mask_from_lengths
@@ -19,8 +20,13 @@ class FastSpeech2(pl.LightningModule):
         super(FastSpeech2, self).__init__()
         self.model_config = model_config
 
-        self.encoder = Encoder(model_config)
-        self.variance_adaptor = VarianceAdaptor(preprocess_config, model_config)
+        if self.model_config.get("multilingual", False):
+            self.emb_generator = EmbeddingGenerator(model_config)
+            self.encoder = MultiLingualEncoder(model_config)
+        else:
+            self.encoder = Encoder(model_config)
+        self.variance_adaptor = VarianceAdaptor(
+            preprocess_config, model_config)
         self.decoder = Decoder(model_config)
         self.mel_linear = nn.Linear(
             model_config["transformer"]["decoder_hidden"],
@@ -30,7 +36,8 @@ class FastSpeech2(pl.LightningModule):
 
         self.speaker_emb = None
         if model_config["multi_speaker"]:
-            self.speaker_emb = SpeakerEncoder(spk_emb_type, preprocess_config, model_config)
+            self.speaker_emb = SpeakerEncoder(
+                spk_emb_type, preprocess_config, model_config)
 
     def forward(
         self,
@@ -55,7 +62,9 @@ class FastSpeech2(pl.LightningModule):
             else None
         )
 
-        output = self.encoder(texts, src_masks)
+        emb_texts = self.emb_generator(
+            texts) if self.model_config.get("multilingual", False) else texts
+        output = self.encoder(emb_texts, src_masks)
 
         if self.speaker_emb is not None:
             output = output + self.speaker_emb(speaker_args).unsqueeze(1).expand(

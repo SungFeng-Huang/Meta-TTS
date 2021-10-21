@@ -7,12 +7,12 @@ from learn2learn.data.transforms import FusedNWaysKShots, LoadData
 from learn2learn.data.task_dataset import DataDescription
 from learn2learn.utils.lightning import EpisodicBatcher
 
-from lightning.collate import get_meta_collate
+from lightning.collate import get_meta_collate, MultiLingualCollate
 
 
 def few_shot_task_dataset(_dataset, ways, shots, queries, task_per_speaker=-1, epoch_length=-1):
     # Make meta-dataset, to apply 1-way-5-shots tasks
-    id2lb = {k:v for k,v in enumerate(_dataset.speaker)}
+    id2lb = {k: v for k, v in enumerate(_dataset.speaker)}
     meta_dataset = MetaDataset(_dataset, indices_to_labels=id2lb)
 
     if task_per_speaker > 0:
@@ -37,7 +37,8 @@ def few_shot_task_dataset(_dataset, ways, shots, queries, task_per_speaker=-1, e
     else:
         # 1-way-5-shots transforms
         transforms = [
-            FusedNWaysKShots(meta_dataset, n=ways, k=shots+queries, replacement=True),
+            FusedNWaysKShots(meta_dataset, n=ways, k=shots +
+                             queries, replacement=True),
             LoadData(meta_dataset),
         ]
         # 1-way-5-shot task dataset
@@ -47,7 +48,58 @@ def few_shot_task_dataset(_dataset, ways, shots, queries, task_per_speaker=-1, e
         )
         if epoch_length > 0:
             # Epochify task dataset, for periodic validation
-            tasks = EpisodicBatcher(tasks, epoch_length=epoch_length).train_dataloader()
+            tasks = EpisodicBatcher(
+                tasks, epoch_length=epoch_length).train_dataloader()
+
+    return tasks
+
+
+def multilingual_few_shot_task_dataset(_datasets, ways, shots, queries, task_per_label=-1, epoch_length=-1):
+    # Make meta-dataset, to apply 1-way-5-shots tasks
+    from .define import LANG_ID2SYMBOLS
+    _dataset = ConcatDataset(_datasets)
+    id2lb = get_multilingual_id2lb(_datasets)
+    meta_dataset = MetaDataset(_dataset, indices_to_labels=id2lb)
+    _collate = MultiLingualCollate(
+        {"lang_id2symbols": LANG_ID2SYMBOLS, "representation_dim": 1024})
+
+    if task_per_label > 0:
+        # constant number of 1-way-5-shots tasks for each speaker
+        tasks = []
+        for label, indices in meta_dataset.labels_to_indices.items():
+            if len(indices) >= shots+queries:
+                # 1-way-5-shots transforms of a label
+                transforms = [
+                    FusedNWaysKShots(meta_dataset, n=ways, k=shots+queries,
+                                     replacement=False, filter_labels=[label]),
+                    LoadData(meta_dataset),
+                ]
+                # 1-way-5-shot task dataset
+                _tasks = TaskDataset(
+                    meta_dataset, task_transforms=transforms, num_tasks=task_per_label,
+                    task_collate=_collate.get_meta_collate(
+                        shots, queries, False),
+                )
+                tasks.append(_tasks)
+        tasks = ConcatDataset(tasks)
+
+    else:
+        # 1-way-5-shots transforms
+        transforms = [
+            FusedNWaysKShots(meta_dataset, n=ways, k=shots +
+                             queries, replacement=True),
+            LoadData(meta_dataset),
+        ]
+        # 1-way-5-shot task dataset
+        tasks = TaskDataset(
+            meta_dataset, task_transforms=transforms,
+            task_collate=_collate.get_meta_collate(
+                shots, queries, False),
+        )
+        if epoch_length > 0:
+            # Epochify task dataset, for periodic validation
+            tasks = EpisodicBatcher(
+                tasks, epoch_length=epoch_length).train_dataloader()
 
     return tasks
 
@@ -55,13 +107,15 @@ def few_shot_task_dataset(_dataset, ways, shots, queries, task_per_speaker=-1, e
 def load_descriptions(tasks, filename):
     with open(filename, 'r') as f:
         loaded_descriptions = json.load(f)
-    assert len(tasks.datasets) == len(loaded_descriptions), "TaskDataset count mismatch"
+    assert len(tasks.datasets) == len(
+        loaded_descriptions), "TaskDataset count mismatch"
 
     for i, _tasks in enumerate(tasks.datasets):
         descriptions = loaded_descriptions[i]
         assert len(descriptions) == _tasks.num_tasks, "num_tasks mismatch"
         for j in descriptions:
-            data_descriptions = [DataDescription(index) for index in descriptions[j]]
+            data_descriptions = [DataDescription(
+                index) for index in descriptions[j]]
             task_descriptions = _tasks.task_transforms[-1](data_descriptions)
             _tasks.sampled_descriptions[int(j)] = task_descriptions
 
@@ -71,7 +125,8 @@ def write_descriptions(tasks, filename):
     for ds in tasks.datasets:
         data_descriptions = {}
         for i in ds.sampled_descriptions:
-            data_descriptions[i] = [desc.index for desc in ds.sampled_descriptions[i]]
+            data_descriptions[i] = [
+                desc.index for desc in ds.sampled_descriptions[i]]
         descriptions.append(data_descriptions)
 
     with open(filename, 'w') as f:
@@ -102,8 +157,10 @@ def prefetch_tasks(tasks, tag='val', log_dir=''):
     if os.path.exists(os.path.join(log_dir, f'{tag}_descriptions.json')) \
             and os.path.exists(os.path.join(log_dir, f'{tag}_SQids.json')):
         # Recover descriptions
-        load_descriptions(tasks, os.path.join(log_dir, f'{tag}_descriptions.json'))
-        SQids, SQids2Tid = load_SQids2Tid(os.path.join(log_dir, f'{tag}_SQids.json'), tag)
+        load_descriptions(tasks, os.path.join(
+            log_dir, f'{tag}_descriptions.json'))
+        SQids, SQids2Tid = load_SQids2Tid(
+            os.path.join(log_dir, f'{tag}_SQids.json'), tag)
 
     else:
         os.makedirs(log_dir, exist_ok=True)
@@ -112,6 +169,18 @@ def prefetch_tasks(tasks, tag='val', log_dir=''):
         SQids, SQids2Tid = get_SQids2Tid(tasks, tag)
         with open(os.path.join(log_dir, f"{tag}_SQids.json"), 'w') as f:
             json.dump(SQids, f, indent=4)
-        write_descriptions(tasks, os.path.join(log_dir, f"{tag}_descriptions.json"))
+        write_descriptions(tasks, os.path.join(
+            log_dir, f"{tag}_descriptions.json"))
 
     return SQids2Tid
+
+
+def get_multilingual_id2lb(datasets):
+    id2lb = {}
+    total = 0
+    for dataset in datasets:
+        l = len(dataset)
+        id2lb.update({k: dataset.lang_id for k in range(total, total + l)})
+        total += l
+
+    return id2lb

@@ -1,4 +1,5 @@
 dataset: "LibriTTS"
+lang_id: 0
 
 path:
     corpus_path: "./data/LibriTTS"
