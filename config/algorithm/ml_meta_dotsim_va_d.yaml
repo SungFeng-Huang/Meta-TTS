@@ -12,12 +12,12 @@ adapt:
         - postnet
 
     ways: 1
-    shots: 100
-    queries: 100
+    shots: 50
+    queries: 50
     steps: 5
-    lr: 0.001
+    lr: 0.0003
     meta_batch_size: 1
 
     test:
-        queries: 100
+        queries: 50
         steps: 100 # max adaptation steps for testing

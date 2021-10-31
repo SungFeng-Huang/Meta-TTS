@@ -51,9 +51,9 @@ class MultilingualMetaDataModule(pl.LightningDataModule):
             self.val_task_dataset = multilingual_few_shot_task_dataset(
                 val_datasets, self.test_ways, self.test_shots, self.test_queries, task_per_label=8,
             )
-            # with seed_all(43):
-            #     self.val_SQids2Tid = prefetch_tasks(
-            #         self.val_task_dataset, 'val', self.log_dir)
+            with seed_all(43):
+                self.val_SQids2Tid = prefetch_tasks(
+                    self.val_task_dataset, 'val', self.log_dir)
 
         if stage in (None, 'test', 'predict'):
             test_datasets = [MultiLingualDataset(
@@ -64,9 +64,9 @@ class MultilingualMetaDataModule(pl.LightningDataModule):
             self.test_task_dataset = multilingual_few_shot_task_dataset(
                 test_datasets, self.test_ways, self.test_shots, self.test_queries, task_per_label=16,
             )
-            # with seed_all(43):
-            #     self.test_SQids2Tid = prefetch_tasks(
-            #         self.test_task_dataset, 'test', self.result_dir)
+            with seed_all(43):
+                self.test_SQids2Tid = prefetch_tasks(
+                    self.test_task_dataset, 'test', self.result_dir)
 
     def train_dataloader(self):
         """Training dataloader"""

@@ -24,7 +24,7 @@ multi_speaker: True
 multilingual: True
 
 max_seq_len: 1000
-codebook_size: 50
+codebook_size: 30
 representation_dim: 1024
 
 vocoder:

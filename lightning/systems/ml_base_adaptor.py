@@ -92,10 +92,6 @@ class BaseAdaptorSystem(System):
 
         emb_texts = embedding_generator(texts)
         output = encoder(emb_texts, src_masks)
-        print("After encoder")
-        print(output.shape)
-        print("mnl")
-        print(max_mel_len)
 
         mel_masks = (
             get_mask_from_lengths(
@@ -116,8 +112,6 @@ class BaseAdaptorSystem(System):
             output, src_masks, mel_masks, max_mel_len,
             p_targets, e_targets, d_targets, p_control, e_control, d_control,
         )
-        print("After variance adaptor")
-        print(output.shape)
 
         if speaker_emb is not None:
             spk_emb = speaker_emb(speaker_args)
@@ -151,13 +145,14 @@ class BaseAdaptorSystem(System):
         # Adapt the classifier
         sup_batch = batch[0][0][0]
         first_order = not train
+        n_minibatch = 4
         for step in range(adaptation_steps):
             mini_batch = []
             for i, feat in enumerate(sup_batch):
                 if i == 5 or i == 8:
                     mini_batch.append(feat)
                 else:
-                    mini_batch.append(feat[step:step+2])
+                    mini_batch.append(feat[step*n_minibatch:(step+1)*n_minibatch])
             preds = self.forward_learner(learner, *mini_batch[2:])
             train_error = self.loss_func(mini_batch, preds)
             learner.adapt(

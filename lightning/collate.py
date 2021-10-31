@@ -185,11 +185,11 @@ class MultiLingualCollate(object):
             calc_ref = time.time() - st1
             qry_out.append(self.reprocess(data, filtered_qry_idxs))
             pad_qry = time.time() - st1
-            print(
-                f"Pad sup: {pad_sup:.2f}s, Filter: {filter:.2f}s, Calc ref: {calc_ref:.2f}s, Pad qry: {pad_qry:.2f}s")
+            # print(
+            #     f"Pad sup: {pad_sup:.2f}s, Filter: {filter:.2f}s, Calc ref: {calc_ref:.2f}s, Pad qry: {pad_qry:.2f}s")
             print(
                 f"Samples (sup, qry): ({len(sup_idxs)}, {len(filtered_qry_idxs)})")
-        print(f"Multilingual collate: {time.time() - st:.2f}s")
+        # print(f"Multilingual collate: {time.time() - st:.2f}s")
 
         return (sup_out, qry_out, ref_p_embeddings)
 
