@@ -4,28 +4,20 @@ import torch
 import yaml
 
 from lightning.model import FastSpeech2
+from utils.similarity import dot_product_similarity
 
 
-# ckpt_path = "./logs/epoch=30-step=30999.ckpt"
-# # Read Config
-# preprocess_configs = [yaml.load(
-#     open(path, "r"), Loader=yaml.FullLoader
-# ) for path in ['config/preprocess/LibriTTS.yaml']]
-# model_config = yaml.load(
-#     open('config/model/ml_base.yaml', "r"), Loader=yaml.FullLoader)
-# algorithm_config = yaml.load(
-#     open('config/algorithm/ml_meta_dotsim_va_d.yaml', "r"), Loader=yaml.FullLoader)
-# model = FastSpeech2(
-#     algorithm_config["adapt"]["speaker_emb"], preprocess_configs[0], model_config)
+ckpt_path = "./logs/epoch=31-step=31999.ckpt"
+feats_path = "./logs/test-clean_phoneme-features.npy"
 
-# checkpoint = torch.load(ckpt_path)
-# for k in checkpoint["state_dict"]:
-#     if k == "model.emb_generator.banks":
-#         print("Name", k)
-#         print(checkpoint["state_dict"][k].shape)
-#         with open(f"{os.path.splitext(ckpt_path)[0]}-banks.npy", 'wb')as f:
-#             np.save(f, checkpoint["state_dict"][k].cpu().numpy())
+checkpoint = torch.load(ckpt_path)
+codebook = checkpoint["state_dict"]["model.emb_generator.banks"].cpu().numpy()
 
-a = np.load("./logs/epoch=20-step=20999-banks.npy")
-b = np.load("./logs/epoch=30-step=30999-banks.npy")
-print(a-b)
+phoneme_features = np.load(feats_path)
+phoneme_features = phoneme_features[np.sum(phoneme_features, axis=1) != 0]
+print(phoneme_features.shape)
+similarity_matrix = dot_product_similarity(
+    codebook, phoneme_features.T)  # [codebook_size, n_symbols]
+
+nearest_codes = np.argmax(similarity_matrix, axis=0)  # [n_symbols]
+print(nearest_codes)
