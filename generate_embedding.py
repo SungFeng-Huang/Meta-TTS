@@ -1,6 +1,7 @@
 import os
 import glob
 import numpy as np
+from tqdm import tqdm
 
 from text import text_to_sequence
 from lightning.datamodules.define import LANG_ID2SYMBOLS
@@ -25,7 +26,9 @@ with open(filename, "r", encoding="utf-8") as f:
 
 d_representation = 1024
 n_symbols = len(LANG_ID2SYMBOLS[lang_id])
-for idx in range(len(names)):
+table = {i: np.zeros(d_representation) for i in range(n_symbols)}
+cnt = {i: 0 for i in range(n_symbols)}
+for idx in tqdm(range(len(names))):
     phone = np.array(text_to_sequence(texts[idx], ["english_cleaners"]))
     representation_path = os.path.join(
         preprocessed_path,
@@ -34,15 +37,11 @@ for idx in range(len(names)):
     )
     representation = np.load(representation_path)
 
-    table = {i: np.zeros(d_representation) for i in range(n_symbols)}
-    cnt = {i: 0 for i in range(n_symbols)}
-    print(len(phone), len(representation))
-    print(phone)
     for ph, r in zip(phone, representation):
         array_has_nan = np.isnan(np.sum(r))
         if array_has_nan:
-            print(names[idx])
-            r[np.isnan(r)] = 0
+            print(names[idx], ph)
+            continue
         table[int(ph)] += r
         cnt[int(ph)] += 1
 
