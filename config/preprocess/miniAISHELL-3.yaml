@@ -1,22 +1,22 @@
-dataset: "LibriTTS"
-lang_id: 0
+dataset: "AISHELL-3"
+lang_id: 1
 
 path:
-    corpus_path: "./data/miniLibriTTS"
+    corpus_path: "./data/miniAISHELL-3"
     lexicon_path: "lexicon/librispeech-lexicon.txt"
-    raw_path: "./raw_data/miniLibriTTS"
-    preprocessed_path: "./preprocessed_data/miniLibriTTS"
+    raw_path: "./raw_data/miniAISHELL-3"
+    preprocessed_path: "./preprocessed_data/miniAISHELL-3"
 
 subsets:
-    train: "train-clean-100"
-    val: "dev-clean"
-    test: "test-clean"
+    train: "train"
+    val: "dev"
+    test: "test"
 
 preprocessing:
     val_size: 512
     text:
-        text_cleaners: ["english_cleaners"]
-        language: "en"
+        text_cleaners: ["transliteration_cleaners"]
+        language: "ch"
     audio:
         sampling_rate: 22050
         max_wav_value: 32768.0

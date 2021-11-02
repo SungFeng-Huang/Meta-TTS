@@ -79,7 +79,7 @@ class Preprocessor:
         speakers, dvectors = {}, {}
         i = 0   # index of total speakers (train + val + test)
         outs = {}
-        for dset in [self.test_set]:
+        for dset in [self.train_set]:
             # for dset in [self.train_set, self.val_set, self.test_set]:
             if dset is None:
                 continue

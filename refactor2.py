@@ -40,7 +40,7 @@ def main(args, configs):
     ckpt_file = None
     if args.exp_key is not None:
         ckpt_file = os.path.join(
-            './output/ckpt/LibriTTS', COMET_CONFIG["project_name"],
+            'output/ckpt/LibriTTS', COMET_CONFIG["project_name"],
             args.exp_key, 'checkpoints', args.ckpt_file
         )
 
@@ -99,7 +99,7 @@ def main(args, configs):
         # Get model
         system = get_system(algorithm_config["type"])
         model = system.load_from_checkpoint(
-            ckpt_file, log_dir=log_dir, result_dir=result_dir)
+            ckpt_file, preprocess_config=preprocess_configs[0], model_config=model_config, train_config=train_config, algorithm_config=algorithm_config,log_dir=log_dir, result_dir=result_dir)
         # Test
         trainer = pl.Trainer(**TRAINER_CONFIG)
         trainer.test(model, datamodule=datamodule)
@@ -161,3 +161,4 @@ if __name__ == "__main__":
                train_config, algorithm_config)
 
     main(args, configs)
+    

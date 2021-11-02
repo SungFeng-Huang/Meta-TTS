@@ -87,7 +87,6 @@ class BaseAdaptorSystem(System):
         mel_linear = _get_module('mel_linear')
         postnet = _get_module('postnet')
         speaker_emb = _get_module('speaker_emb')
-
         src_masks = get_mask_from_lengths(src_lens, max_src_len)
 
         emb_texts = embedding_generator(texts)
@@ -188,6 +187,11 @@ class BaseAdaptorSystem(System):
 
         sup_batch = batch[0][0][0]
         qry_batch = batch[0][1][0]
+
+        ref_p_embedding = batch[0][2][0]
+        self.learner.module.emb_generator.calcQuantizeMatrix(
+                ref_p_embedding)
+                
         outputs['_batch'] = qry_batch
 
         # Evaluating the initial model
@@ -196,10 +200,9 @@ class BaseAdaptorSystem(System):
         valid_error = self.loss_func(qry_batch, predictions)
         outputs[f"step_0"] = {
             "recon": {"losses": valid_error, "output": predictions}}
-
         # synth_samples & save & log
         predictions = self.forward_learner(
-            self.learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+            self.learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
         outputs[f"step_0"].update({"synth": {"output": predictions}})
 
         # Adapt
@@ -218,7 +221,7 @@ class BaseAdaptorSystem(System):
             if ft_step in [5, 10, 20, 50, 100]:
                 # synth_samples & save & log
                 predictions = self.forward_learner(
-                    learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+                    learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
                 outputs[f"step_{ft_step}"].update(
                     {"synth": {"output": predictions}})
         del learner

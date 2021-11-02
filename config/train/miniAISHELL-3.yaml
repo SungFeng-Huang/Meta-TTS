@@ -1,0 +1,4 @@
+path:
+  ckpt_path: "./output/ckpt/miniAISHELL-3"
+  log_path: "./output/log/miniAISHELL-3"
+  result_path: "./output/result/miniAISHELL-3"
