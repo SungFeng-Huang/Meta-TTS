@@ -9,7 +9,11 @@ import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 
+import transformer.Constants as Constants
+from transformer.Layers import FFTBlock
+from transformer.Models import get_sinusoid_encoding_table
 from utils.tools import get_mask_from_lengths, pad
+from utils.similarity import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -39,7 +43,8 @@ class VarianceAdaptor(nn.Module):
         assert pitch_quantization in ["linear", "log"]
         assert energy_quantization in ["linear", "log"]
         with open(
-            os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
+            os.path.join(preprocess_config["path"]
+                         ["preprocessed_path"], "stats.json")
         ) as f:
             stats = json.load(f)
             pitch_min, pitch_max = stats["pitch"][:2]
@@ -48,7 +53,8 @@ class VarianceAdaptor(nn.Module):
         if pitch_quantization == "log":
             self.pitch_bins = nn.Parameter(
                 torch.exp(
-                    torch.linspace(np.log(pitch_min), np.log(pitch_max), n_bins - 1)
+                    torch.linspace(np.log(pitch_min),
+                                   np.log(pitch_max), n_bins - 1)
                 ),
                 requires_grad=False,
             )
@@ -60,7 +66,8 @@ class VarianceAdaptor(nn.Module):
         if energy_quantization == "log":
             self.energy_bins = nn.Parameter(
                 torch.exp(
-                    torch.linspace(np.log(energy_min), np.log(energy_max), n_bins - 1)
+                    torch.linspace(np.log(energy_min),
+                                   np.log(energy_max), n_bins - 1)
                 ),
                 requires_grad=False,
             )
@@ -80,7 +87,8 @@ class VarianceAdaptor(nn.Module):
     def get_pitch_embedding(self, x, target, mask, control):
         prediction = self.pitch_predictor(x, mask)
         if target is not None:
-            embedding = self.pitch_embedding(torch.bucketize(target, self.pitch_bins))
+            embedding = self.pitch_embedding(
+                torch.bucketize(target, self.pitch_bins))
         else:
             prediction = prediction * control
             embedding = self.pitch_embedding(
@@ -91,7 +99,8 @@ class VarianceAdaptor(nn.Module):
     def get_energy_embedding(self, x, target, mask, control):
         prediction = self.energy_predictor(x, mask)
         if target is not None:
-            embedding = self.energy_embedding(torch.bucketize(target, self.energy_bins))
+            embedding = self.energy_embedding(
+                torch.bucketize(target, self.energy_bins))
         else:
             prediction = prediction * control
             embedding = self.energy_embedding(
@@ -248,6 +257,99 @@ class VariancePredictor(nn.Module):
             out = out.masked_fill(mask, 0.0)
 
         return out
+
+
+class EmbeddingGenerator(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        n_banks = config["codebook_size"]
+        d_word_vec_orig = config["representation_dim"]
+        d_word_vec = config["transformer"]["encoder_hidden"]
+        self.banks = nn.Parameter(torch.randn(n_banks, d_word_vec_orig))
+        self.proj = nn.Linear(d_word_vec_orig, d_word_vec)
+        self.quantize_matrix = None
+
+    def calcQuantizeMatrix(self, ref):
+        r""" Compute binary quantize matrix from reference representations
+        Args:
+            ref: Reference representations with size (vocab_size, embed_dim).
+        """
+        with torch.no_grad():
+            similarity = dot_product_similarity(
+                torch.tensor(ref, dtype=torch.float32).cuda(), self.banks.T)  # (vocab_size, n_banks)
+            self.quantize_matrix = torch.zeros_like(similarity)
+            self.quantize_matrix[torch.arange(
+                len(similarity)), similarity.argmax(1)] = 1
+
+    def forward(self, x):
+        return self.proj(F.embedding(x, self.quantize_matrix @ self.banks, padding_idx=Constants.PAD))
+
+
+class MultiLingualEncoder(nn.Module):
+    """ MultiLingual Encoder """
+
+    def __init__(self, config):
+        super().__init__()
+
+        n_position = config["max_seq_len"] + 1
+        # n_src_vocab = len(symbols) + 1  vocab size is determined by EmbeddingGenerator
+        d_word_vec = config["transformer"]["encoder_hidden"]
+        n_layers = config["transformer"]["encoder_layer"]
+        n_head = config["transformer"]["encoder_head"]
+        d_k = d_v = (
+            config["transformer"]["encoder_hidden"]
+            // config["transformer"]["encoder_head"]
+        )
+        d_model = config["transformer"]["encoder_hidden"]
+        d_inner = config["transformer"]["conv_filter_size"]
+        kernel_size = config["transformer"]["conv_kernel_size"]
+        dropout = config["transformer"]["encoder_dropout"]
+
+        self.max_seq_len = config["max_seq_len"]
+        self.d_model = d_model
+
+        self.position_enc = nn.Parameter(
+            get_sinusoid_encoding_table(n_position, d_word_vec).unsqueeze(0),
+            requires_grad=False,
+        )
+
+        self.layer_stack = nn.ModuleList(
+            [
+                FFTBlock(
+                    d_model, n_head, d_k, d_v, d_inner, kernel_size, dropout=dropout
+                )
+                for _ in range(n_layers)
+            ]
+        )
+
+    def forward(self, emb_seq, mask, return_attns=False):
+
+        enc_slf_attn_list = []
+        batch_size, max_len = emb_seq.shape[0], emb_seq.shape[1]
+
+        # -- Prepare masks
+        slf_attn_mask = mask.unsqueeze(1).expand(-1, max_len, -1)
+
+        # -- Forward
+        if not self.training and emb_seq.shape[1] > self.max_seq_len:
+            enc_output = emb_seq + get_sinusoid_encoding_table(
+                emb_seq.shape[1], self.d_model
+            )[: emb_seq.shape[1], :].unsqueeze(0).expand(batch_size, -1, -1).to(
+                emb_seq.device
+            )
+        else:
+            enc_output = emb_seq + self.position_enc[
+                :, :max_len, :
+            ].expand(batch_size, -1, -1)
+
+        for enc_layer in self.layer_stack:
+            enc_output, enc_slf_attn = enc_layer(
+                enc_output, mask=mask, slf_attn_mask=slf_attn_mask
+            )
+            if return_attns:
+                enc_slf_attn_list += [enc_slf_attn]
+
+        return enc_output
 
 
 class Conv(nn.Module):

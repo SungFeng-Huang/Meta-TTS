@@ -6,8 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
-from transformer import Encoder, Decoder, PostNet, EmbeddingGenerator, MultiLingualEncoder
-from transformer.Models import EmbeddingGenerator
+from transformer import Encoder, Decoder, PostNet
+from lightning.model.modules import EmbeddingGenerator, MultiLingualEncoder
 from .modules import VarianceAdaptor
 from .speaker_encoder import SpeakerEncoder
 from utils.tools import get_mask_from_lengths
