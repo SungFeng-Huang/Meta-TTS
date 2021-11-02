@@ -9,7 +9,6 @@ import learn2learn as l2l
 
 from tqdm import tqdm
 from resemblyzer import VoiceEncoder
-from transformer.Models import EmbeddingGenerator
 
 from utils.tools import get_mask_from_lengths
 from lightning.systems.system import System
