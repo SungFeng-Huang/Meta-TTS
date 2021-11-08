@@ -1,22 +1,23 @@
 name: meta_emb_va_d shared
-type: meta  # meta/baseline
+type: meta # meta/baseline
+meta_type: spk
 
 adapt:
-  speaker_emb: shared # shared/table/encoder
-  modules:
-    - speaker_emb
-    - variance_adaptor
-    - decoder
-    - mel_linear
-    - postnet
+    speaker_emb: shared # shared/table/encoder
+    modules:
+        - speaker_emb
+        - variance_adaptor
+        - decoder
+        - mel_linear
+        - postnet
 
-  ways: 1
-  shots: 5
-  queries: 5
-  steps: 5
-  lr: 0.001
-  meta_batch_size: 8
+    ways: 1
+    shots: 5
+    queries: 5
+    steps: 5
+    lr: 0.001
+    meta_batch_size: 8
 
-  test:
-    queries: 1
-    steps: 100 # max adaptation steps for testing
+    test:
+        queries: 1
+        steps: 100 # max adaptation steps for testing

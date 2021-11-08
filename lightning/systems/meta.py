@@ -26,14 +26,14 @@ class MetaSystem(BaseAdaptorSystem):
         # NOTE: should rename `ref_p_embedding` to something like
         # `ref_phn_feats` or `ref_phn_representations`
         assert len(batch) == 1, "meta_batch_per_gpu"
-        assert len(batch[0]) == 3, "sup + qry + ref_p_embedding"
+        assert len(batch[0]) == 3, "sup + qry + ref_phn_feats"
         assert len(batch[0][0]) == 1, "n_batch == 1"
         assert len(batch[0][0][0]) == 12, "data with 12 elements"
 
     def on_after_batch_transfer(self, batch, dataloader_idx):
         # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
         # the same variable, they are not two variables with the same values.
-        ref_phn_feats = batch[0][2]
+        ref_phn_feats = batch[0][2][0]
         self.model.encoder.src_word_emb.set_quantize_matrix(ref_phn_feats)
         del batch[0][2]
         return batch
@@ -43,7 +43,28 @@ class MetaSystem(BaseAdaptorSystem):
     @torch.enable_grad()
     def adapt(self, batch, adaptation_steps=5, learner=None, train=True):
         # TODO: overwrite for supporting SGD and iMAML
-        return super().adapt(batch, adaptation_steps, learner, train)
+
+        # MAML
+        if learner is None:
+            learner = self.learner.clone()
+            learner.train()
+
+        sup_batch = batch[0][0][0]
+        first_order = not train
+        n_minibatch = 5
+        for step in range(adaptation_steps):
+            mini_batch = []
+            for i, feat in enumerate(sup_batch):
+                if i == 5 or i == 8:
+                    mini_batch.append(feat)
+                else:
+                    mini_batch.append(
+                        feat[step*n_minibatch:(step+1)*n_minibatch])
+            preds = self.forward_learner(learner, *mini_batch[2:])
+            train_error = self.loss_func(mini_batch, preds)
+            learner.adapt(
+                train_error[0], first_order=first_order, allow_unused=False, allow_nograd=True)
+        return learner
 
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
         self._on_meta_batch_start(batch)
@@ -78,4 +99,3 @@ class MetaSystem(BaseAdaptorSystem):
         loss_dict = {f"Val/{k}": v for k, v in loss2dict(val_loss).items()}
         self.log_dict(loss_dict, sync_dist=True)
         return {'losses': val_loss, 'output': predictions, '_batch': qry_batch}
-

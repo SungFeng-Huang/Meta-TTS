@@ -21,7 +21,8 @@ class FastSpeech2(pl.LightningModule):
         self.model_config = model_config
 
         self.encoder = Encoder(model_config)
-        self.variance_adaptor = VarianceAdaptor(preprocess_config, model_config)
+        self.variance_adaptor = VarianceAdaptor(
+            preprocess_config, model_config)
         self.decoder = Decoder(model_config)
         self.mel_linear = nn.Linear(
             model_config["transformer"]["decoder_hidden"],
@@ -31,7 +32,8 @@ class FastSpeech2(pl.LightningModule):
 
         self.speaker_emb = None
         if model_config["multi_speaker"]:
-            self.speaker_emb = SpeakerEncoder(spk_emb_type, preprocess_config, model_config)
+            self.speaker_emb = SpeakerEncoder(
+                spk_emb_type, preprocess_config, model_config)
 
         # Deal with multi-lingual (meta)
         # NOTE: I don't think it's a good choice to use the term "multilingual"
@@ -44,10 +46,10 @@ class FastSpeech2(pl.LightningModule):
         #   2. use a general wrapper to deal with it
         # We choose option 2 here:
         self.phn_emb_type = 'mono-lingual'
-        if self.model_config.get("multilingual", False):
+        if self.model_config.get("multi_lingual", False):
             self.phn_emb_type = 'meta-lingual'
         self.encoder.src_word_emb = PhonemeEmbedding(
-            phn_emb_type, model_config, default_emb=self.encoder.src_word_emb,
+            self.phn_emb_type, model_config, default_emb=self.encoder.src_word_emb,
         )
         # Then the only thing we need to do is:
         #   1. Add 'encoder' in algorithm_config["adapt"]["modules"]

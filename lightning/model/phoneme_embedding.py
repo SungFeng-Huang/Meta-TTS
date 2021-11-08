@@ -20,7 +20,6 @@ class PhonemeEmbedding(pl.LightningModule):
                 return default_emb
         return object.__new__(cls, emb_type, model_config, default_emb)
 
-
     def __init__(self, emb_type, model_config, default_emb=None):
         """
         All the data members would be moved to cuda together with the whole model
@@ -46,8 +45,8 @@ class PhonemeEmbedding(pl.LightningModule):
                 codebook_size, d_feat, padding_idx=Constants.PAD
             )
             self.proj = nn.Linear(d_feat, d_word_vec)
-            self.weighting_matrix = torch.zeros(n_src_vocab, codebook_size, requires_grad=False)
-
+            self.weighting_matrix = torch.zeros(
+                n_src_vocab, codebook_size, requires_grad=False)
 
     @torch.no_grad()
     def set_quantize_matrix(self, ref):
@@ -65,12 +64,12 @@ class PhonemeEmbedding(pl.LightningModule):
         similarity = ref_norm @ banks_norm.T
         # NOTE: why create tensor again, probably not need to transfer to cuda again
         # similarity = dot_product_similarity(
-            # torch.tensor(ref, dtype=torch.float32).cuda(), self.banks.T
+        # torch.tensor(ref, dtype=torch.float32).cuda(), self.banks.T
         # )  # (vocab_size, codebook_size)
 
         self.weighting_matrix.zero_()
-        self.weighting_matrix[torch.arange(len(similarity)), similarity.argmax(1)] = 1
-
+        self.weighting_matrix[torch.arange(
+            len(similarity)), similarity.argmax(1)] = 1
 
     def forward(self, args):
         src_seq = args  # shape: (batch_size, max_len)
@@ -80,7 +79,7 @@ class PhonemeEmbedding(pl.LightningModule):
 
         elif self.emb_type == 'meta-lingual':
             weighted_embedding = self.weighting_matrix @ self.banks
-            output = F.embedding(src_seq, weighted_embedding, padding_idx=Constants.PAD)
+            output = F.embedding(src_seq, weighted_embedding,
+                                 padding_idx=Constants.PAD)
             output = self.proj(output)
             return output
-
