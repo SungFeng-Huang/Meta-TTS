@@ -1,24 +1,23 @@
-name: ml_meta_dotsim_va_d table
+name: meta-lingual-debug
 type: meta # meta/baseline
 meta_type: lang
 
 adapt:
     speaker_emb: table # shared/table/encoder
     modules:
-        - emb_generator
-        - speaker_emb
+        - encoder
         - variance_adaptor
         - decoder
         - mel_linear
         - postnet
 
     ways: 1
-    shots: 50
-    queries: 50
+    shots: 25
+    queries: 25
     steps: 5
     lr: 0.0003
     meta_batch_size: 1
 
     test:
-        queries: 50
+        queries: 25
         steps: 100 # max adaptation steps for testing

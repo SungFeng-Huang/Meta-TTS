@@ -41,7 +41,7 @@ class BaselineDataModule(BaseDataModule):
 
             # Validation set
             self.val_task_dataset = few_shot_task_dataset(
-                self.val_datasets, self.test_ways, self.test_shots, self.test_queries, task_per_speaker=8, type=self.meta_type
+                self.val_datasets, self.test_ways, self.test_shots, self.test_queries, task_per_label=8, type=self.meta_type
             )
             with seed_all(43):
                 self.val_SQids2Tid = prefetch_tasks(
@@ -50,7 +50,7 @@ class BaselineDataModule(BaseDataModule):
         if stage in (None, 'test', 'predict'):
             # Test set
             self.test_task_dataset = few_shot_task_dataset(
-                self.test_datasets, self.test_ways, self.test_shots, self.test_queries, task_per_speaker=16, type=self.meta_type
+                self.test_datasets, self.test_ways, self.test_shots, self.test_queries, task_per_label=16, type=self.meta_type
             )
             with seed_all(43):
                 self.test_SQids2Tid = prefetch_tasks(

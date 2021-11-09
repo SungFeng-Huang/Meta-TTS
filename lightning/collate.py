@@ -312,7 +312,7 @@ class MultiLingualCollate(object):
                 phn_repr[i] = np.zeros(self.d_representation)
             else:
                 phn_repr[i] = np.mean(np.stack(table[i], axis=0), axis=0)
-        return phn_repr
+        return torch.from_numpy(phn_repr).float()
 
     def reprocess(self, data, idxs):
         ids = [data[idx]["id"] for idx in idxs]

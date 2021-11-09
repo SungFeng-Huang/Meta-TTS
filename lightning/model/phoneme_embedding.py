@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import json
 import torch
 import pytorch_lightning as pl
@@ -12,13 +13,13 @@ from transformer import Encoder, Decoder, PostNet, Constants
 
 class PhonemeEmbedding(pl.LightningModule):
 
-    def __new__(cls, emb_type, model_config, default_emb=None):
-        if emb_type == 'mono-lingual' or emb_type == 'multi-lingual':
-            # If already constructed, use the old one, which means nothing
-            # happened.
-            if default_emb is not None:
-                return default_emb
-        return object.__new__(cls, emb_type, model_config, default_emb)
+    # def __new__(cls, emb_type, model_config, default_emb=None):
+    #     if emb_type == 'mono-lingual' or emb_type == 'multi-lingual':
+    #         # If already constructed, use the old one, which means nothing
+    #         # happened.
+    #         if default_emb is not None:
+    #             return default_emb
+    #     return object.__new__(cls, emb_type, model_config, default_emb)
 
     def __init__(self, emb_type, model_config, default_emb=None):
         """
@@ -31,7 +32,7 @@ class PhonemeEmbedding(pl.LightningModule):
 
         self.emb_type = emb_type
         n_src_vocab = len(symbols) + 1
-        d_word_vec = modle_config["transformer"]["encoder_hidden"]
+        d_word_vec = model_config["transformer"]["encoder_hidden"]
 
         if emb_type == 'mono-lingual' or emb_type == 'multi-lingual':
             self.src_word_emb = nn.Embedding(
@@ -40,10 +41,11 @@ class PhonemeEmbedding(pl.LightningModule):
 
         elif emb_type == 'meta-lingual':
             codebook_size = model_config["codebook_size"]
-            d_feat = config["representation_dim"]
-            self.banks = nn.Embedding(
-                codebook_size, d_feat, padding_idx=Constants.PAD
-            )
+            d_feat = model_config["representation_dim"]
+            self.banks = nn.Parameter(torch.randn(codebook_size, d_feat))
+            # self.banks = nn.Embedding(
+            #     codebook_size, d_feat, padding_idx=Constants.PAD
+            # )
             self.proj = nn.Linear(d_feat, d_word_vec)
             self.weighting_matrix = torch.zeros(
                 n_src_vocab, codebook_size, requires_grad=False)
@@ -67,7 +69,7 @@ class PhonemeEmbedding(pl.LightningModule):
         # torch.tensor(ref, dtype=torch.float32).cuda(), self.banks.T
         # )  # (vocab_size, codebook_size)
 
-        self.weighting_matrix.zero_()
+        self.weighting_matrix = torch.zeros_like(similarity)
         self.weighting_matrix[torch.arange(
             len(similarity)), similarity.argmax(1)] = 1
 

@@ -33,12 +33,12 @@ class MetaDataModule(BaseDataModule):
             epoch_length = self.meta_batch_size * self.val_step
             self.train_task_dataset = few_shot_task_dataset(
                 self.train_datasets, self.train_ways, self.train_shots, self.train_queries,
-                task_per_speaker=-1, epoch_length=epoch_length, type=self.meta_type
+                task_per_label=-1, epoch_length=epoch_length, type=self.meta_type
             )
 
             # Validation set
             self.val_task_dataset = few_shot_task_dataset(
-                self.val_datasets, self.test_ways, self.test_shots, self.test_queries, task_per_speaker=8, type=self.meta_type
+                self.val_datasets, self.test_ways, self.test_shots, self.test_queries, task_per_label=8, type=self.meta_type
             )
             with seed_all(43):
                 self.val_SQids2Tid = prefetch_tasks(
@@ -47,7 +47,7 @@ class MetaDataModule(BaseDataModule):
         if stage in (None, 'test', 'predict'):
             # Test set
             self.test_task_dataset = few_shot_task_dataset(
-                self.test_datasets, self.test_ways, self.test_shots, self.test_queries, task_per_speaker=16, type=self.meta_type
+                self.test_datasets, self.test_ways, self.test_shots, self.test_queries, task_per_label=16, type=self.meta_type
             )
             with seed_all(43):
                 self.test_SQids2Tid = prefetch_tasks(

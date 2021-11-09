@@ -35,7 +35,7 @@ class MetaSystem(BaseAdaptorSystem):
         # the same variable, they are not two variables with the same values.
         ref_phn_feats = batch[0][2][0]
         self.model.encoder.src_word_emb.set_quantize_matrix(ref_phn_feats)
-        del batch[0][2]
+        del batch[0][2][0]
         return batch
 
     # Second order gradients for RNNs
