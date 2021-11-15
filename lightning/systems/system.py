@@ -35,7 +35,7 @@ class System(pl.LightningModule):
         self.algorithm_config = algorithm_config
         self.save_hyperparameters()
 
-        self.model = FastSpeech2(algorithm_config["adapt"]["speaker_emb"], preprocess_config, model_config)
+        self.model = FastSpeech2(preprocess_config, model_config, algorithm_config)
         self.loss_func = FastSpeech2Loss(preprocess_config, model_config)
 
         self.log_dir = log_dir

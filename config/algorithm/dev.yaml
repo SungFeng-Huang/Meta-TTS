@@ -2,7 +2,8 @@ name: dev meta_emb_va_d table
 type: meta  # meta/baseline
 
 adapt:
-  speaker_emb: encoder # shared/table/encoder
+  speaker_emb: table # shared/table/encoder
+
   modules:
     - encoder
     - variance_adaptor
@@ -10,13 +11,21 @@ adapt:
     - mel_linear
     - postnet
 
-  ways: 1
-  shots: 5
-  queries: 5
-  steps: 2
-  lr: 0.001
-  meta_batch_size: 1
+  detached_modules:
+    - encoder.projection_layer
+
+  task: &task
+    ways: 1
+    shots: 5
+    queries: 5
+    lr: 0.001
+
+  train:
+    << : *task
+    steps: 2
+    meta_batch_size: 1
 
   test:
+    << : *task
     queries: 1
     steps: 100 # max adaptation steps for testing

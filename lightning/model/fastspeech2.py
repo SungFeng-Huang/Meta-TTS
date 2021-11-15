@@ -6,17 +6,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
-from transformer import Encoder, Decoder, PostNet, Constants
+from transformer import Encoder, Decoder, PostNet
 from .modules import VarianceAdaptor
 from .speaker_encoder import SpeakerEncoder
-from .phoneme_embedding import PhonemeEmbedding
+# from .phoneme_embedding import PhonemeEmbedding
 from utils.tools import get_mask_from_lengths
 
 
 class FastSpeech2(pl.LightningModule):
     """ FastSpeech2 """
 
-    def __init__(self, spk_emb_type, preprocess_config, model_config):
+    def __init__(self, preprocess_config, model_config, algorithm_config):
         super(FastSpeech2, self).__init__()
         self.model_config = model_config
 
@@ -29,31 +29,11 @@ class FastSpeech2(pl.LightningModule):
         )
         self.postnet = PostNet()
 
-        self.speaker_emb = None
-        if model_config["multi_speaker"]:
-            self.speaker_emb = SpeakerEncoder(spk_emb_type, preprocess_config, model_config)
+        # If not using multi-speaker, would return None
+        self.speaker_emb = SpeakerEncoder(preprocess_config, model_config, algorithm_config)
 
-        # Deal with multi-lingual (meta)
-        # NOTE: I don't think it's a good choice to use the term "multilingual"
-        # to refer to meta-codebook, since there are two conditions:
-        #   1. algorithm == "meta": meta-codebook
-        #   2. algorithm == "baseline": original nn.Embedding
-        # So we have two options:
-        #   1. this part should be placed in `System` instead of
-        #       `FastSpeech2`.
-        #   2. use a general wrapper to deal with it
-        # We choose option 2 here:
-        self.phn_emb_type = 'mono-lingual'
-        if self.model_config.get("multilingual", False):
-            self.phn_emb_type = 'meta-lingual'
-        self.encoder.src_word_emb = PhonemeEmbedding(
-            phn_emb_type, model_config, default_emb=self.encoder.src_word_emb,
-        )
-        # Then the only thing we need to do is:
-        #   1. Add 'encoder' in algorithm_config["adapt"]["modules"]
-        #   2. Dataloader stuffs
-        #   3. At MetaSystem.on_after_batch_transfer(), run
-        #       `self.encoder.set_quantize_matrix()`.
+        print(self)
+
 
     def forward(
         self,

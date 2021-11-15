@@ -23,14 +23,14 @@ class BaseAdaptorSystem(System):
         super().__init__(*args, **kwargs)
 
         # All of the settings below are for few-shot validation
-        adaptation_lr = self.algorithm_config["adapt"]["lr"]
+        adaptation_lr = self.algorithm_config["adapt"]["task"]["lr"]
         self.learner = l2l.algorithms.MAML(
             torch.nn.ModuleDict({
                 k: getattr(self.model, k) for k in self.algorithm_config["adapt"]["modules"]
             }), lr=adaptation_lr
         )
 
-        self.adaptation_steps      = self.algorithm_config["adapt"]["steps"]
+        self.adaptation_steps      = self.algorithm_config["adapt"]["train"]["steps"]
         self.test_adaptation_steps = self.algorithm_config["adapt"]["test"]["steps"]
         assert self.test_adaptation_steps % self.adaptation_steps == 0
 

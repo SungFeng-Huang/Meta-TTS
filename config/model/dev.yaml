@@ -21,6 +21,7 @@ variance_embedding:
   n_bins: 256
 
 multi_speaker: True
+multi_lingual: True
 
 max_seq_len: 1000
 

@@ -21,22 +21,24 @@ class MetaSystem(BaseAdaptorSystem):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _on_meta_batch_start(self, batch):
-        """ Check meta-batch data """
-        # NOTE: should rename `ref_p_embedding` to something like
-        # `ref_phn_feats` or `ref_phn_representations`
-        assert len(batch) == 1, "meta_batch_per_gpu"
-        assert len(batch[0]) == 3, "sup + qry + ref_p_embedding"
-        assert len(batch[0][0]) == 1, "n_batch == 1"
-        assert len(batch[0][0][0]) == 12, "data with 12 elements"
+    # def _on_meta_batch_start(self, batch):
+        # """ Check meta-batch data """
+        # # NOTE: should rename `ref_p_embedding` to something like
+        # # `ref_phn_feats` or `ref_phn_representations`
+        # assert len(batch) == 1, "meta_batch_per_gpu"
+        # assert len(batch[0]) == 3, "sup + qry + ref_p_embedding"
+        # assert len(batch[0][0]) == 1, "n_batch == 1"
+        # assert len(batch[0][0][0]) == 12, "data with 12 elements"
 
-    def on_after_batch_transfer(self, batch, dataloader_idx):
-        # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
-        # the same variable, they are not two variables with the same values.
-        ref_phn_feats = batch[0][2]
-        self.model.encoder.src_word_emb.set_quantize_matrix(ref_phn_feats)
-        del batch[0][2]
-        return batch
+    # def on_after_batch_transfer(self, batch, dataloader_idx):
+        # # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
+        # # the same variable, they are not two variables with the same values.
+        # ref_phn_feats = batch[0][2]
+        # # self.model.encoder.src_word_emb.set_quantize_matrix(ref_phn_feats)
+        # # TODO
+        # self.model.encoder.src_word_emb._parameter['weight'] = emb_tensor.clone()
+        # del batch[0][2]
+        # return batch
 
     # Second order gradients for RNNs
     @torch.backends.cudnn.flags(enabled=False)
