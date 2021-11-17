@@ -11,7 +11,7 @@ from text import text_to_sequence
 from utils.tools import pad_1D, pad_2D
 
 
-class Dataset(Dataset):
+class TTSDataset(Dataset):
     def __init__(
         self, filename, preprocess_config, train_config, sort=False, drop_last=False, refer_wav=False
     ):
@@ -150,7 +150,7 @@ class Dataset(Dataset):
         else:
             idx_arr = np.arange(data_size)
 
-        tail = idx_arr[len(idx_arr) - (len(idx_arr) % self.batch_size) :]
+        tail = idx_arr[len(idx_arr) - (len(idx_arr) % self.batch_size):]
         idx_arr = idx_arr[: len(idx_arr) - (len(idx_arr) % self.batch_size)]
         idx_arr = idx_arr.reshape((-1, self.batch_size)).tolist()
         if not self.drop_last and len(tail) > 0:
@@ -161,6 +161,36 @@ class Dataset(Dataset):
             output.append(self.reprocess(data, idx))
 
         return output
+
+
+class MonolingualTTSDataset(TTSDataset):
+    def __init__(
+        self, filename, preprocess_config, train_config, sort=False, drop_last=False, refer_wav=False
+    ):
+        super().__init__(filename, preprocess_config, train_config, sort, drop_last, refer_wav)
+        self.lang_id = preprocess_config["lang_id"]
+
+    def __getitem__(self, idx):
+        sample = super().__getitem__(idx)
+
+        basename = self.basename[idx]
+        speaker = self.speaker[idx]
+
+        representation_path = os.path.join(
+            self.preprocessed_path,
+            "representation",
+            "{}-representation-{}.npy".format(speaker, basename),
+        )
+        if not os.path.isfile(representation_path):
+            representation = np.zeros((1, 1024))
+        else:
+            representation = np.load(representation_path)
+
+        sample.update({
+            "representation": representation,
+        })
+
+        return sample
 
 
 class TextDataset(Dataset):
@@ -230,10 +260,10 @@ if __name__ == "__main__":
         open("./config/LJSpeech/train.yaml", "r"), Loader=yaml.FullLoader
     )
 
-    train_dataset = Dataset(
+    train_dataset = TTSDataset(
         "train.txt", preprocess_config, train_config, sort=True, drop_last=True
     )
-    val_dataset = Dataset(
+    val_dataset = TTSDataset(
         "val.txt", preprocess_config, train_config, sort=False, drop_last=False
     )
     train_loader = DataLoader(

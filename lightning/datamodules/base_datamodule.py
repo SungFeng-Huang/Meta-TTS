@@ -2,7 +2,7 @@ import pytorch_lightning as pl
 
 from torch.utils.data import DataLoader
 
-from dataset import Dataset
+from dataset import TTSDataset as Dataset
 from lightning.collate import get_single_collate
 
 
