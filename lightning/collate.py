@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+from functools import partial
+from collections import defaultdict
 
 from utils.tools import pad_1D, pad_2D
 
@@ -58,70 +60,8 @@ def reprocess(data, idxs):
     )
 
 
-def get_meta_collate(shots, queries, sort=True):
-    """ data: N * (K + K)"""
-    batch_size = shots + queries
-    def collate_fn(data):
-        data_size = len(data)
-        assert data_size % batch_size == 0, "Assum batch_size = ways * (shots + queries)"
-        assert data_size // batch_size > 0, "Assum batch_size = ways * (shots + queries)"
-
-        if sort:
-            len_arr = np.array([d["text"].shape[0] for d in data])
-            idx_arr = np.argsort(-len_arr)
-        else:
-            idx_arr = np.arange(data_size)
-
-        idx_arr = idx_arr.reshape((-1, batch_size))
-        # idx_arr = idx_arr.reshape((-1, batch_size)).tolist()
-
-        sup_idx = np.zeros(batch_size, dtype=bool)
-        sup_idx[np.arange(shots)] = True
-        # sup_idx[np.random.choice(batch_size, shots)] = True
-        qry_idx = ~sup_idx
-
-        sup_out = list()
-        qry_out = list()
-        for idx in idx_arr[:, sup_idx]:
-            sup_out.append(reprocess(data, idx))
-        for idx in idx_arr[:, qry_idx]:
-            qry_out.append(reprocess(data, idx))
-
-        # 2(sup+qry) * n_batch * 12(data_ele)
-        return (sup_out, qry_out)
-        # output = list()
-        # for idx in idx_arr:
-            # output.append(reprocess(data, idx))
-
-        return output
-    return collate_fn
-
-
-def get_multi_collate(shots, queries, sort=True):
-    """ data: N * (K + K)"""
-    batch_size = shots + queries
-    def collate_fn(data):
-        data_size = len(data)
-        assert data_size % batch_size == 0, "Assum batch_size = ways * (shots + queries)"
-        assert data_size // batch_size > 0, "Assum batch_size = ways * (shots + queries)"
-
-        if sort:
-            len_arr = np.array([d["text"].shape[0] for d in data])
-            idx_arr = np.argsort(-len_arr)
-        else:
-            idx_arr = np.arange(data_size)
-
-        idx_arr = idx_arr.reshape((-1, batch_size))
-
-        output = list()
-        for idx in idx_arr:
-            output.append(reprocess(data, idx))
-
-        return output
-    return collate_fn
-
-
 def get_single_collate(sort=True):
+    """Used with BaselineDataModule"""
     def collate_fn(data):
         data_size = len(data)
 
@@ -135,4 +75,161 @@ def get_single_collate(sort=True):
 
         return output
     return collate_fn
+
+
+class SpeakerTaskCollate:
+    """TaskDataset.task_collate
+
+    Task: 1 way(spk), K shots, Q queries
+    data: len(data) = K + Q     [GD]
+    """
+
+    def __init__(self):
+        pass
+
+
+    def get_meta_collate(self, shots, queries, sort=False, split=True):
+        return partial(self.meta_collate_fn, shots=shots, queries=queries, sort=sort, split=split)
+
+
+    def meta_collate_fn(self, data, shots, queries, sort=False, split=True):
+        """
+        split: split to sup/qry for meta-loss. If False, `get_meta_collate` is
+            still different from `get_single_collate`, where the data
+            distributions can be different.
+        """
+        batch_size = shots + queries
+        data_size = len(data)
+        assert data_size == batch_size, "n_batch=1 for speaker adaptation"
+
+        if sort:
+            len_arr = np.array([d["text"].shape[0] for d in data])
+            idx_arr = np.argsort(-len_arr)
+        else:
+            idx_arr = np.arange(data_size)
+
+        idx_arr = idx_arr.reshape((-1, batch_size))
+
+        if split:
+            sup_idx = np.zeros(batch_size, dtype=bool)
+            sup_idx[np.arange(shots)] = True
+            # sup_idx[np.random.choice(batch_size, shots)] = True
+            qry_idx = ~sup_idx
+
+            # n_batch * 12 data elements
+            sup_out = [reprocess(data, idx) for idx in idx_arr[:, sup_idx]]
+            qry_out = [reprocess(data, idx) for idx in idx_arr[:, qry_idx]]
+
+            # 2 * n_batch * 12
+            output = (sup_out, qry_out)
+
+        else:
+            # n_batch * 12
+            output = [reprocess(data, idx) for idx in idx_arr]
+
+        return output
+
+
+class LanguageTaskCollate:
+    """TaskDataset.task_collate
+
+    Task: N spks (N >= 1), 1 way(lang), K shots, Q queries, B batch_size
+    data: len(data) = K + Q     [SGD, K%B=0]
+    """
+
+    def __init__(self, config):
+        """
+            config: dict,
+        """
+        self.lang_id2symbols = config["lang_id2symbols"]
+        self.d_representation = config["representation_dim"]
+
+
+    def get_meta_collate(self, shots, queries):
+        return partial(self.meta_collate_fn, shots=shots, queries=queries)
+
+
+    def meta_collate_fn(self, data, shots, queries):
+        """ multi-speaker with multi-task inner-loop training:
+                random split, use global speaker_id
+        """
+        import time
+        st = time.time()
+        batch_size = shots + queries
+        data_size = len(data)
+        # assert data_size % batch_size == 0, "Assume batch_size = 1 way * (shots + queries)"
+        # assert data_size // batch_size > 0, "Assume batch_size = 1 way * (shots + queries)"
+        assert data_size == batch_size, "len(data) = K + Q     [SGD, K%B=0]"
+
+        idx_arr = np.arange(data_size)
+        idx_arr = idx_arr.reshape((-1, batch_size))
+
+        sup_out = list()
+        qry_out = list()
+        ref_phn_repr = None
+        for idxs in idx_arr:
+            sup_ids, qry_ids = self.split_sup_qry(data, idxs, shots, queries)
+            # print("S/Q ids", sup_ids, qry_ids)
+
+            # st1 = time.time()
+            sup_out.append(reprocess(data, sup_ids))
+            # pad_sup = time.time() - st1
+
+            qry_out.append(reprocess(data, qry_ids))
+            # pad_qry = time.time() - st1
+
+            ref_phn_repr = self.calc_phn_repr(data, sup_ids)
+            # calc_ref = time.time() - st1
+
+        return (sup_out, qry_out, ref_phn_repr)
+
+
+    def split_sup_qry(self, data, idxs, shots, queries):
+        assert len(idxs) == shots + queries
+        phn2idxs = defaultdict(list)
+        for idx in idxs:
+            phn_set = set(data[idx]["text"])
+            for phn in phn_set:
+                phn2idxs[phn].append(idx)
+
+        sup_ids = []
+        qry_ids = []
+        for idx in idxs:
+            if len(qry_ids) < queries:
+                phn_set = set(data[idx]["text"])
+                for phn in phn_set:
+                    if len(phn2idxs[phn]) == 1:
+                        sup_ids.append(idx)
+                        break
+                else:
+                    qry_ids.append(idx)
+                    for phn in phn_set:
+                        phn2idxs[phn].remove(idx)
+            else:
+                sup_ids.append(idx)
+
+        assert len(sup_ids) == shots and len(qry_ids) == queries
+        return np.array(sup_ids), np.array(qry_ids)
+
+
+    def calc_phn_repr(self, data, idxs):
+        lang_id = data[idxs[0]]["language"]
+        n_symbols = len(self.lang_id2symbols[lang_id])
+        texts = [data[idx]["text"] for idx in idxs]
+        representations = [data[idx]["representation"] for idx in idxs]
+
+        table = {i: [] for i in range(n_symbols)}
+        for text, representation in zip(texts, representations):
+            # NOTE: len(text) == len(representation) ?
+            for t, r in zip(text, representation):
+                table[int(t)].append(r)
+
+        phn_repr = np.zeros((n_symbols, self.d_representation), dtype=float)
+        for i in range(n_symbols):
+            if len(table[i]) == 0:
+                phn_repr[i] = np.zeros(self.d_representation)
+            else:
+                phn_repr[i] = np.mean(np.stack(table[i], axis=0), axis=0)
+
+        return torch.from_numpy(phn_repr).float()
 

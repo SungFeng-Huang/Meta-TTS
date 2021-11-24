@@ -187,6 +187,7 @@ class MonolingualTTSDataset(TTSDataset):
             representation = np.load(representation_path)
 
         sample.update({
+            "language": self.lang_id,
             "representation": representation,
         })
 

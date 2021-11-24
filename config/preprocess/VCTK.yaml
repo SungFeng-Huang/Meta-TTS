@@ -1,4 +1,5 @@
 dataset: "VCTK"
+lang_id: 0
 
 path:
   corpus_path: "/home/r06942045/myData/VCTK-Corpus"

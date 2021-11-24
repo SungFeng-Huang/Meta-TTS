@@ -9,7 +9,7 @@ import pytorch_lightning as pl
 from transformer import Encoder, Decoder, PostNet
 from .modules import VarianceAdaptor
 from .speaker_encoder import SpeakerEncoder
-# from .phoneme_embedding import PhonemeEmbedding
+from .phoneme_embedding import PhonemeEmbedding
 from utils.tools import get_mask_from_lengths
 
 
@@ -32,7 +32,10 @@ class FastSpeech2(pl.LightningModule):
         # If not using multi-speaker, would return None
         self.speaker_emb = SpeakerEncoder(preprocess_config, model_config, algorithm_config)
 
-        print(self)
+        if algorithm_config["adapt"]["type"] == "lang":
+            self.phn_emb_generator = PhonemeEmbedding(model_config, algorithm_config)
+
+        print("PhonemeEmbedding", self.phn_emb_generator)
 
 
     def forward(

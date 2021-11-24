@@ -1,15 +1,15 @@
-dataset: "LibriTTS"
+dataset: "miniLibriTTS"
 lang_id: 0
 
 path:
   corpus_path: "/home/r06942045/myData/LibriTTS"
   lexicon_path: "lexicon/librispeech-lexicon.txt"
   raw_path: "./raw_data/LibriTTS"
-  preprocessed_path: "./preprocessed_data/LibriTTS"
+  preprocessed_path: "./preprocessed_data/miniLibriTTS"
 
 subsets:
-  train: "train-clean-100"
-  val: "dev-clean"
+  train: "test-clean"
+  val: "test-clean"
   test: "test-clean"
 
 preprocessing:

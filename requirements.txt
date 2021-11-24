@@ -1,4 +1,5 @@
 pytorch-lightning
+learn2learn
 comet-ml
 resemblyzer
 g2p-en

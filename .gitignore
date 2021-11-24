@@ -118,6 +118,8 @@ learn2learn/
 lightning_logs/
 raw_data/
 output/
+preprocessed_data/miniAISHELL-3/
+preprocessed_data/miniLibriTTS/
 preprocessed_data/LibriTTS/
 preprocessed_data/VCTK/
 evaluation/speechmetrics/

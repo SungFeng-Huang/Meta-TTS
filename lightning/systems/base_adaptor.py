@@ -75,7 +75,7 @@ class BaseAdaptorSystem(System):
             spk_emb = speaker_emb(speaker_args)
             if average_spk_emb:
                 spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
-            output += spk_emb.unsqueeze(1).expand(-1, max(mel_lens), -1)
+            output += spk_emb.unsqueeze(1).expand(-1, max_mel_len, -1)
 
         output, mel_masks = decoder(output, mel_masks)
         output = mel_linear(output)

@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, ConcatDataset
 
 from .baseline_datamodule import BaselineDataModule
 from .utils import few_shot_task_dataset
@@ -25,9 +25,11 @@ class MetaDataModule(BaselineDataModule):
 
     def _train_setup(self):
         epoch_length = self.meta_batch_size * self.val_step
+        self.train_dataset = ConcatDataset(self.train_datasets)
+
         self.train_task_dataset = few_shot_task_dataset(
             self.train_dataset, self.train_ways, self.train_shots, self.train_queries,
-            task_per_speaker=-1, epoch_length=epoch_length
+            n_tasks_per_label=-1, epoch_length=epoch_length, type=self.meta_type
         )
 
 

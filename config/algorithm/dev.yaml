@@ -1,8 +1,23 @@
 name: dev meta_emb_va_d table
-type: meta  # meta/baseline
+type: meta # meta/baseline
+#meta_type: spk
+#
+_phn_emb_config:
+  embedding: &embedding
+    type: embedding
+    refresh: False
+  codebook: &codebook
+    type: codebook
+    size: 30
+    representation_dim: 1024
+    attention:
+      type: hard
+      share: False
 
 adapt:
+  type: lang # spk/lang
   speaker_emb: table # shared/table/encoder
+  phoneme_emb: *codebook  # *embedding/*codebook
 
   modules:
     - encoder
@@ -11,12 +26,9 @@ adapt:
     - mel_linear
     - postnet
 
-  detached_modules:
-    - encoder.projection_layer
-
   task: &task
     ways: 1
-    shots: 5
+    shots: 10
     queries: 5
     lr: 0.001
 
