@@ -66,7 +66,7 @@ class IMAMLSystem(BaseAdaptorSystem):
             preds = self.forward_learner(learner, *mini_batch[2:])
             train_error = self.loss_func(mini_batch, preds)
             reg = self.bias_reg_f(learner)
-            print(self.device, step, train_error[0], reg)
+            # print(self.device, step, train_error[0], reg)
             learner.adapt_(train_error[0]+reg, first_order=first_order, allow_unused=False, allow_nograd=True)
         return learner, task
 
