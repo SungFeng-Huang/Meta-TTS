@@ -54,7 +54,6 @@ class IMAMLSystem(BaseAdaptorSystem):
             sup_data = batch[0][0][0]
             qry_data = batch[0][1][0]
             task = Task(reg_param=self.algorithm_config["adapt"]["imaml"]["reg_param"],
-                        system=self,
                         sup_data=sup_data,
                         qry_data=qry_data,
                         batch_size=5)

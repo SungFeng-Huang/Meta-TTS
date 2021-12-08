@@ -81,12 +81,7 @@ class Task:
     """
     Handles the train and valdation loss for a single task
     """
-    def __init__(self, reg_param, system, sup_data, qry_data, batch_size=None):
-        self.system = system
-        self.forward_func = system.forward_learner
-        self.loss_func = system.loss_func
-        self.hlearner = system.learner    # learner point to hyper modules
-
+    def __init__(self, reg_param, sup_data, qry_data, batch_size=None):
         self.sup_data = sup_data
         self.qry_data = qry_data
         self.sup_sampler = BatchSampler(RandomSampler(range(len(sup_data[0]))),
