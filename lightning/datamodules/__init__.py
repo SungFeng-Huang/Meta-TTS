@@ -6,6 +6,7 @@ from .meta_datamodule import MetaDataModule
 DATA_MODULE = {
     "base": BaseDataModule,
     "meta": MetaDataModule,
+    "imaml": MetaDataModule,
     "baseline": BaselineDataModule,
 }
 

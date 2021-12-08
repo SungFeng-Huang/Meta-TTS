@@ -9,7 +9,9 @@ import learn2learn as l2l
 
 from tqdm import tqdm
 from resemblyzer import VoiceEncoder
+# from learn2learn.algorithms import MAML
 
+from .utils import MAML
 from utils.tools import get_mask_from_lengths
 from lightning.systems.system import System
 from lightning.utils import loss2dict
@@ -24,7 +26,8 @@ class BaseAdaptorSystem(System):
 
         # All of the settings below are for few-shot validation
         adaptation_lr = self.algorithm_config["adapt"]["task"]["lr"]
-        self.learner = l2l.algorithms.MAML(
+        self.adaptation_class = self.algorithm_config["adapt"]["class"]
+        self.learner = MAML(
             torch.nn.ModuleDict({
                 k: getattr(self.model, k) for k in self.algorithm_config["adapt"]["modules"]
             }), lr=adaptation_lr
@@ -102,7 +105,7 @@ class BaseAdaptorSystem(System):
         for step in range(adaptation_steps):
             preds = self.forward_learner(learner, *sup_batch[2:])
             train_error = self.loss_func(sup_batch, preds)
-            learner.adapt(train_error[0], first_order=first_order, allow_unused=False, allow_nograd=True)
+            learner.adapt_(train_error[0], first_order=first_order, allow_unused=False, allow_nograd=True)
         return learner
 
     def meta_learn(self, batch, batch_idx, train=True):

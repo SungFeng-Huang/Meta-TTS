@@ -60,6 +60,67 @@ def reprocess(data, idxs):
     )
 
 
+def split_reprocess(batch, idxs):
+    (
+        ids,
+        raw_texts,
+        speaker_args,
+        texts,
+        text_lens,
+        max_text_lens,
+        mels,
+        mel_lens,
+        max_mel_lens,
+        pitches,
+        energies,
+        durations,
+    ) = batch
+
+    if isinstance(idxs, list):
+        idxs = np.array(idxs)
+
+    sub_ids = [ids[idx] for idx in idxs]
+    sub_raw_texts = [raw_texts[idx] for idx in idxs]
+    if isinstance(speaker_args, tuple):
+        ref_mels, ref_slices = speaker_args
+        sub_ref_slices = [ref_slices[idx] for idx in idxs]
+        sub_ref_mels = torch.cat([ref_mels[ref_slice]
+                                  for ref_slice in sub_ref_slices], dim=0)
+        sub_speaker_args = (sub_ref_mels, sub_ref_slices)
+    else:
+        sub_speaker_args = speaker_args[idxs]
+    sub_text_lens = text_lens[idxs]
+    sub_max_text_lens = sub_text_lens.max()
+    sub_texts = texts[idxs][:, :sub_max_text_lens]
+    sub_mel_lens = mel_lens[idxs]
+    sub_max_mel_lens = sub_mel_lens.max()
+    sub_mels = mels[idxs][:, :sub_max_mel_lens]
+    if pitches.shape[1] == max_text_lens:
+        sub_pitches = pitches[idxs][:, :sub_max_text_lens]
+    else:
+        sub_pitches = pitches[idxs][:, :sub_max_mel_lens]
+    if energies.shape[1] == max_text_lens:
+        sub_energies = energies[idxs][:, :sub_max_text_lens]
+    else:
+        sub_energies = energies[idxs][:, :sub_max_mel_lens]
+    sub_durations = durations[idxs][:, :sub_max_text_lens]
+
+    return (
+        sub_ids,
+        sub_raw_texts,
+        sub_speaker_args,
+        sub_texts,
+        sub_text_lens,
+        sub_max_text_lens,
+        sub_mels,
+        sub_mel_lens,
+        sub_max_mel_lens,
+        sub_pitches,
+        sub_energies,
+        sub_durations,
+    )
+
+
 def get_single_collate(sort=True):
     """Used with BaselineDataModule"""
     def collate_fn(data):

@@ -15,6 +15,14 @@ from config.comet import COMET_CONFIG
 from lightning.datamodules import get_datamodule
 from lightning.systems import get_system
 
+# NOTSET/DEBUG/INFO/WARNING/ERROR/CRITICAL
+os.environ["COMET_LOGGING_CONSOLE"] = "ERROR"
+import warnings
+warnings.filterwarnings("ignore")
+import logging
+# configure logging at the root level of lightning
+logging.getLogger("pytorch_lightning").setLevel(logging.ERROR)
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 TRAINER_CONFIG = {
@@ -52,6 +60,9 @@ def main(args, configs):
         'accumulate_grad_batches': train_config["optimizer"]["grad_acc_step"],
         'resume_from_checkpoint': ckpt_file,
     }
+    if algorithm_config["type"] == 'imaml':
+        # should manually clip grad
+        del trainer_training_config['gradient_clip_val']
 
     if args.stage == 'train':
         # Init logger
@@ -124,15 +135,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-p", "--preprocess_config", type=str, nargs='+', help="path to preprocess.yaml",
-        default=['config/preprocess/LibriTTS.yaml'],
+        default=['config/preprocess/miniLibriTTS.yaml'],
+        # default=['config/preprocess/LibriTTS.yaml'],
     )
     parser.add_argument(
         "-m", "--model_config", type=str, help="path to model.yaml",
-        default='config/model/base.yaml',
+        default='config/model/dev.yaml',
+        # default='config/model/base.yaml',
     )
     parser.add_argument(
         "-t", "--train_config", type=str, nargs='+', help="path to train.yaml",
-        default=['config/train/base.yaml', 'config/train/LibriTTS.yaml'],
+        default=['config/train/dev.yaml', 'config/train/miniLibriTTS.yaml'],
+        # default=['config/train/base.yaml', 'config/train/LibriTTS.yaml'],
     )
     parser.add_argument(
         "-a", "--algorithm_config", type=str, help="path to algorithm.yaml",

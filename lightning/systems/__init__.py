@@ -1,8 +1,10 @@
 from .baseline import BaselineSystem
 from .meta import MetaSystem
+from .imaml import IMAMLSystem
 
 SYSTEM = {
     "meta": MetaSystem,
+    "imaml": IMAMLSystem,
     "baseline": BaselineSystem,
 }
 
