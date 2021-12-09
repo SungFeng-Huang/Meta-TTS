@@ -19,20 +19,20 @@ class BaseDataModule(pl.LightningDataModule):
 
 
     def setup(self, stage=None):
-        refer_wav = (self.algorithm_config["adapt"]["speaker_emb"]
+        spk_refer_wav = (self.algorithm_config["adapt"]["speaker_emb"]
                      in ["dvec", "encoder", "scratch_encoder"])
 
         if stage in (None, 'fit', 'validate'):
             self.train_datasets = [
                 Dataset(
                     f"{preprocess_config['subsets']['train']}.txt",
-                    preprocess_config, self.train_config, sort=True, drop_last=True, refer_wav=refer_wav
+                    preprocess_config, self.train_config, sort=True, drop_last=True, spk_refer_wav=spk_refer_wav
                 ) for preprocess_config in self.preprocess_configs
             ]
             self.val_datasets = [
                 Dataset(
                     f"{preprocess_config['subsets']['val']}.txt",
-                    preprocess_config, self.train_config, sort=False, drop_last=False, refer_wav=refer_wav
+                    preprocess_config, self.train_config, sort=False, drop_last=False, spk_refer_wav=spk_refer_wav
                 ) for preprocess_config in self.preprocess_configs
             ]
 
@@ -40,7 +40,7 @@ class BaseDataModule(pl.LightningDataModule):
             self.test_datasets = [
                 Dataset(
                     f"{preprocess_config['subsets']['test']}.txt",
-                    preprocess_config, self.train_config, sort=False, drop_last=False, refer_wav=refer_wav
+                    preprocess_config, self.train_config, sort=False, drop_last=False, spk_refer_wav=spk_refer_wav
                 ) for preprocess_config in self.preprocess_configs
             ]
 

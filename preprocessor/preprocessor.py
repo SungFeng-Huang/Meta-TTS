@@ -9,6 +9,8 @@ import pyworld as pw
 from scipy.interpolate import interp1d
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
+import resemblyzer
+from resemblyzer import preprocess_wav, wav_to_mel_spectrogram
 
 import audio as Audio
 
@@ -249,6 +251,22 @@ class Preprocessor:
                 pos += d
             energy = energy[: len(duration)]
 
+        # speaker d-vector reference
+        # Settings are slightly different from above, so should start again
+        wav = preprocess_wav(wav_path)
+
+        # Compute where to split the utterance into partials and pad the waveform
+        # with zeros if the partial utterances cover a larger range.
+        wav_slices, mel_slices = resemblyzer.VoiceEncoder.compute_partial_slices(
+            len(wav), rate=1.3, min_coverage=0.75
+        )
+        max_wave_length = wav_slices[-1].stop
+        if max_wave_length >= len(wav):
+            wav = np.pad(wav, (0, max_wave_length - len(wav)), "constant")
+        # Split the utterance into partials and forward them through the model
+        spk_ref_mel = wav_to_mel_spectrogram(wav)
+        spk_ref_mel_slices = [spk_ref_mel[s] for s in mel_slices]
+
         # Save files
         dur_filename = "{}-duration-{}.npy".format(speaker, basename)
         np.save(os.path.join(self.out_dir, "duration", dur_filename), duration)
@@ -263,6 +281,12 @@ class Preprocessor:
         np.save(
             os.path.join(self.out_dir, "mel", mel_filename),
             mel_spectrogram.T,
+        )
+
+        spk_ref_mel_slices_filename = mel_filename
+        np.save(
+            os.path.join(self.out_dir, "spk_ref_mel_slices", spk_ref_mel_slices_filename),
+            spk_ref_mel_slices,
         )
 
         return (

@@ -26,20 +26,20 @@ def reprocess(data, idxs):
     energies = pad_1D(energies)
     durations = pad_1D(durations)
 
-    if "ref_mel_slices" in data[0]:
-        ref_mels = [data[idx]["ref_mel_slices"] for idx in idxs]
-        # ref_mel_lens = np.array([len(ref_mel) for ref_mel in ref_mels])
+    if "spk_ref_mel_slices" in data[0]:
+        spk_ref_mels = [data[idx]["spk_ref_mel_slices"] for idx in idxs]
+        # spk_ref_mel_lens = np.array([len(spk_ref_mel) for spk_ref_mel in spk_ref_mels])
         start = 0
-        ref_slices = []
-        for ref_mel in ref_mels:
-            end = start + ref_mel.shape[0]
-            ref_slices.append(slice(start, end))
+        spk_ref_slices = []
+        for spk_ref_mel in spk_ref_mels:
+            end = start + spk_ref_mel.shape[0]
+            spk_ref_slices.append(slice(start, end))
             start = end
 
-        ref_mels = np.concatenate(ref_mels, axis=0)
+        spk_ref_mels = np.concatenate(spk_ref_mels, axis=0)
         speaker_args = (
-            torch.from_numpy(ref_mels).float(),
-            ref_slices
+            torch.from_numpy(spk_ref_mels).float(),
+            spk_ref_slices
         )
     else:
         speaker_args = torch.from_numpy(speakers).long()
@@ -82,11 +82,12 @@ def split_reprocess(batch, idxs):
     sub_ids = [ids[idx] for idx in idxs]
     sub_raw_texts = [raw_texts[idx] for idx in idxs]
     if isinstance(speaker_args, tuple):
-        ref_mels, ref_slices = speaker_args
-        sub_ref_slices = [ref_slices[idx] for idx in idxs]
-        sub_ref_mels = torch.cat([ref_mels[ref_slice]
-                                  for ref_slice in sub_ref_slices], dim=0)
-        sub_speaker_args = (sub_ref_mels, sub_ref_slices)
+        spk_ref_mels, spk_ref_slices = speaker_args
+        sub_spk_ref_slices = [spk_ref_slices[idx] for idx in idxs]
+        sub_spk_ref_mels = torch.cat([
+            spk_ref_mels[spk_ref_slice] for spk_ref_slice in sub_spk_ref_slices
+        ], dim=0)
+        sub_speaker_args = (sub_spk_ref_mels, sub_spk_ref_slices)
     else:
         sub_speaker_args = speaker_args[idxs]
     sub_text_lens = text_lens[idxs]
