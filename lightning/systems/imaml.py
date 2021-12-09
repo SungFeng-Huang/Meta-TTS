@@ -8,6 +8,7 @@ import pytorch_lightning as pl
 import learn2learn as l2l
 
 from learn2learn.algorithms.lightning import LightningMAML
+from hypergrad import update_tensor_grads
 
 from utils.tools import get_mask_from_lengths
 from lightning.systems.base_adaptor import BaseAdaptorSystem
@@ -109,27 +110,38 @@ class IMAMLSystem(BaseAdaptorSystem):
             losses = self.loss_func(mini_batch, preds)
             return losses[0], losses, preds
             
-        task.reset_iterator()
-        grads, valid_error, predictions = CG(learner, self.model,
-                                             K=self.algorithm_config["adapt"]["imaml"]["K"],
-                                             fp_map=fp_map,
-                                             outer_loss=outer_loss,
-                                             set_grad=False,
-                                             stochastic=True)
-        # self.gpu_stats(f"Step {self.global_step}: After CG")
+        if train:
+            task.reset_iterator()
+            grads, valid_error, predictions = CG(learner, self.model,
+                                                 K=self.algorithm_config["adapt"]["imaml"]["K"],
+                                                 fp_map=fp_map,
+                                                 outer_loss=outer_loss,
+                                                 set_grad=False,
+                                                 stochastic=True)
+            # self.gpu_stats(f"Step {self.global_step}: After CG")
 
-        grads = [self.trainer.training_type_plugin.reduce(g) for g in grads]
+            with torch.no_grad():
+                total_norm = torch.norm(torch.stack([torch.norm(g, 2.0).to(self.device) for g in grads]), 2.0)
+                max_norm = self.train_config["optimizer"]["grad_clip_thresh"]
+                clip_coef = max_norm / (total_norm + 1e-6)
+                clip_coef_clamped = torch.clamp(clip_coef, max=1.0).to(self.device)
+                for g in grads:
+                    g.mul_(clip_coef_clamped)
+            grads = [self.trainer.training_type_plugin.reduce(g) for g in grads]
 
-        opt = self.optimizers()
-        opt.zero_grad()
+            opt = self.optimizers()
+            opt.zero_grad()
 
-        from hypergrad import update_tensor_grads
-        hparams = [p for p in self.model.parameters() if p.requires_grad]
-        update_tensor_grads(hparams, grads)
-        torch.nn.utils.clip_grad_norm_(hparams, self.train_config["optimizer"]["grad_clip_thresh"])
-        opt.step()
+            hparams = [p for p in self.model.parameters() if p.requires_grad]
+            update_tensor_grads(hparams, grads)
+            opt.step()
 
-        del task
+            del task
+
+        else:
+            with torch.no_grad():
+                _, valid_error, predictions = outer_loss(learner, self.model)
+
         return valid_error, predictions
 
 
