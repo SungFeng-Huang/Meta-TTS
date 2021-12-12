@@ -22,6 +22,8 @@ adapt:
   imaml:
     K: 5  # CG steps  # TODO: need tuning
     reg_param: 1  # TODO: need tuning
+    batch_size: 5
+    stochastic: True
 
   modules:
     - encoder

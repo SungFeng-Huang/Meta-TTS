@@ -7,12 +7,16 @@ import numpy as np
 import pytorch_lightning as pl
 import learn2learn as l2l
 
+from typing import List, Callable
+from torch import Tensor
+from torch.nn import Module
 from learn2learn.algorithms.lightning import LightningMAML
 from hypergrad import update_tensor_grads
 
 from utils.tools import get_mask_from_lengths
-from lightning.systems.base_adaptor import BaseAdaptorSystem
 from lightning.utils import loss2dict
+from lightning.systems.base_adaptor import BaseAdaptorSystem
+from lightning.systems.utils import Task, CG, MAML
 
 
 class IMAMLSystem(BaseAdaptorSystem):
@@ -51,52 +55,50 @@ class IMAMLSystem(BaseAdaptorSystem):
             learner.train()
 
         if task is None:
-            from .utils import Task
             sup_data = batch[0][0][0]
             qry_data = batch[0][1][0]
-            task = Task(reg_param=self.algorithm_config["adapt"]["imaml"]["reg_param"],
-                        sup_data=sup_data,
+            task = Task(sup_data=sup_data,
                         qry_data=qry_data,
-                        batch_size=5)
+                        batch_size=self.algorithm_config["adapt"]["imaml"]["batch_size"])
 
         # Adapt the classifier
         first_order = True
+        reg_param = self.algorithm_config["adapt"]["imaml"]["reg_param"]
         for step in range(adaptation_steps):
             mini_batch = task.next_batch()
             preds = self.forward_learner(learner, *mini_batch[2:])
             train_error = self.loss_func(mini_batch, preds)
-            reg = self.bias_reg_f(learner)
-            # print(self.device, step, train_error[0], reg)
-            learner.adapt_(train_error[0]+reg, first_order=first_order, allow_unused=False, allow_nograd=True)
+            loss = (train_error[0] + 0.5 * reg_param * self.bias_reg_f(learner))
+            learner.adapt_(loss, first_order=first_order, allow_unused=False, allow_nograd=True)
         return learner, task
 
     @torch.enable_grad()
     def meta_learn(self, batch, batch_idx, train=True):
-        from .utils import Task, CG, MAML
-        from typing import List, Callable
-        from torch import Tensor
-        from torch.nn import Module
-
         sup_data = batch[0][0][0]
         qry_data = batch[0][1][0]
 
         # self.gpu_stats(f"Step {self.global_step}: Before inner update")
         learner, task = self.adapt(batch, self.adaptation_steps, train=train)
         # self.gpu_stats(f"Step {self.global_step}: After inner update")
+        stochastic = self.algorithm_config["adapt"]["imaml"]["stochastic"]
+        reg_param = self.algorithm_config["adapt"]["imaml"]["reg_param"]
 
         def fp_map(learner: MAML, hmodel: Module) -> List[Tensor]:
             """ Required by CG. Adaptation mapping function.
             Input: learner module, hyper-model.
             Output: updated learner params.
             """
-            mini_batch = task.next_batch()
+            if stochastic:
+                mini_batch = task.next_batch()
+            else:
+                mini_batch = sup_data
             preds = self.forward_learner(learner, *mini_batch[2:])
             losses = self.loss_func(mini_batch, preds)
             # biased regularized loss where the bias are the meta-parameters in hparams
-            loss = (losses[0] + 0.5 * task.reg_param * self.bias_reg_f(learner))
-            new_learner = learner.copy()
-            new_learner.adapt_(loss, first_order=False, allow_unused=False, allow_nograd=True)
-            # new_learner = learner.adapt(loss, first_order=False, allow_unused=False, allow_nograd=True)
+            loss = (losses[0] + 0.5 * reg_param * self.bias_reg_f(learner))
+            # new_learner = learner.copy()
+            # new_learner.adapt_(loss, first_order=False, allow_unused=False, allow_nograd=True)
+            new_learner = learner.adapt(loss, first_order=False, allow_unused=False, allow_nograd=True)
             # return list(new_learner.parameters())
             return [p for p in new_learner.module.parameters() if p.requires_grad]
 
@@ -135,6 +137,9 @@ class IMAMLSystem(BaseAdaptorSystem):
             hparams = [p for p in self.model.parameters() if p.requires_grad]
             update_tensor_grads(hparams, grads)
             opt.step()
+
+            sch = self.lr_schedulers()
+            sch.step()
 
             del task
 

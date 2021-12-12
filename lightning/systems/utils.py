@@ -81,7 +81,7 @@ class Task:
     """
     Handles the train and valdation loss for a single task
     """
-    def __init__(self, reg_param, sup_data, qry_data, batch_size=None):
+    def __init__(self, sup_data, qry_data, batch_size=None):
         self.sup_data = sup_data
         self.qry_data = qry_data
         self.sup_sampler = BatchSampler(RandomSampler(range(len(sup_data[0]))),
@@ -90,7 +90,6 @@ class Task:
         self.sup_it = iter(self.sup_sampler)
 
         self.batch_size = batch_size
-        self.reg_param = reg_param
 
     def reset_iterator(self):
         self.sup_it = iter(self.sup_sampler)
