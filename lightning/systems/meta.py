@@ -11,6 +11,7 @@ from learn2learn.algorithms.lightning import LightningMAML
 
 from utils.tools import get_mask_from_lengths
 from lightning.systems.base_adaptor import BaseAdaptorSystem
+from lightning.systems.utils import Task
 from lightning.utils import loss2dict
 
 
@@ -35,7 +36,7 @@ class MetaSystem(BaseAdaptorSystem):
     # Second order gradients for RNNs
     @torch.backends.cudnn.flags(enabled=False)
     @torch.enable_grad()
-    def adapt(self, batch, adaptation_steps=5, learner=None, train=True):
+    def adapt(self, batch, adaptation_steps=5, learner=None, task=None, train=True):
         # TODO: overwrite for supporting SGD and iMAML
         # return super().adapt(batch, adaptation_steps, learner, train)
 
@@ -45,13 +46,16 @@ class MetaSystem(BaseAdaptorSystem):
             learner = self.learner.clone()
             learner.train()
 
-        sup_batch = batch[0][0][0]
+        if task is None:
+            sup_data = batch[0][0][0]
+            qry_data = batch[0][1][0]
+            task = Task(sup_data=sup_data,
+                        qry_data=qry_data,
+                        batch_size=self.algorithm_config["adapt"]["imaml"]["batch_size"]) # The batch size is borrowed from the imaml config.
+
         first_order = not train
-        n_minibatch = 5
         for step in range(adaptation_steps):
-            subset = slice(step*n_minibatch, (step+1)*n_minibatch)
-            mini_batch = [feat if i in [5, 8] else feat[subset]
-                          for i, feat in enumerate(sup_batch)]
+            mini_batch = task.next_batch()
 
             preds = self.forward_learner(learner, *mini_batch[2:])
             train_error = self.loss_func(mini_batch, preds)
