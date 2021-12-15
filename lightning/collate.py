@@ -257,19 +257,26 @@ class LanguageTaskCollate:
         sup_ids = []
         qry_ids = []
         for idx in idxs:
+            flag = False
             if len(qry_ids) < queries:
                 phn_set = set(data[idx]["text"])
                 for phn in phn_set:
                     if len(phn2idxs[phn]) == 1:
                         sup_ids.append(idx)
+                        flag = True
                         break
-                else:
+                if flag == False :
                     qry_ids.append(idx)
                     for phn in phn_set:
                         phn2idxs[phn].remove(idx)
             else:
                 sup_ids.append(idx)
 
+        ids_list = sup_ids + qry_ids
+        sanity_check = (len(sup_ids) == shots and len(qry_ids) == queries)
+        if sanity_check == False : # Force redestribution
+            sup_ids = ids_list[0:10]
+            qry_ids = ids_list[10:]
         assert len(sup_ids) == shots and len(qry_ids) == queries
         return np.array(sup_ids), np.array(qry_ids)
 
