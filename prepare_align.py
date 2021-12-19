@@ -2,7 +2,7 @@ import os
 import argparse
 import yaml
 
-from preprocessor import libritts, vctk
+from preprocessor import libritts, vctk, css10, aishell3, jvs, cv
 
 
 def main(config):
@@ -19,6 +19,26 @@ def main(config):
         for dmode, dset in config["subsets"].items():
             config["path"]["raw_path"] = os.path.join(raw_path, dset)
             vctk.prepare_align(config)
+    if "CSS10" in config["dataset"]:
+        raw_path = config["path"]["raw_path"]
+        for dmode, dset in config["subsets"].items():
+            config["path"]["raw_path"] = os.path.join(raw_path, dset)
+            css10.prepare_align(config)
+    if "CommonVoice" in config["dataset"]:
+        raw_path = config["path"]["raw_path"]
+        for dmode, dset in config["subsets"].items():
+            config["path"]["raw_path"] = os.path.join(raw_path, dset)
+            cv.prepare_align(config)
+    if "AISHELL-3" in config["dataset"]:
+        raw_path = config["path"]["raw_path"]
+        for dmode, dset in config["subsets"].items():
+            config["path"]["raw_path"] = os.path.join(raw_path, dset)
+            aishell3.prepare_align(config)
+    if "JVS" in config["dataset"]:
+        raw_path = config["path"]["raw_path"]
+        for dmode, dset in config["subsets"].items():
+            config["path"]["raw_path"] = os.path.join(raw_path, dset)
+            jvs.prepare_align(config)
 
 
 if __name__ == "__main__":

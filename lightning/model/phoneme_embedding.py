@@ -116,7 +116,7 @@ class PhonemeEmbedding(pl.LightningModule):
                     ref.shape[0], self.att_banks.shape[0],
                     device=self.device
                 )
-                # NOTE: I don't know why I can't directly assign = 1
+                # NOTE: Can't directly assign = 1 since need to ensure tensors on the same device, use ones_like() instead. 
                 weighting_matrix[ref_mask, similarity.argmax(1)] = torch.ones_like(ref_mask).float()
                 # padding_idx
                 weighting_matrix[Constants.PAD].fill_(0)
@@ -131,8 +131,8 @@ class PhonemeEmbedding(pl.LightningModule):
             """
             q = self.w_qs(ref).view(1, -1, 1, self.d_word_vec)
             k = self.w_ks(self.att_banks).view(1, -1, 1, self.d_word_vec)
-            q = q.permute(2, 0, 1, 3).contiguous().view(1, -1, d_word_vec)  # 1 x vocab_size x dk
-            k = k.permute(2, 0, 1, 3).contiguous().view(1, -1, d_word_vec)  # 1 x codebook_size x dk
+            q = q.permute(2, 0, 1, 3).contiguous().view(1, -1, self.d_word_vec)  # 1 x vocab_size x dk
+            k = k.permute(2, 0, 1, 3).contiguous().view(1, -1, self.d_word_vec)  # 1 x codebook_size x dk
             v = self.emb_banks.unsqueeze(0)
             weighted_embedding = self.attention(q, k, v)
             with torch.no_grad():

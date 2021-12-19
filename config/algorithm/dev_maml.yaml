@@ -1,0 +1,49 @@
+name: dev meta_emb_va_d table
+type: meta # meta/baseline/imaml
+#meta_type: spk
+#
+_phn_emb_config:
+  embedding: &embedding
+    type: embedding
+    refresh: False
+  codebook: &codebook
+    type: codebook
+    size: 30
+    representation_dim: 1024
+    attention:
+      type: hard
+      share: False
+
+adapt:
+  type: lang # spk/lang
+  class: MAML # MAML/iMAML
+  speaker_emb: table # shared/table/encoder
+  phoneme_emb: *codebook  # *embedding/*codebook
+  imaml:
+    K: 5  # CG steps  # TODO: need tuning
+    reg_param: 1  # TODO: need tuning
+    batch_size: 5
+    stochastic: True
+
+  modules:
+    - encoder
+    - variance_adaptor
+    - decoder
+    - mel_linear
+    - postnet
+
+  task: &task
+    ways: 1
+    shots: 20
+    queries: 5
+    lr: 0.001
+
+  train:
+    << : *task
+    steps: 5
+    meta_batch_size: 1
+
+  test:
+    << : *task
+    queries: 1
+    steps: 100 # max adaptation steps for testing

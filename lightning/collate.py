@@ -275,8 +275,8 @@ class LanguageTaskCollate:
         ids_list = sup_ids + qry_ids
         sanity_check = (len(sup_ids) == shots and len(qry_ids) == queries)
         if sanity_check == False : # Force redestribution
-            sup_ids = ids_list[0:10]
-            qry_ids = ids_list[10:]
+            sup_ids = ids_list[:shots]
+            qry_ids = ids_list[shots:]
         assert len(sup_ids) == shots and len(qry_ids) == queries
         return np.array(sup_ids), np.array(qry_ids)
 

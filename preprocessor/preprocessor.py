@@ -5,18 +5,21 @@ import json
 import tgt
 import librosa
 import numpy as np
+import torch
 import pyworld as pw
 from scipy.interpolate import interp1d
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 import resemblyzer
 from resemblyzer import preprocess_wav, wav_to_mel_spectrogram
+import s3prl.hub as hub
 
 import audio as Audio
 
 
 class Preprocessor:
     def __init__(self, config):
+        self.ssl_extractor = getattr(hub, 'hubert_large_ll60k')().cuda()
         self.config = config
         self.in_dir = config["path"]["raw_path"]
         self.out_dir = config["path"]["preprocessed_path"]
@@ -62,6 +65,8 @@ class Preprocessor:
         os.makedirs((os.path.join(self.out_dir, "pitch")), exist_ok=True)
         os.makedirs((os.path.join(self.out_dir, "energy")), exist_ok=True)
         os.makedirs((os.path.join(self.out_dir, "duration")), exist_ok=True)
+        os.makedirs((os.path.join(self.out_dir, "representation")), exist_ok=True)
+        os.makedirs((os.path.join(self.out_dir, "spk_ref_mel_slices")), exist_ok=True)
 
         print("Processing Data ...")
         n_frames = 0
@@ -72,8 +77,7 @@ class Preprocessor:
         speakers = {}
         i = 0   # index of total speakers (train + val + test)
         outs = {}
-        for dset in [self.test_set]:
-        # for dset in [self.train_set, self.val_set, self.test_set]:
+        for dset in [self.train_set, self.val_set, self.test_set]:
             if dset is None:
                 continue
             dset_dir = os.path.join(self.in_dir, dset)
@@ -95,6 +99,8 @@ class Preprocessor:
                         else:
                             info, pitch, energy, n = ret
                         out.append(info)
+                    else:
+                        continue
 
                     if len(pitch) > 0:
                         pitch_scaler.partial_fit(pitch.reshape((-1, 1)))
@@ -102,6 +108,8 @@ class Preprocessor:
                         energy_scaler.partial_fit(energy.reshape((-1, 1)))
 
                     n_frames += n
+                    # debug
+                    # break
                 i += 1
             outs[dset] = out
 
@@ -166,6 +174,12 @@ class Preprocessor:
             )
         )
 
+        # Write total info:
+        with open(os.path.join(self.out_dir, f"info.txt"), "w", encoding="utf-8") as f:
+            f.write("Total time: {} hours".format(
+                n_frames * self.hop_length / self.sampling_rate / 3600
+            ))
+        
         # Write metadata
         for dset in outs:
             out = outs[dset]
@@ -182,10 +196,9 @@ class Preprocessor:
         tg_path = os.path.join(
             self.out_dir, "TextGrid", speaker, "{}.TextGrid".format(basename)
         )
-
         # Get alignments
         textgrid = tgt.io.read_textgrid(tg_path)
-        phone, duration, start, end = self.get_alignment(
+        phone, duration, ssl_duration, start, end = self.get_alignment(
             textgrid.get_tier_by_name("phones")
         )
         text = "{" + " ".join(phone) + "}"
@@ -197,6 +210,17 @@ class Preprocessor:
         wav = wav[
             int(self.sampling_rate * start) : int(self.sampling_rate * end)
         ].astype(np.float32)
+
+        # SSL representation
+        wav1, _ = librosa.load(wav_path, sr=16000)
+        wav1 = wav1[
+            int(16000 * start): int(16000 * end)
+        ].astype(np.float32)
+        wav1 = torch.from_numpy(wav1).float()
+        with torch.no_grad():
+            representation = self.ssl_extractor(
+                [wav1.cuda()])["last_hidden_state"][0]
+        representation = representation.detach().cpu().numpy()
 
         # Read raw text
         with open(text_path, "r") as f:
@@ -251,6 +275,17 @@ class Preprocessor:
                 pos += d
             energy = energy[: len(duration)]
 
+        # SSL representation Phoneme-level average
+        pos = 0
+        for i, d in enumerate(ssl_duration):
+            if d > 0:
+                representation[i] = np.mean(
+                    representation[pos: pos + d], axis=0)
+            else:
+                representation[i] = np.zeros(1024)
+            pos += d
+        representation = representation[: len(ssl_duration)]
+
         # speaker d-vector reference
         # Settings are slightly different from above, so should start again
         wav = preprocess_wav(wav_path)
@@ -282,6 +317,8 @@ class Preprocessor:
             os.path.join(self.out_dir, "mel", mel_filename),
             mel_spectrogram.T,
         )
+        representation_filename = "{}-representation-{}.npy".format(speaker, basename)
+        np.save(os.path.join(self.out_dir, "representation", representation_filename), representation)
 
         spk_ref_mel_slices_filename = mel_filename
         np.save(
@@ -300,7 +337,7 @@ class Preprocessor:
         sil_phones = ["sil", "sp", "spn"]
 
         phones = []
-        durations = []
+        durations, ssl_durations = [], []
         start_time = 0
         end_time = 0
         end_idx = 0
@@ -329,12 +366,19 @@ class Preprocessor:
                     - np.round(s * self.sampling_rate / self.hop_length)
                 )
             )
+            ssl_durations.append(
+                int(
+                    np.round(e * 50)  # Hubert use 20ms window
+                    - np.round(s * 50)
+                )
+            )
 
         # Trim tailing silences
         phones = phones[:end_idx]
         durations = durations[:end_idx]
+        ssl_durations = ssl_durations[:end_idx]
 
-        return phones, durations, start_time, end_time
+        return phones, durations, ssl_durations, start_time, end_time
 
     def remove_outlier(self, values):
         values = np.array(values)
