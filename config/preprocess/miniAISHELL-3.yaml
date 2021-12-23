@@ -1,4 +1,4 @@
-dataset: "AISHELL-3"
+dataset: "miniAISHELL-3"
 lang_id: 1
 
 path:
@@ -8,8 +8,8 @@ path:
     preprocessed_path: "./preprocessed_data/miniAISHELL-3"
 
 subsets:
-    train: "train"
-    val: "dev"
+    train: "test"
+    val: "test"
     test: "test"
 
 preprocessing:

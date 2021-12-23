@@ -27,13 +27,13 @@ class BaseDataModule(pl.LightningDataModule):
                 Dataset(
                     f"{preprocess_config['subsets']['train']}.txt",
                     preprocess_config, self.train_config, sort=True, drop_last=True, spk_refer_wav=spk_refer_wav
-                ) for preprocess_config in self.preprocess_configs
+                ) for preprocess_config in self.preprocess_configs if 'train' in preprocess_config['subsets']
             ]
             self.val_datasets = [
                 Dataset(
                     f"{preprocess_config['subsets']['val']}.txt",
                     preprocess_config, self.train_config, sort=False, drop_last=False, spk_refer_wav=spk_refer_wav
-                ) for preprocess_config in self.preprocess_configs
+                ) for preprocess_config in self.preprocess_configs if 'val' in preprocess_config['subsets']
             ]
 
         if stage in (None, 'test', 'predict'):
@@ -41,7 +41,7 @@ class BaseDataModule(pl.LightningDataModule):
                 Dataset(
                     f"{preprocess_config['subsets']['test']}.txt",
                     preprocess_config, self.train_config, sort=False, drop_last=False, spk_refer_wav=spk_refer_wav
-                ) for preprocess_config in self.preprocess_configs
+                ) for preprocess_config in self.preprocess_configs if 'test' in preprocess_config['subsets']
             ]
 
 

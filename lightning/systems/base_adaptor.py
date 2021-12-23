@@ -33,6 +33,7 @@ class BaseAdaptorSystem(System):
             }), lr=adaptation_lr
         )
 
+        self.no_adapt              = self.algorithm_config["adapt"]["train"].get("no_adapt", -1)
         self.adaptation_steps      = self.algorithm_config["adapt"]["train"]["steps"]
         self.test_adaptation_steps = self.algorithm_config["adapt"]["test"]["steps"]
         assert self.test_adaptation_steps % self.adaptation_steps == 0

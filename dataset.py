@@ -32,6 +32,7 @@ class TTSDataset(Dataset):
             self.speaker_map = json.load(f)
         self.sort = sort
         self.drop_last = drop_last
+        self.lang_id = 0
 
     def __len__(self):
         return len(self.text)
@@ -41,7 +42,7 @@ class TTSDataset(Dataset):
         speaker = self.speaker[idx]
         speaker_id = self.speaker_map[speaker]
         raw_text = self.raw_text[idx]
-        phone = np.array(text_to_sequence(self.text[idx], self.cleaners))
+        phone = np.array(text_to_sequence(self.text[idx], self.cleaners, self.lang_id))
         mel_path = os.path.join(
             self.preprocessed_path,
             "mel",

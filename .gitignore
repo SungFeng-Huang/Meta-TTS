@@ -118,14 +118,8 @@ learn2learn/
 lightning_logs/
 raw_data/
 output/
-preprocessed_data/AISHELL-3/
-preprocessed_data/CommonVoice/
-preprocessed_data/JVS/
-preprocessed_data/CSS10/
-preprocessed_data/miniAISHELL-3/
-preprocessed_data/miniLibriTTS/
-preprocessed_data/LibriTTS/
-preprocessed_data/VCTK/
+preprocessed_data/*/
+!preprocessed_data/example_corpus/
 evaluation/speechmetrics/
 evaluation/Pytorch_MBNet/
 evaluation/images/**/._*

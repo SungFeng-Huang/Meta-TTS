@@ -18,10 +18,10 @@ from lightning.systems import get_system
 # NOTSET/DEBUG/INFO/WARNING/ERROR/CRITICAL
 os.environ["COMET_LOGGING_CONSOLE"] = "ERROR"
 import warnings
-warnings.filterwarnings("ignore")
+# warnings.filterwarnings("ignore")
 import logging
 # configure logging at the root level of lightning
-logging.getLogger("pytorch_lightning").setLevel(logging.ERROR)
+# logging.getLogger("pytorch_lightning").setLevel(logging.ERROR)
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

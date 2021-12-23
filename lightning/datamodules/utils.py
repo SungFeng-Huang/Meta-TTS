@@ -8,7 +8,7 @@ from learn2learn.data.task_dataset import DataDescription
 from learn2learn.utils.lightning import EpisodicBatcher
 
 from lightning.collate import SpeakerTaskCollate, LanguageTaskCollate
-from .define import LANG_ID2SYMBOLS
+from text.define import LANG_ID2SYMBOLS
 
 
 def few_shot_task_dataset(_dataset, ways, shots, queries, n_tasks_per_label=-1, epoch_length=-1, type="spk"):
