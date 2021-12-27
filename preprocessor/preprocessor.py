@@ -62,6 +62,7 @@ class Preprocessor:
         os.makedirs((os.path.join(self.out_dir, "pitch")), exist_ok=True)
         os.makedirs((os.path.join(self.out_dir, "energy")), exist_ok=True)
         os.makedirs((os.path.join(self.out_dir, "duration")), exist_ok=True)
+        os.makedirs((os.path.join(self.out_dir, "spk_ref_mel_slices")), exist_ok=True)
 
         print("Processing Data ...")
         n_frames = 0
@@ -72,10 +73,16 @@ class Preprocessor:
         speakers = {}
         i = 0   # index of total speakers (train + val + test)
         outs = {}
-        for dset in [self.test_set]:
-        # for dset in [self.train_set, self.val_set, self.test_set]:
+        dsets = []
+        for dset in [self.train_set, self.val_set, self.test_set]:
             if dset is None:
                 continue
+            elif isinstance(dset, list):
+                dsets += dset
+            elif isinstance(dset, str):
+                dsets.append(dset)
+
+        for dset in dsets:
             dset_dir = os.path.join(self.in_dir, dset)
             out = list()
             for speaker in tqdm(os.listdir(dset_dir), desc=dset):
@@ -108,8 +115,9 @@ class Preprocessor:
         print("Computing statistic quantities ...")
         # Perform normalization if necessary
         if self.pitch_normalization:
-            # For additional testing corpus/set
-            if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
+            # For additional corpus/set
+            # if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
+            if os.path.exists(os.path.join(self.out_dir, "stats.json")):
                 stats = json.load(open(os.path.join(self.out_dir, "stats.json"), 'r'))
                 pitch_mean = stats['pitch'][2]
                 pitch_std = stats['pitch'][3]
@@ -121,7 +129,8 @@ class Preprocessor:
             pitch_mean = 0
             pitch_std = 1
         if self.energy_normalization:
-            if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
+            # if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
+            if os.path.exists(os.path.join(self.out_dir, "stats.json")):
                 stats = json.load(open(os.path.join(self.out_dir, "stats.json"), 'r'))
                 energy_mean = stats['energy'][2]
                 energy_std = stats['energy'][3]

@@ -21,9 +21,9 @@ class TTSDataset(Dataset):
         self.batch_size = train_config["optimizer"]["batch_size"]
 
         self.spk_refer_wav = spk_refer_wav
-        if spk_refer_wav:
-            dset = filename.split('.')[0]
-            self.raw_path = os.path.join(preprocess_config["path"]["raw_path"], dset)
+        # if spk_refer_wav:
+            # dset = filename.split('.')[0]
+            # self.raw_path = os.path.join(preprocess_config["path"]["raw_path"], dset)
 
         self.basename, self.speaker, self.text, self.raw_text = self.process_meta(
             filename
