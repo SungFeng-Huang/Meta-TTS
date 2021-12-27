@@ -33,6 +33,8 @@ class TTSDataset(Dataset):
         self.sort = sort
         self.drop_last = drop_last
 
+        print(f"\nLength of dataset: {len(self.text)}")
+
     def __len__(self):
         return len(self.text)
 

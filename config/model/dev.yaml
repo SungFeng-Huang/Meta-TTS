@@ -1,8 +1,8 @@
 transformer:
-  encoder_layer: 2
+  encoder_layer: 1
   encoder_head: 2
   encoder_hidden: 256
-  decoder_layer: 2
+  decoder_layer: 1
   decoder_head: 2
   decoder_hidden: 256
   conv_filter_size: 1024

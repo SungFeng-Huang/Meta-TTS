@@ -22,24 +22,25 @@ class MetaSystem(BaseAdaptorSystem):
         super().__init__(*args, **kwargs)
 
     def on_after_batch_transfer(self, batch, dataloader_idx):
-        # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
-        # the same variable, they are not two variables with the same values.
-        sup_batch, qry_batch, ref_phn_feats = batch[0]
-        # ref_phn_feats = batch[0][2]
-        self.model.encoder.src_word_emb._parameters['weight'] = \
-            self.model.phn_emb_generator.get_new_embedding(ref_phn_feats).clone()
-        # del batch[0][2]
-        # return batch
-        return [(sup_batch, qry_batch)]
+        if self.algorithm_config["adapt"]["phoneme_emb"]["type"] == "codebook":
+            # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
+            # the same variable, they are not two variables with the same values.
+            sup_batch, qry_batch, ref_phn_feats = batch[0]
+            self.model.encoder.src_word_emb._parameters['weight'] = \
+                self.model.phn_emb_generator.get_new_embedding(ref_phn_feats).clone()
+            return [(sup_batch, qry_batch)]
+        else:
+            return batch
 
     # Second order gradients for RNNs
     @torch.backends.cudnn.flags(enabled=False)
     @torch.enable_grad()
     def adapt(self, batch, adaptation_steps=5, learner=None, train=True):
         # TODO: overwrite for supporting SGD and iMAML
-        # return super().adapt(batch, adaptation_steps, learner, train)
+        return super().adapt(batch, adaptation_steps, learner, train)
 
         # MAML
+        # NOTE: skipped
         # TODO: SGD data reuse for more steps
         if learner is None:
             learner = self.learner.clone()

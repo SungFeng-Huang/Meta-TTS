@@ -34,8 +34,7 @@ class FastSpeech2(pl.LightningModule):
 
         if algorithm_config["adapt"]["type"] == "lang":
             self.phn_emb_generator = PhonemeEmbedding(model_config, algorithm_config)
-
-        print("PhonemeEmbedding", self.phn_emb_generator)
+            print("PhonemeEmbedding", self.phn_emb_generator)
 
 
     def forward(
