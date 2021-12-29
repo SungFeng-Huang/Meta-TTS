@@ -113,10 +113,11 @@ class Saver(Callback):
             loss_dict.update({"Step": step, "Stage": "Validation"})
             # To stdout
             df = pd.DataFrame([loss_dict], columns=["Step", "Stage"]+CSV_COLUMNS)
-            if len(self.log_loss_dicts)==0:
-                tqdm.write(df.to_string(header=True, index=False, col_space=COL_SPACE))
-            else:
-                tqdm.write(df.to_string(header=True, index=False, col_space=COL_SPACE).split('\n')[-1])
+            if pl_module.local_rank == 0:
+                if len(self.log_loss_dicts)==0:
+                    tqdm.write(df.to_string(header=True, index=False, col_space=COL_SPACE))
+                else:
+                    tqdm.write(df.to_string(header=True, index=False, col_space=COL_SPACE).split('\n')[-1])
             # To file
             self.log_loss_dicts.append(loss_dict)
             log_file_path = os.path.join(self.log_dir, 'log.txt')
