@@ -1,23 +1,14 @@
-name: dev meta_emb_va_d table
-type: meta  # meta/baseline/imaml
-
+name: meta_emb_va_d table
+type: meta  # meta/baseline/imaml, get_system
 
 _phn_emb_config:
   embedding: &embedding
     type: embedding
     refresh: False
-  codebook: &codebook
-    type: codebook
-    size: 30
-    representation_dim: 1024
-    attention:
-      type: hard
-      share: False
-
 
 adapt:
   type: spk # spk/lang
-  class: iMAML # MAML/iMAML
+  #class: MAML # MAML/iMAML, not used
   speaker_emb: table # shared/table/encoder
   phoneme_emb: *embedding  # *embedding/*codebook
   modules:

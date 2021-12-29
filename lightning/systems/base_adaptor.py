@@ -26,7 +26,7 @@ class BaseAdaptorSystem(System):
 
         # All of the settings below are for few-shot validation
         adaptation_lr = self.algorithm_config["adapt"]["task"]["lr"]
-        self.adaptation_class = self.algorithm_config["adapt"]["class"]
+        # self.adaptation_class = self.algorithm_config["adapt"]["class"]
         self.learner = MAML(
             torch.nn.ModuleDict({
                 k: getattr(self.model, k) for k in self.algorithm_config["adapt"]["modules"]

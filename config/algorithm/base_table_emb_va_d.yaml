@@ -1,8 +1,16 @@
 name: base_emb_va_d table
-type: baseline  # meta/baseline
+type: baseline  # meta/baseline/imaml, get_system
+
+_phn_emb_config:
+  embedding: &embedding
+    type: embedding
+    refresh: False
 
 adapt:
+  type: spk # spk/lang
+  #class: iMAML # MAML/iMAML, not used
   speaker_emb: table # shared/table/encoder
+  phoneme_emb: *embedding  # *embedding/*codebook
   modules:
     - speaker_emb
     - variance_adaptor
@@ -10,13 +18,18 @@ adapt:
     - mel_linear
     - postnet
 
-  ways: 1
-  shots: 5
-  queries: 5
-  steps: 5
-  lr: 0.001
-  meta_batch_size: 8
+  task: &task
+    ways: 1
+    shots: 5
+    queries: 5
+    lr: 0.001
+
+  train:
+    << : *task
+    steps: 5
+    meta_batch_size: 8
 
   test:
+    << : *task
     queries: 1
     steps: 100 # max adaptation steps for testing
