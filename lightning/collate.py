@@ -243,7 +243,7 @@ class LanguageTaskCollate:
             ref_phn_repr = self.calc_phn_repr(data, sup_ids)
             # calc_ref = time.time() - st1
 
-        return (sup_out, qry_out, ref_phn_repr)
+        return (sup_out, qry_out, ref_phn_repr, data[idxs[0]]["language"])
 
 
     def split_sup_qry(self, data, idxs, shots, queries):

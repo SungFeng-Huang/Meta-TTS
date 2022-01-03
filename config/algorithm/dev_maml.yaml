@@ -8,16 +8,16 @@ _phn_emb_config:
     refresh: False
   codebook: &codebook
     type: codebook
-    size: 100
+    size: 30
     representation_dim: 1024
     attention:
-      type: hard
+      type: soft2
       share: False
 
 adapt:
   type: lang # spk/lang
   class: MAML # MAML/iMAML
-  speaker_emb: dvec # shared/table/encoder
+  speaker_emb: table # shared/table/encoder
   phoneme_emb: *codebook  # *embedding/*codebook
   imaml:
     K: 5  # CG steps  # TODO: need tuning

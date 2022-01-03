@@ -1,0 +1,4 @@
+path:
+  ckpt_path: "./output/ckpt/multilingual"
+  log_path: "./output/log/multilingual"
+  result_path: "./output/result/multilingual"

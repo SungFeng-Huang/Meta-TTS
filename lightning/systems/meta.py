@@ -25,10 +25,13 @@ class MetaSystem(BaseAdaptorSystem):
     def on_after_batch_transfer(self, batch, dataloader_idx):
         # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
         # the same variable, they are not two variables with the same values.
-        sup_batch, qry_batch, ref_phn_feats = batch[0]
+        sup_batch, qry_batch, ref_phn_feats, lang_id = batch[0]
         # ref_phn_feats = batch[0][2]
         self.model.encoder.src_word_emb._parameters['weight'] = \
-            self.model.phn_emb_generator.get_new_embedding(ref_phn_feats).clone()
+            self.model.get_new_embedding(ref_phn_feats, "soft2").clone()
+            # self.model.get_new_embedding(ref_phn_feats, f"table-{lang_id}").clone()
+            # self.model.get_new_embedding(ref_phn_feats, "hard").clone()
+            # self.model.phn_emb_generator.get_new_embedding(ref_phn_feats).clone()
         # del batch[0][2]
         # return batch
         return [(sup_batch, qry_batch)]
