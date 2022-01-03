@@ -11,10 +11,13 @@ from text import _clean_text
 def prepare_align(config):
     in_dir = config["path"]["corpus_path"]
     out_dir = config["path"]["raw_path"]
+    corpus = config["dataset"]
+    dset = out_dir.rsplit('/', 1)[1]
+
     sampling_rate = config["preprocessing"]["audio"]["sampling_rate"]
     max_wav_value = config["preprocessing"]["audio"]["max_wav_value"]
     cleaners = config["preprocessing"]["text"]["text_cleaners"]
-    for speaker in tqdm(os.listdir(in_dir)):
+    for speaker in tqdm(os.listdir(in_dir), desc=f"{corpus}/{dset}"):
         for chapter in os.listdir(os.path.join(in_dir, speaker)):
             for file_name in os.listdir(os.path.join(in_dir, speaker, chapter)):
                 if file_name[-4:] != ".wav":

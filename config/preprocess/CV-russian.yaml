@@ -4,8 +4,8 @@ lang_id: 4
 path:
   corpus_path: "../CommonVoice/clean_comvoi/ru"
   lexicon_path: "lexicon/librispeech-lexicon.txt"
-  raw_path: "./raw_data/CommonVoice/ru""
-  preprocessed_path: "./preprocessed_data/CommonVoice/ru""
+  raw_path: "./raw_data/CommonVoice/ru"
+  preprocessed_path: "./preprocessed_data/CommonVoice/ru"
 
 subsets:
   train: "train"
