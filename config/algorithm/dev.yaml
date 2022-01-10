@@ -14,6 +14,7 @@ _phn_emb_config:
       type: hard
       share: False
 
+pretrain: 6000
 adapt:
   type: lang # spk/lang
   class: iMAML # MAML/iMAML

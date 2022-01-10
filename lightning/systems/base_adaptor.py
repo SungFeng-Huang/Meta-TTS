@@ -33,10 +33,11 @@ class BaseAdaptorSystem(System):
             }), lr=adaptation_lr
         )
 
-        self.no_adapt              = self.algorithm_config["adapt"]["train"].get("no_adapt", -1)
         self.adaptation_steps      = self.algorithm_config["adapt"]["train"]["steps"]
         self.test_adaptation_steps = self.algorithm_config["adapt"]["test"]["steps"]
         assert self.adaptation_steps == 0 or self.test_adaptation_steps % self.adaptation_steps == 0
+
+        self.pretrain_step = self.codebook_config.get("pretrain", -1)
 
     def forward_learner(
         self, learner, speaker_args, texts, src_lens, max_src_len,

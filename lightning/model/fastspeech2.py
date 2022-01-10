@@ -35,7 +35,7 @@ class FastSpeech2(pl.LightningModule):
         self.phn_emb_generators = nn.ModuleDict()
         if algorithm_config["adapt"]["type"] == "lang":
             self.codebook_config = algorithm_config["adapt"]["phoneme_emb"]
-            if self.codebook_config["type"] == "embedding" or self.codebook_config.get("pretrain", False):
+            if self.codebook_config["type"] == "embedding" or self.codebook_config.get("pretrain", -1) > 0:
                 for i in range(2):
                     self.phn_emb_generators[f"table-{i}"] = TablePhonemeEmbedding(model_config, algorithm_config, i)
             elif self.codebook_config["type"] == "codebook":
