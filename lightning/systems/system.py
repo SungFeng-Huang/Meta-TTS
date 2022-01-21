@@ -116,6 +116,7 @@ class System(pl.LightningModule):
         state_dict = checkpoint["state_dict"]
         model_state_dict = self.state_dict()
         is_changed = False
+        state_dict_pop_keys = []
         for k in state_dict:
             if k in model_state_dict:
                 if state_dict[k].shape != model_state_dict[k].shape:
@@ -128,7 +129,15 @@ class System(pl.LightningModule):
             else:
                 if self.local_rank == 0:
                     print(f"Dropping parameter {k}")
+                state_dict_pop_keys.append(k)
                 is_changed = True
+
+        # modify state_dict format to model_state_dict format
+        for k in state_dict_pop_keys:
+            state_dict.pop(k)
+        for k in model_state_dict:
+            if k not in state_dict:
+                state_dict[k] = model_state_dict[k]
 
         if is_changed:
             checkpoint.pop("optimizer_states", None)

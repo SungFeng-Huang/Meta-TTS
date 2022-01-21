@@ -8,9 +8,9 @@ path:
     preprocessed_path: "./preprocessed_data/miniAISHELL-3"
 
 subsets:
-    train: "test"
-    val: "test2"
-    test: "test2"
+    train: "train"
+    val: "val"
+    test: "train"
 
 preprocessing:
     val_size: 512

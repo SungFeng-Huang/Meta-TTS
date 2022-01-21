@@ -37,7 +37,6 @@ class BaseAdaptorSystem(System):
         self.test_adaptation_steps = self.algorithm_config["adapt"]["test"]["steps"]
         assert self.adaptation_steps == 0 or self.test_adaptation_steps % self.adaptation_steps == 0
 
-        self.pretrain_step = self.codebook_config.get("pretrain", -1)
 
     def forward_learner(
         self, learner, speaker_args, texts, src_lens, max_src_len,
@@ -47,6 +46,7 @@ class BaseAdaptorSystem(System):
         average_spk_emb=False,
     ):
         _get_module = lambda name: getattr(learner.module, name, getattr(self.model, name, None))
+        emb_generator    = _get_module('emb_generator')
         encoder          = _get_module('encoder')
         variance_adaptor = _get_module('variance_adaptor')
         decoder          = _get_module('decoder')
@@ -56,7 +56,10 @@ class BaseAdaptorSystem(System):
 
         src_masks = get_mask_from_lengths(src_lens, max_src_len)
 
-        output = encoder(texts, src_masks)
+        emb_texts = emb_generator(texts)
+        # assert not (emb_texts != emb_texts).any(), "emb generator NaN!"
+        output = encoder(emb_texts, src_masks)
+        # assert not (output != output).any(), "encoder NaN!"
 
         mel_masks = (
             get_mask_from_lengths(mel_lens, max_mel_len) if mel_lens is not None else None
@@ -80,12 +83,18 @@ class BaseAdaptorSystem(System):
             spk_emb = speaker_emb(speaker_args)
             if average_spk_emb:
                 spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
+            if max_mel_len is None:  # inference stage
+                max_mel_len = max(mel_lens)
             output += spk_emb.unsqueeze(1).expand(-1, max_mel_len, -1)
 
         output, mel_masks = decoder(output, mel_masks)
+        # assert not (output != output).any(), "decoder NaN!"
         output = mel_linear(output)
+        # assert not (output != output).any(), "mel linear NaN!"
 
-        postnet_output = postnet(output) + output
+        tmp = postnet(output)
+        # assert not (tmp != tmp).any(), "postnet NaN!"
+        postnet_output = tmp + output
 
         return (
             output, postnet_output,
@@ -118,14 +127,15 @@ class BaseAdaptorSystem(System):
 
         # Evaluating the adapted model
         # Use speaker embedding of support set
-        predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
+        # predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
+        predictions = self.forward_learner(learner, *qry_batch[2:], average_spk_emb=True)
         valid_error = self.loss_func(qry_batch, predictions)
         return valid_error, predictions
 
     def _on_meta_batch_start(self, batch):
         """ Check meta-batch data """
         assert len(batch) == 1, "meta_batch_per_gpu"
-        assert len(batch[0]) == 2, "sup + qry"
+        assert len(batch[0]) == 2 or len(batch[0]) == 4, "sup + qry (+ ref_phn_feats + lang_id)"
         assert len(batch[0][0]) == 1, "n_batch == 1"
         assert len(batch[0][0][0]) == 12, "data with 12 elements"
 
@@ -140,12 +150,14 @@ class BaseAdaptorSystem(System):
         outputs['_batch'] = qry_batch
 
         # Evaluating the initial model
-        predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
+        # predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
+        predictions = self.forward_learner(self.learner, *qry_batch[2:], average_spk_emb=True)
         valid_error = self.loss_func(qry_batch, predictions)
         outputs[f"step_0"] = {"recon": {"losses": valid_error, "output": predictions}}
 
         # synth_samples & save & log
-        predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+        # predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+        predictions = self.forward_learner(self.learner, *qry_batch[2:6], average_spk_emb=True)
         outputs[f"step_0"].update({"synth": {"output": predictions}})
 
         # Adapt
@@ -154,13 +166,15 @@ class BaseAdaptorSystem(System):
             learner = self.adapt(batch, self.adaptation_steps, learner=learner, train=False)
 
             # Evaluating the adapted model
-            predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
+            # predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
+            predictions = self.forward_learner(learner, *qry_batch[2:], average_spk_emb=True)
             valid_error = self.loss_func(qry_batch, predictions)
             outputs[f"step_{ft_step}"] = {"recon": {"losses": valid_error, "output": predictions}}
 
             if ft_step in [5, 10, 20, 50, 100]:
                 # synth_samples & save & log
-                predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+                # predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+                predictions = self.forward_learner(learner, *qry_batch[2:6], average_spk_emb=True)
                 outputs[f"step_{ft_step}"].update({"synth": {"output": predictions}})
         del learner
 

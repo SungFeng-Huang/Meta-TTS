@@ -11,7 +11,7 @@ from lightning.collate import SpeakerTaskCollate, LanguageTaskCollate
 from text.define import LANG_ID2SYMBOLS
 
 
-def few_shot_task_dataset(_dataset, ways, shots, queries, n_tasks_per_label=-1, epoch_length=-1, type="spk"):
+def few_shot_task_dataset(_dataset, ways, shots, queries, n_tasks_per_label=-1, epoch_length=-1, type="spk", *args, **kwargs):
     """
         _dataset is already a `ConcatDataset`
     """
@@ -34,14 +34,13 @@ def few_shot_task_dataset(_dataset, ways, shots, queries, n_tasks_per_label=-1, 
             if len(indices) >= shots+queries:
                 # 1-way-K-shots-Q-queries transforms per label
                 transforms = [
-                    FusedNWaysKShots(meta_dataset, n=ways, k=shots+queries,
-                                     replacement=False, filter_labels=[label]),
+                    FusedNWaysKShots(meta_dataset, n=ways, k=shots+queries, replacement=True, filter_labels=[label]),
                     LoadData(meta_dataset),
                 ]
                 # 1-way-K-shots-Q-queries task dataset
                 _tasks = TaskDataset(
                     meta_dataset, task_transforms=transforms, num_tasks=n_tasks_per_label,
-                    task_collate=_collate.get_meta_collate(shots, queries),
+                    task_collate=_collate.get_meta_collate(shots, queries, *args, **kwargs),
                 )
                 tasks.append(_tasks)
         tasks = ConcatDataset(tasks)
@@ -56,7 +55,7 @@ def few_shot_task_dataset(_dataset, ways, shots, queries, n_tasks_per_label=-1, 
         # 1-way-K-shots-Q-queries task dataset
         tasks = TaskDataset(
             meta_dataset, task_transforms=transforms,
-            task_collate=_collate.get_meta_collate(shots, queries),
+            task_collate=_collate.get_meta_collate(shots, queries, *args, **kwargs),
         )
         if epoch_length > 0:
             # Epochify task dataset, for periodic validation
@@ -114,6 +113,8 @@ def get_SQids2Tid(tasks, tag):
 def prefetch_tasks(tasks, tag='val', log_dir=''):
     if (os.path.exists(os.path.join(log_dir, f'{tag}_descriptions.json'))
             and os.path.exists(os.path.join(log_dir, f'{tag}_SQids.json'))):
+        # print(os.path.join(log_dir, f'{tag}_descriptions.json'))
+        # print("heyheyhey2-1, why the path exist??")
         # Recover descriptions
         load_descriptions(tasks, os.path.join(log_dir, f'{tag}_descriptions.json'))
         SQids, SQids2Tid = load_SQids2Tid(os.path.join(log_dir, f'{tag}_SQids.json'), tag)

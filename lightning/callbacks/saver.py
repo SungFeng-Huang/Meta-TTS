@@ -103,6 +103,36 @@ class Saver(Callback):
             self.log_audio(logger, "Validation", step, basename, "synthesized", wav_prediction, metadata)
             plt.close(fig)
 
+    def on_validation_batch_end2(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+        loss = outputs['losses']
+        output = outputs['output']
+        _batch = outputs['_batch']  # batch or qry_batch
+        
+        step = pl_module.global_step+1
+        assert len(list(pl_module.logger)) == 1
+        logger = pl_module.logger[0]
+        vocoder = pl_module.vocoder
+
+        loss_dict = loss2dict(loss)
+        self.val_loss_dicts.append(loss_dict)
+
+        # Log loss for each sample to csv files
+        sup_ids = batch[0]
+        # SQids = f"{'-'.join(sup_ids)}.{'-'.join(qry_ids)}"
+        # task_id = trainer.datamodule.val_SQids2Tid[SQids]
+        self.log_csv("Validation", step, 0, loss_dict)
+
+        # Log figure/audio to logger + save audio
+        if batch_idx == 0 and pl_module.local_rank == 0:
+            metadata = {'sup_ids': sup_ids}
+            fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
+                _batch, output, vocoder, self.preprocess_config
+            )
+            self.log_figure(logger, "Validation", step, basename, "", fig)
+            self.log_audio(logger, "Validation", step, basename, "reconstructed", wav_reconstruction, metadata)
+            self.log_audio(logger, "Validation", step, basename, "synthesized", wav_prediction, metadata)
+            plt.close(fig)
+
     def on_validation_epoch_end(self, trainer, pl_module):
         # if pl_module.global_step > 0:
         if True:
@@ -158,6 +188,8 @@ class Saver(Callback):
             if "recon" in outputs[f"step_{ft_step}"]:
                 valid_error = outputs[f"step_{ft_step}"]["recon"]["losses"]
                 loss_dicts.append({"Step": ft_step, **loss2dict(valid_error)})
+            print("recon check")
+            print(loss2dict(valid_error))
 
             if "synth" in outputs[f"step_{ft_step}"]:
                 predictions = outputs[f"step_{ft_step}"]["synth"]["output"]
@@ -165,6 +197,9 @@ class Saver(Callback):
                     _batch, predictions, vocoder, self.preprocess_config,
                     figure_dir, audio_dir, f"step_{global_step}-FTstep_{ft_step}"
                 )
+            print("synth check")
+            # if ft_step == 0:
+            #     break
 
         df = pd.DataFrame(loss_dicts, columns=["Step"] + CSV_COLUMNS).set_index("Step")
         df.to_csv(csv_file_path, mode='a', header=True, index=True)

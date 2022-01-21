@@ -26,37 +26,21 @@ class IMAMLSystem(BaseAdaptorSystem):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.automatic_optimization = False
+        self.init_codebook_type()
 
     def on_after_batch_transfer(self, batch, dataloader_idx):
         # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
-        # the same variable, they are not two variables with the same values.
-        if self.global_step == 0 and self.pretrain_step > 0:
-            self.start_pretrain()
-        if self.global_step == self.pretrain_step:
-            self.end_pretrain()
-        
+        # the same variable, they are not two variables with the same values.        
         sup_batch, qry_batch, ref_phn_feats, lang_id = batch[0]
-        if self.codebook_type == "table":
-            self.model.encoder.src_word_emb._parameters['weight'] = \
-                self.model.get_new_embedding(ref_phn_feats, f"table-{lang_id}").clone()
-        else:
-            self.adaptation_steps = self.algorithm_config["adapt"]["train"]["steps"]
-            self.model.encoder.src_word_emb._parameters['weight'] = \
-                self.model.get_new_embedding(ref_phn_feats, self.codebook_type).clone()
+        self.model.get_new_embedding(self.codebook_type, ref_phn_feats=ref_phn_feats, lang_id=lang_id)
         return [(sup_batch, qry_batch)]
     
-    def start_pretrain(self):
-        print("Start pretrain.")
-        self.codebook_type = "table"
-        self.adaptation_steps = 0
-
-    def end_pretrain(self):
-        print("End pretrain.")
+    def init_codebook_type(self):        
         codebook_config = self.algorithm_config["adapt"]["phoneme_emb"]
         if codebook_config["type"] == "embedding":
-            self.codebook_type = "table"
+            self.codebook_type = "table-sep"
         elif codebook_config["type"] == "codebook":
-            self.codebook_type = self.codebook_config["attention"]["type"]
+            self.codebook_type = codebook_config["attention"]["type"]
         else:
             raise NotImplementedError
         self.adaptation_steps = self.algorithm_config["adapt"]["train"]["steps"]

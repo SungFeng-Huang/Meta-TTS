@@ -1,21 +1,21 @@
-dataset: "AISHELL-3"
-lang_id: 1
+dataset: "miniGlobalPhone-fr"
+lang_id: 2
 
 path:
-    corpus_path: "../AISHELL-3/AISHELL-3"
+    corpus_path: "./data/miniAISHELL-3"
     lexicon_path: "lexicon/librispeech-lexicon.txt"
-    raw_path: "./raw_data/AISHELL-3"
-    preprocessed_path: "./preprocessed_data/AISHELL-3"
+    raw_path: "./raw_data/miniAISHELL-3"
+    preprocessed_path: "./preprocessed_data/miniGlobalPhone-fr"
 
 subsets:
     train: "train"
     val: "val"
-    test: "val"
+    test: "test"
 
 preprocessing:
     val_size: 512
     text:
-        text_cleaners: ["transliteration_cleaners"]
+        text_cleaners: ["basic_cleaners"]
         language: "ch"
     audio:
         sampling_rate: 22050

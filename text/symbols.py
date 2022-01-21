@@ -27,3 +27,7 @@ symbols = (
     + _pinyin
     + _silences
 )
+
+common_symbols = [_pad] + list(_special) + list(_punctuation) + _silences
+en_symbols = common_symbols + list(_letters) + _arpabet
+zh_symbols = common_symbols + _pinyin

@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
-from transformer import Encoder, Decoder, PostNet
+from transformer import Encoder, Decoder, PostNet, Encoder2
 from .modules import VarianceAdaptor
 from .speaker_encoder import SpeakerEncoder
 from .phoneme_embedding import PhonemeEmbedding, HardAttCodebook, SoftAttCodebook, TablePhonemeEmbedding, SoftAttCodebook2
@@ -20,7 +20,8 @@ class FastSpeech2(pl.LightningModule):
         super(FastSpeech2, self).__init__()
         self.model_config = model_config
 
-        self.encoder = Encoder(model_config)
+        self.emb_generator = nn.Embedding(1, 1)
+        self.encoder = Encoder2(model_config)
         self.variance_adaptor = VarianceAdaptor(preprocess_config, model_config)
         self.decoder = Decoder(model_config)
         self.mel_linear = nn.Linear(
@@ -32,24 +33,8 @@ class FastSpeech2(pl.LightningModule):
         # If not using multi-speaker, would return None
         self.speaker_emb = SpeakerEncoder(preprocess_config, model_config, algorithm_config)
 
-        self.phn_emb_generators = nn.ModuleDict()
-        if algorithm_config["adapt"]["type"] == "lang":
-            self.codebook_config = algorithm_config["adapt"]["phoneme_emb"]
-            if self.codebook_config["type"] == "embedding" or self.codebook_config.get("pretrain", -1) > 0:
-                for i in range(2):
-                    self.phn_emb_generators[f"table-{i}"] = TablePhonemeEmbedding(model_config, algorithm_config, i)
-            elif self.codebook_config["type"] == "codebook":
-                if self.codebook_config["attention"]["type"] == "hard":
-                    self.phn_emb_generators["hard"] = HardAttCodebook(model_config, algorithm_config)
-                elif self.codebook_config["attention"]["type"] == "soft":
-                    self.phn_emb_generators["soft"] = SoftAttCodebook(model_config, algorithm_config)
-                elif self.codebook_config["attention"]["type"] == "soft2":
-                    self.phn_emb_generators["soft2"] = SoftAttCodebook2(model_config, algorithm_config)
-            else:
-                raise NotImplementedError
-
-        print("PhonemeEmbedding", self.phn_emb_generators)
-
+        self.phoneme_embedding = PhonemeEmbedding(model_config, algorithm_config)
+        print("PhonemeEmbedding", self.phoneme_embedding)
 
     def forward(
         self,
@@ -74,7 +59,8 @@ class FastSpeech2(pl.LightningModule):
             else None
         )
 
-        output = self.encoder(texts, src_masks)
+        emb_texts = self.emb_generator(texts)
+        output = self.encoder(emb_texts, src_masks)
 
         if self.speaker_emb is not None:
             output = output + self.speaker_emb(speaker_args).unsqueeze(1).expand(
@@ -125,6 +111,6 @@ class FastSpeech2(pl.LightningModule):
             mel_lens,
         )
 
-    def get_new_embedding(self, ref_phn_feats, name):
-        self.phn_emb_generator = self.phn_emb_generators[name]
-        return self.phn_emb_generator.get_new_embedding(ref_phn_feats)
+    def get_new_embedding(self, mode, *args, **kwargs):
+        self.emb_generator._parameters['weight'] = \
+                    self.phoneme_embedding.get_new_embedding(mode, *args, **kwargs).clone()

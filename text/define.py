@@ -1,6 +1,4 @@
-# NOTE: this should be move to other place
-
-from text.symbols import symbols
+from text.symbols import symbols, common_symbols, en_symbols, zh_symbols
 
 """
 0: en   1: zh   2: fr   3:de
@@ -17,11 +15,12 @@ def get_phoneme_set(path, encoding='utf-8'):
 
 
 LANG_ID2SYMBOLS = {
-    0: symbols,
-    1: symbols,
-    2: get_phoneme_set("../MFA/lexicon/French/phoneset.txt"),
-    3: get_phoneme_set("../MFA/lexicon/German/phoneset.txt"),
+    0: en_symbols,
+    1: zh_symbols,
+    2: common_symbols + get_phoneme_set("../MFA/lexicon/French/phoneset.txt"),
+    3: common_symbols + get_phoneme_set("../MFA/lexicon/German/phoneset.txt"),
     4: [],
-    5: get_phoneme_set("../MFA/lexicon/Spanish/phoneset.txt"),
+    5: common_symbols + get_phoneme_set("../MFA/lexicon/Spanish/phoneset.txt"),
     6: [],
+    7: common_symbols + get_phoneme_set("../MFA/lexicon/Czech/phoneset.txt"),
 }

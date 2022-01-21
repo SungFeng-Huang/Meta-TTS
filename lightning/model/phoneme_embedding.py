@@ -1,11 +1,10 @@
 import os
 import numpy as np
 import json
-import numpy as np
+from functools import partial
 
 import torch
 from torch import nn
-from torch.nn import functional as F
 
 import pytorch_lightning as pl
 
@@ -16,7 +15,7 @@ from text.symbols import symbols
 from text.define import LANG_ID2SYMBOLS
 
 
-class PhonemeEmbedding(pl.LightningModule):
+class PhonemeEmbeddingOld(pl.LightningModule):
     # NOTE:
     #   Tested:
     #       - hard att
@@ -146,15 +145,76 @@ class PhonemeEmbedding(pl.LightningModule):
             return weighted_embedding.squeeze(0)
 
 
+class BaseEmbeddings(pl.LightningModule):
+    def __init__(self, model_config, algorithm_config):
+        super().__init__()
+        self.embeddings = nn.ModuleDict()
+        if algorithm_config["type"] in ["baseline"]:
+            for lang_id, v in LANG_ID2SYMBOLS.items():
+                if len(v) > 0:
+                    self.embeddings[f"table-{lang_id}"] = TablePhonemeEmbedding(model_config, algorithm_config, lang_id)
+        if algorithm_config["adapt"]["type"] == "spk":  # Multi-speaker, English only
+            pass
+        elif algorithm_config["adapt"]["type"] == "lang":
+            self.codebook_config = algorithm_config["adapt"]["phoneme_emb"]
+            if self.codebook_config["type"] == "codebook":
+                if self.codebook_config["attention"]["type"] == "hard":
+                    self.embeddings["hard"] = HardAttCodebook(model_config, algorithm_config)
+                elif self.codebook_config["attention"]["type"] == "soft":
+                    self.embeddings["soft"] = SoftAttCodebook(model_config, algorithm_config)
+                elif self.codebook_config["attention"]["type"] == "soft2":
+                    self.embeddings["soft2"] = SoftAttCodebook2(model_config, algorithm_config)
+            elif self.codebook_config["type"] == "embedding":
+                for lang_id, v in LANG_ID2SYMBOLS.items():
+                    if len(v) > 0:
+                        self.embeddings[f"table-{lang_id}"] = TablePhonemeEmbedding(model_config, algorithm_config, lang_id)
+            else:
+                print(self.codebook_config["type"])
+                raise NotImplementedError
+        else:
+            raise NotImplementedError
+    
+
+class PhonemeEmbedding(pl.LightningModule):
+    def __init__(self, model_config, algorithm_config):
+        super().__init__()
+        self.get_new_embedding_funcs = {}
+        self.hub = BaseEmbeddings(model_config, algorithm_config)
+        self.register_func("table", self.get_table)
+        self.register_func("table-sep", self.get_table_sep)
+        self.register_func("hard", partial(self.get_from_codebook, "hard"))
+        self.register_func("soft", partial(self.get_from_codebook, "soft"))
+        self.register_func("soft2", partial(self.get_from_codebook, "soft2"))
+
+    def register_func(self, mode, func):
+        self.get_new_embedding_funcs[mode] = func
+
+    def get_table(self, *args, **kwargs):
+        return torch.cat([self.hub.embeddings[f"table-{lang_id}"].get_new_embedding() 
+            for lang_id, v in LANG_ID2SYMBOLS.items() if len(v) > 0], dim=0)
+
+    def get_table_sep(self, *args, **kwargs):
+        return self.hub.embeddings[f"table-{kwargs['lang_id']}"].get_new_embedding(init=True)
+
+    def get_from_codebook(self, mode, *args, **kwargs):
+        return self.hub.embeddings[mode].get_new_embedding(kwargs["ref_phn_feats"])
+    
+    def get_new_embedding(self, mode, *args, **kwargs):
+        return self.get_new_embedding_funcs[mode](*args, **kwargs)
+
+
 class TablePhonemeEmbedding(pl.LightningModule):
     def __init__(self, model_config, algorithm_config, lang_id):
         super().__init__()
-        codebook_size = len(LANG_ID2SYMBOLS[lang_id])
-        d_word_vec = model_config["transformer"]["encoder_hidden"]
-        self.banks = nn.Parameter(torch.randn(codebook_size, d_word_vec))
+        self.d_word_vec = model_config["transformer"]["encoder_hidden"]
+        self.codebook_size = len(LANG_ID2SYMBOLS[lang_id])
+        self.banks = nn.Parameter(torch.randn(self.codebook_size, self.d_word_vec))
 
-    def get_new_embedding(self, ref):
-        return self.banks
+    def get_new_embedding(self, init=False):
+        if init:
+            return torch.randn(self.codebook_size, self.d_word_vec).to(self.device)
+        else:
+            return self.banks.clone()
 
 
 class HardAttCodebook(pl.LightningModule):
@@ -170,10 +230,15 @@ class HardAttCodebook(pl.LightningModule):
 
         # One-hot similarity
         # feats <-> att_banks -> token_id -> emb_banks, need to change path here.
-        centroids = load_hubert_centroids("preprocessed_data/LibriTTS/train-clean-100_phoneme-features.npy", self.codebook_size)
+        centroids = load_hubert_centroids([
+            "preprocessed_data/LibriTTS/train-clean-100_phoneme-features.npy",
+            "preprocessed_data/AISHELL-3/train_phoneme-features.npy",
+            "preprocessed_data/GlobalPhone/fr/train_phoneme-features.npy",
+            # "preprocessed_data/GlobalPhone/de/train_phoneme-features.npy",
+        ], self.codebook_size)
         self.att_banks = nn.Parameter(centroids)
 
-    def get_new_embedding(self, ref):
+    def get_new_embedding(self, ref, *args, **kwargs):
         try:
             assert ref.device == self.device
         except:
@@ -188,11 +253,6 @@ class HardAttCodebook(pl.LightningModule):
         normed_banks = self.att_banks / bank_norms
 
         similarity = normed_ref @ normed_banks.T
-        print(normed_ref.shape)
-        print(normed_banks.shape)
-        print(similarity.shape)
-        print(torch.mean(similarity, dim=1))
-        print(torch.max(similarity, dim=1))
 
         with torch.no_grad():
             weighting_matrix = torch.zeros(
@@ -245,7 +305,7 @@ class SoftAttCodebook(pl.LightningModule):
     #         # Weights shared after the model has been moved to TPU Device
     #         self.att_banks.weight = self.emb_banks.weight
 
-    def get_new_embedding(self, ref):
+    def get_new_embedding(self, ref, *args, **kwargs):
         """ Soft attention weight. Better not share_att_banks.
         key: self.att_banks
         value: self.emb_banks
@@ -281,7 +341,12 @@ class SoftAttCodebook2(pl.LightningModule):
         self.d_feat = self.codebook_config["representation_dim"]
 
         # att(feats, att_banks) -> token_id weights -> emb_banks
-        centroids = load_hubert_centroids("preprocessed_data/LibriTTS/train-clean-100_phoneme-features.npy", self.codebook_size)
+        centroids = load_hubert_centroids([
+            "preprocessed_data/LibriTTS/train-clean-100_phoneme-features.npy",
+            "preprocessed_data/AISHELL-3/train_phoneme-features.npy",
+            "preprocessed_data/GlobalPhone/fr/train_phoneme-features.npy",
+            # "preprocessed_data/GlobalPhone/de/train_phoneme-features.npy",
+        ], self.codebook_size)
         self.att_banks = nn.Parameter(centroids)
         # self.att_banks.requires_grad = False
 
@@ -292,7 +357,7 @@ class SoftAttCodebook2(pl.LightningModule):
 
         self.attention = ScaledDotProductAttention(temperature=0.1)
 
-    def get_new_embedding(self, ref):
+    def get_new_embedding(self, ref, *args, **kwargs):
         """ Soft attention weight. Better not share_att_banks.
         key: self.att_banks
         value: self.emb_banks
@@ -324,9 +389,10 @@ class SoftAttCodebook2(pl.LightningModule):
         return weighted_embedding.squeeze(0)
 
 
-def load_hubert_centroids(path, size):
+def load_hubert_centroids(paths, size):
     from sklearn.cluster import KMeans
-    repr = np.load(path)
+    repr = [np.load(path) for path in paths]
+    repr = np.concatenate(repr, axis=0)
     kmeans = KMeans(n_clusters=size, random_state=0).fit(repr)
     centers = kmeans.cluster_centers_
     return torch.from_numpy(centers)

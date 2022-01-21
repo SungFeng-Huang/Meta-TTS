@@ -1,11 +1,11 @@
-dataset: "CommonVoice-german"
-lang_id: 3
+dataset: "GlobalPhone-spanish"
+lang_id: 5
 
 path:
-  corpus_path: "../CommonVoice/clean_comvoi/de"
+  corpus_path: "../CommonVoice/clean_comvoi/fr"
   lexicon_path: "lexicon/librispeech-lexicon.txt"
-  raw_path: "./raw_data/CommonVoice/de"
-  preprocessed_path: "./preprocessed_data/CommonVoice/de"
+  raw_path: "./raw_data/CommonVoice/fr"
+  preprocessed_path: "./preprocessed_data/GlobalPhone/es"
 
 subsets:
   train: "train"

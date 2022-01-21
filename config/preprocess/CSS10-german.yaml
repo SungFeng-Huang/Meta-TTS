@@ -13,7 +13,7 @@ subsets:
 preprocessing:
   val_size: 512
   text:
-    text_cleaners: ["english_cleaners"]
+    text_cleaners: ["basic_cleaners"]
     language: "en"
   audio:
     sampling_rate: 22050

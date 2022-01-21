@@ -1,11 +1,11 @@
-dataset: "CSS10-french"
+dataset: "GlobalPhone-french"
 lang_id: 2
 
 path:
-  corpus_path: "../CSS10/french"
+  corpus_path: "../CommonVoice/clean_comvoi/fr"
   lexicon_path: "lexicon/librispeech-lexicon.txt"
-  raw_path: "./raw_data/CSS10/french"
-  preprocessed_path: "./preprocessed_data/CSS10/french"
+  raw_path: "./raw_data/CommonVoice/fr"
+  preprocessed_path: "./preprocessed_data/GlobalPhone/fr"
 
 subsets:
   train: "train"
@@ -13,7 +13,7 @@ subsets:
 preprocessing:
   val_size: 512
   text:
-    text_cleaners: ["english_cleaners"]
+    text_cleaners: ["basic_cleaners"]
     language: "en"
   audio:
     sampling_rate: 22050

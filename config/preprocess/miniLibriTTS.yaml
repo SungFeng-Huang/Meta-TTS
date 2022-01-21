@@ -8,9 +8,9 @@ path:
   preprocessed_path: "./preprocessed_data/miniLibriTTS"
 
 subsets:
-  train: "test"
-  val: "test2"
-  test: "test2"
+  train: "train"
+  val: "val"
+  test: "test"
 
 preprocessing:
   val_size: 512

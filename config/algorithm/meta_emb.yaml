@@ -1,4 +1,4 @@
-name: dev meta_emb_va_d table
+name: meta_emb table
 type: meta # meta/baseline/imaml
 #meta_type: spk
 #
@@ -8,13 +8,13 @@ _phn_emb_config:
     refresh: False
   codebook: &codebook
     type: codebook
-    size: 30
+    size: 100
     representation_dim: 1024
     attention:
       type: hard
       share: False
 
-pretrain: 20000
+pretrain: 30000
 adapt:
   type: lang # spk/lang
   class: MAML # MAML/iMAML
@@ -28,8 +28,6 @@ adapt:
 
   modules:
     - encoder
-    - variance_adaptor
-    - decoder
     - mel_linear
     - postnet
 

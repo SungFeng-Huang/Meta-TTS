@@ -135,7 +135,7 @@ def get_single_collate(sort=True):
 
         output = reprocess(data, idx_arr)
 
-        return output
+        return (output, data[idx_arr[0][0]]["language"])
     return collate_fn
 
 
@@ -206,14 +206,42 @@ class LanguageTaskCollate:
         self.lang_id2symbols = config["lang_id2symbols"]
         self.d_representation = config["representation_dim"]
 
+        # calculate re-id increment
+        increment = 0
+        self.re_id_increment = {}
+        for k, v in self.lang_id2symbols.items():
+            self.re_id_increment[k] = increment
+            increment += len(v)
 
-    def get_meta_collate(self, shots, queries):
-        return partial(self.meta_collate_fn, shots=shots, queries=queries)
+    def get_collate(self, sort=False, re_id=True):
+        return partial(self.collate_fn, sort=sort, re_id=re_id)
 
+    def get_meta_collate(self, shots, queries, re_id=False):
+        return partial(self.meta_collate_fn, shots=shots, queries=queries, re_id=re_id)
 
-    def meta_collate_fn(self, data, shots, queries):
+    def collate_fn(self, data, sort=False, re_id=True):
+        data_size = len(data)
+
+        if sort:
+            len_arr = np.array([d["text"].shape[0] for d in data])
+            idx_arr = np.argsort(-len_arr)
+        else:
+            idx_arr = np.arange(data_size)
+
+        # concat embedding, re-id each phoneme
+        if re_id:
+            for idx in idx_arr:
+                data[idx]["text"] += self.re_id_increment[data[idx]["language"]]
+            # print(self.re_id_increment[data[idx]["language"]])
+        output = reprocess(data, idx_arr)
+
+        return output
+    
+    def meta_collate_fn(self, data, shots, queries, re_id=False):
         """ multi-speaker with multi-task inner-loop training:
                 random split, use global speaker_id
+            re_id is set to true to handle baseline testing with 
+                concatenated phoneme table and no cal_phn_repr
         """
         import time
         st = time.time()
@@ -224,6 +252,10 @@ class LanguageTaskCollate:
         assert data_size == batch_size, "len(data) = K + Q     [SGD, K%B=0]"
 
         idx_arr = np.arange(data_size)
+        if re_id:
+            for idx in idx_arr:
+                data[idx]["text"] += self.re_id_increment[data[idx]["language"]]
+        
         idx_arr = idx_arr.reshape((-1, batch_size))
 
         sup_out = list()
@@ -240,7 +272,7 @@ class LanguageTaskCollate:
             qry_out.append(reprocess(data, qry_ids))
             # pad_qry = time.time() - st1
 
-            ref_phn_repr = self.calc_phn_repr(data, sup_ids)
+            ref_phn_repr = None if re_id else self.calc_phn_repr(data, sup_ids)
             # calc_ref = time.time() - st1
 
         return (sup_out, qry_out, ref_phn_repr, data[idxs[0]]["language"])

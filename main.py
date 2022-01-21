@@ -50,8 +50,14 @@ def main(args, configs):
     ckpt_file = None
     if args.exp_key is not None:
         ckpt_file = os.path.join(
-            'output/ckpt/LibriTTS', COMET_CONFIG["project_name"],
+            train_config["path"]["ckpt_path"], COMET_CONFIG["project_name"],
             args.exp_key, 'checkpoints', args.ckpt_file
+        )
+
+    pretrain_ckpt_file = None
+    if args.pretrain_path is not None:
+        pretrain_ckpt_file = os.path.join(
+            args.pretrain_path, 'checkpoints', args.ckpt_file
         )
 
     trainer_training_config = {
@@ -69,7 +75,7 @@ def main(args, configs):
     if args.stage == 'train':
         # Init logger
         comet_logger = pl.loggers.CometLogger(
-            save_dir=os.path.join(train_config["path"]["log_path"], "meta"),
+            save_dir=train_config["path"]["log_path"],
             experiment_key=args.exp_key,
             experiment_name=algorithm_config["name"],
             **COMET_CONFIG
@@ -102,10 +108,19 @@ def main(args, configs):
     if args.stage == 'train':
         # Get model
         system = get_system(algorithm_config["type"])
-        model = system(
-            preprocess_configs[0], model_config, train_config, algorithm_config,
-            log_dir, result_dir
-        )
+        # TODO: pretrain model is different to resume training
+        if pretrain_ckpt_file is None:
+            model = system(
+                preprocess_configs[0], model_config, train_config, algorithm_config,
+                log_dir, result_dir
+            )
+        else:
+            model = system.load_from_checkpoint(
+                pretrain_ckpt_file, 
+                preprocess_config=preprocess_configs[0], model_config=model_config, train_config=train_config, algorithm_config=algorithm_config,
+                log_dir=log_dir, result_dir=result_dir
+            )
+
         # Train
         trainer = pl.Trainer(
             logger=loggers, **TRAINER_CONFIG, **trainer_training_config
@@ -117,7 +132,9 @@ def main(args, configs):
         # Get model
         system = get_system(algorithm_config["type"])
         model = system.load_from_checkpoint(
-            ckpt_file, log_dir=log_dir, result_dir=result_dir
+            ckpt_file, 
+            preprocess_config=preprocess_configs[0], model_config=model_config, train_config=train_config, algorithm_config=algorithm_config,
+            log_dir=log_dir, result_dir=result_dir
         )
         # Test
         trainer = pl.Trainer(**TRAINER_CONFIG)
@@ -156,6 +173,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-e", "--exp_key", type=str, help="experiment key",
+        default=None,
+    )
+    parser.add_argument(
+        "-pre", "--pretrain_path", type=str, help="pretrained model path",
         default=None,
     )
     parser.add_argument(
