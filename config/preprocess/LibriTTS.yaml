@@ -8,7 +8,8 @@ path:
   preprocessed_path: "./preprocessed_data/LibriTTS"
 
 subsets:
-  train: "train-all"
+  #train: "train-all"
+  train: "train-clean"
   #train:
     #- train-clean-100
     #- train-clean-360

@@ -126,7 +126,7 @@ class Saver(Callback):
             # Reset
             self.log_loss_dicts = []
 
-    def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_test_batch_end(self, trainer, pl_module, all_outputs, batch, batch_idx, dataloader_idx):
         global_step = getattr(pl_module, 'test_global_step', pl_module.global_step)
         adaptation_steps = pl_module.adaptation_steps           # log/save period
         test_adaptation_steps = pl_module.test_adaptation_steps # total fine-tune steps
@@ -135,40 +135,46 @@ class Saver(Callback):
         sup_ids = batch[0][0][0][0]
         qry_ids = batch[0][1][0][0]
         SQids = f"{'-'.join(sup_ids)}.{'-'.join(qry_ids)}"
-        task_id = trainer.datamodule.test_SQids2Tid[SQids]
+        _task_id = trainer.datamodule.test_SQids2Tid[SQids]
 
-        figure_dir = os.path.join(self.result_dir, "figure", "Testing", f"step_{global_step}", task_id)
-        audio_dir = os.path.join(self.result_dir, "audio", "Testing", f"step_{global_step}", task_id)
-        log_dir = os.path.join(self.result_dir, "csv", "Testing", f"step_{global_step}")
-        os.makedirs(figure_dir, exist_ok=True)
-        os.makedirs(audio_dir, exist_ok=True)
-        os.makedirs(log_dir, exist_ok=True)
-        csv_file_path = os.path.join(log_dir, f"{task_id}.csv")
+        for i, outputs in enumerate(all_outputs):
+            if len(all_outputs) == 1:
+                task_id = _task_id
+            else:
+                task_id = f"{_task_id}_{i}"
 
-        loss_dicts = []
-        _batch = outputs["_batch"]
+            figure_dir = os.path.join(self.result_dir, "figure", "Testing", f"step_{global_step}", task_id)
+            audio_dir = os.path.join(self.result_dir, "audio", "Testing", f"step_{global_step}", task_id)
+            log_dir = os.path.join(self.result_dir, "csv", "Testing", f"step_{global_step}")
+            os.makedirs(figure_dir, exist_ok=True)
+            os.makedirs(audio_dir, exist_ok=True)
+            os.makedirs(log_dir, exist_ok=True)
+            csv_file_path = os.path.join(log_dir, f"{task_id}.csv")
 
-        for ft_step in range(0, test_adaptation_steps+1, adaptation_steps):
-            if ft_step == 0:
-                predictions = outputs[f"step_{ft_step}"]["recon"]["output"]
-                recon_samples(
-                    _batch, predictions, vocoder, self.preprocess_config,
-                    figure_dir, audio_dir
-                )
+            loss_dicts = []
+            _batch = outputs["_batch"]
 
-            if "recon" in outputs[f"step_{ft_step}"]:
-                valid_error = outputs[f"step_{ft_step}"]["recon"]["losses"]
-                loss_dicts.append({"Step": ft_step, **loss2dict(valid_error)})
+            for ft_step in range(0, test_adaptation_steps+1, adaptation_steps):
+                if ft_step == 0:
+                    predictions = outputs[f"step_{ft_step}"]["recon"]["output"]
+                    recon_samples(
+                        _batch, predictions, vocoder, self.preprocess_config,
+                        figure_dir, audio_dir
+                    )
 
-            if "synth" in outputs[f"step_{ft_step}"]:
-                predictions = outputs[f"step_{ft_step}"]["synth"]["output"]
-                synth_samples(
-                    _batch, predictions, vocoder, self.preprocess_config,
-                    figure_dir, audio_dir, f"step_{global_step}-FTstep_{ft_step}"
-                )
+                if "recon" in outputs[f"step_{ft_step}"]:
+                    valid_error = outputs[f"step_{ft_step}"]["recon"]["losses"]
+                    loss_dicts.append({"Step": ft_step, **loss2dict(valid_error)})
 
-        df = pd.DataFrame(loss_dicts, columns=["Step"] + CSV_COLUMNS).set_index("Step")
-        df.to_csv(csv_file_path, mode='a', header=True, index=True)
+                if "synth" in outputs[f"step_{ft_step}"]:
+                    predictions = outputs[f"step_{ft_step}"]["synth"]["output"]
+                    synth_samples(
+                        _batch, predictions, vocoder, self.preprocess_config,
+                        figure_dir, audio_dir, f"step_{global_step}-FTstep_{ft_step}"
+                    )
+
+            df = pd.DataFrame(loss_dicts, columns=["Step"] + CSV_COLUMNS).set_index("Step")
+            df.to_csv(csv_file_path, mode='a', header=True, index=True)
 
     def save_audio(self, stage, step, basename, tag, audio):
         """

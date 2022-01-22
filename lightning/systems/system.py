@@ -90,6 +90,7 @@ class System(pl.LightningModule):
         
         # Save figures/audios/csvs
         saver = Saver(self.preprocess_config, self.log_dir, self.result_dir)
+        self.saver = saver
 
         callbacks = [checkpoint, outer_bar, lr_monitor, gpu_monitor, saver]
         return callbacks
@@ -116,21 +117,96 @@ class System(pl.LightningModule):
         state_dict = checkpoint["state_dict"]
         model_state_dict = self.state_dict()
         is_changed = False
+        changes = {"skip": [], "drop": [], "replace": [], "miss": []}
+
+        if 'model.speaker_emb.weight' in state_dict:
+            # Compatiable with old version
+            assert "model.speaker_emb.model.weight" in model_state_dict
+            assert "model.speaker_emb.model.weight" not in state_dict
+            state_dict["model.speaker_emb.model.weight"] = state_dict.pop("model.speaker_emb.weight")
+            changes["replace"].append(["model.speaker_emb.weight", "model.speaker_emb.model.weight"])
+            is_changed = True
+
         for k in state_dict:
             if k in model_state_dict:
                 if state_dict[k].shape != model_state_dict[k].shape:
-                    if self.local_rank == 0:
-                        print(f"Skip loading parameter: {k}, "
-                                    f"required shape: {model_state_dict[k].shape}, "
-                                    f"loaded shape: {state_dict[k].shape}")
+                    if k == "model.speaker_emb.model.weight":
+                        # train-clean-100: 247 (spk_id 0 ~ 246)
+                        # train-clean-360: 904 (spk_id 247 ~ 1150)
+                        # train-other-500: 1160 (spk_id 1151 ~ 2310)
+                        # dev-clean: 40 (spk_id 2311 ~ 2350)
+                        # test-clean: 39 (spk_id 2351 ~ 2389)
+                        if self.preprocess_config["dataset"] == "LibriTTS":
+                            # LibriTTS: testing emb already in ckpt
+                            # Shape mismatch: version problem
+                            # (train-clean-100 vs train-all)
+                            assert self.algorithm_config["adapt"]["speaker_emb"] == "table"
+                            assert (state_dict[k].shape[0] == 326
+                                    and model_state_dict[k].shape[0] == 2390), \
+                                f"state_dict: {state_dict[k].shape}, model: {model_state_dict[k].shape}"
+                            model_state_dict[k][:247] = state_dict[k][:247]
+                            model_state_dict[k][-79:] = state_dict[k][-79:]
+                        else:
+                            # Corpus mismatch
+                            assert state_dict[k].shape[0] in [326, 2390]
+                            assert self.algorithm_config["adapt"]["speaker_emb"] == "table"
+                            if self.algorithm_config["adapt"]["test"].get(
+                                    "avg_train_spk_emb", False
+                            ):
+                                model_state_dict[k][:] = state_dict[k][:247].mean(dim=0)
+                                if self.local_rank == 0:
+                                    print("Average training speaker emb as testing emb")
+                    # Other testing corpus with different # of spks: re-initialize
+                    changes["skip"].append([
+                        k, model_state_dict[k].shape, state_dict[k].shape
+                    ])
                     state_dict[k] = model_state_dict[k]
                     is_changed = True
             else:
-                if self.local_rank == 0:
-                    print(f"Dropping parameter {k}")
+                changes["drop"].append(k)
                 is_changed = True
+
+        for k in model_state_dict:
+            if k not in state_dict:
+                changes["miss"].append(k)
+                is_changed = True
+
+        if self.local_rank == 0:
+            print()
+            for replaced in changes["replace"]:
+                before, after = replaced
+                print(f"Replace: {before}\n\t-> {after}")
+            for skipped in changes["skip"]:
+                k, required_shape, loaded_shape = skipped
+                print(f"Skip parameter: {k}, \n" \
+                           + f"\trequired shape: {required_shape}, " \
+                           + f"loaded shape: {loaded_shape}")
+            for dropped in changes["drop"]:
+                print(f"Dropping parameter: {dropped}")
+                del state_dict[dropped]
+            for missed in changes["miss"]:
+                print(f"Missing parameter: {missed}")
+            print()
 
         if is_changed:
             checkpoint.pop("optimizer_states", None)
 
 
+    def on_test_start(self):
+        if self.local_rank == 0:
+            print("Testing speaker emb")
+            print("Before:")
+            print(self.model.speaker_emb.model.weight[-39:])
+
+        if (self.preprocess_config["dataset"] == "LibriTTS"
+                and self.algorithm_config["adapt"]["speaker_emb"] == "table"
+                and self.algorithm_config["adapt"]["test"].get("avg_train_spk_emb", False)):
+
+            with torch.no_grad():
+                self.model.speaker_emb.model.weight[-39:] = \
+                    self.model.speaker_emb.model.weight[:247].mean(dim=0)
+
+        if self.local_rank == 0:
+            print("After:")
+            print(self.model.speaker_emb.model.weight[-39:])
+            print()

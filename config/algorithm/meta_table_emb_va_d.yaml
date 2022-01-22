@@ -33,3 +33,4 @@ adapt:
     << : *task
     queries: 1
     steps: 100 # max adaptation steps for testing
+    avg_train_spk_emb: False

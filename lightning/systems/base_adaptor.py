@@ -14,6 +14,7 @@ from resemblyzer import VoiceEncoder
 from .utils import MAML
 from utils.tools import get_mask_from_lengths
 from lightning.systems.system import System
+from lightning.systems.utils import Task
 from lightning.utils import loss2dict
 
 
@@ -64,6 +65,8 @@ class BaseAdaptorSystem(System):
             spk_emb = speaker_emb(speaker_args)
             if average_spk_emb:
                 spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
+
+        if speaker_emb is not None:
             output += spk_emb.unsqueeze(1).expand(-1, max_src_len, -1)
 
         (
@@ -75,10 +78,10 @@ class BaseAdaptorSystem(System):
         )
 
         if speaker_emb is not None:
-            spk_emb = speaker_emb(speaker_args)
-            if average_spk_emb:
-                spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
-            output += spk_emb.unsqueeze(1).expand(-1, max_mel_len, -1)
+            # spk_emb = speaker_emb(speaker_args)
+            # if average_spk_emb:
+                # spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
+            output += spk_emb.unsqueeze(1).expand(-1, max(mel_lens), -1)
 
         output, mel_masks = decoder(output, mel_masks)
         output = mel_linear(output)
@@ -131,7 +134,27 @@ class BaseAdaptorSystem(System):
         self._on_meta_batch_start(batch)
 
     def test_step(self, batch, batch_idx):
+        all_outputs = []
+        qry_batch = batch[0][1][0]
+        if self.algorithm_config["adapt"]["test"].get("1-shot", False):
+            task = Task(sup_data=batch[0][0][0],
+                        qry_data=batch[0][1][0],
+                        batch_size=1,
+                        shuffle=False)
+            for sup_batch in iter(task):
+                mini_batch = [([sup_batch], [qry_batch])]
+                outputs = self._test_step(mini_batch, batch_idx)
+                all_outputs.append(outputs)
+        else:
+            outputs = self._test_step(batch, batch_idx)
+            all_outputs.append(outputs)
+
+        return all_outputs
+
+    def _test_step(self, batch, batch_idx):
         outputs = {}
+
+        saving_steps = self.algorithm_config["adapt"]["test"].get("saving_steps", [5, 10, 20, 50, 100])
 
         sup_batch = batch[0][0][0]
         qry_batch = batch[0][1][0]
@@ -156,7 +179,7 @@ class BaseAdaptorSystem(System):
             valid_error = self.loss_func(qry_batch, predictions)
             outputs[f"step_{ft_step}"] = {"recon": {"losses": valid_error, "output": predictions}}
 
-            if ft_step in [5, 10, 20, 50, 100]:
+            if ft_step in saving_steps:
                 # synth_samples & save & log
                 predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
                 outputs[f"step_{ft_step}"].update({"synth": {"output": predictions}})

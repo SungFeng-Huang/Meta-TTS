@@ -29,7 +29,7 @@ if quiet:
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 TRAINER_CONFIG = {
     "gpus": -1 if torch.cuda.is_available() else None,
-    "accelerator": "ddp" if torch.cuda.is_available() else None,
+    "strategy": "ddp" if torch.cuda.is_available() else None,
     "auto_select_gpus": True,
     "limit_train_batches": 1.0,  # Useful for fast experiment
     "deterministic": True,
@@ -117,7 +117,13 @@ def main(args, configs):
         # Get model
         system = get_system(algorithm_config["type"])
         model = system.load_from_checkpoint(
-            ckpt_file, log_dir=log_dir, result_dir=result_dir
+            ckpt_file,
+            preprocess_config=preprocess_configs[0],
+            model_config=model_config,
+            train_config=train_config,
+            algorithm_config=algorithm_config,
+            log_dir=log_dir, result_dir=result_dir,
+            strict=False,
         )
         # Test
         trainer = pl.Trainer(**TRAINER_CONFIG)

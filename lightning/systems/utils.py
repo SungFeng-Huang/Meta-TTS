@@ -81,10 +81,11 @@ class Task:
     """
     Handles the train and valdation loss for a single task
     """
-    def __init__(self, sup_data, qry_data, batch_size=None):
+    def __init__(self, sup_data, qry_data, batch_size=None, shuffle=True):
         self.sup_data = sup_data
         self.qry_data = qry_data
-        self.sup_sampler = BatchSampler(RandomSampler(range(len(sup_data[0]))),
+        sampler = RandomSampler(range(len(sup_data[0]))) if shuffle else range(len(sup_data[0]))
+        self.sup_sampler = BatchSampler(sampler,
                                         batch_size=batch_size,
                                         drop_last=True)
         self.sup_it = iter(self.sup_sampler)
@@ -102,6 +103,18 @@ class Task:
             idxs = next(self.sup_it)
         batch = split_reprocess(self.sup_data, idxs)
         return batch
+
+    def __iter__(self):
+        self.reset_iterator()
+        return self
+
+    def __next__(self):
+        try:
+            idxs = next(self.sup_it)
+            batch = split_reprocess(self.sup_data, idxs)
+            return batch
+        except:
+            raise StopIteration
 
 
 def CG(module: MAML,
