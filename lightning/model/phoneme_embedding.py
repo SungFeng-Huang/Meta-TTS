@@ -185,6 +185,7 @@ class PhonemeEmbedding(pl.LightningModule):
         self.register_func("hard", partial(self.get_from_codebook, "hard"))
         self.register_func("soft", partial(self.get_from_codebook, "soft"))
         self.register_func("soft2", partial(self.get_from_codebook, "soft2"))
+        print("PhonemeEmbedding", self.hub)
 
     def register_func(self, mode, func):
         self.get_new_embedding_funcs[mode] = func

@@ -20,7 +20,6 @@ class BaselineSystem(BaseAdaptorSystem):
         super().__init__(*args, **kwargs)
 
     def on_after_batch_transfer(self, batch, dataloader_idx):
-        self.model.get_new_embedding("table")
         return batch
     
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):

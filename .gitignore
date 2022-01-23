@@ -124,6 +124,7 @@ evaluation/speechmetrics/
 evaluation/Pytorch_MBNet/
 evaluation/images/**/._*
 evaluation/images/**/*.png
+/results/
 *.npy
 *.csv
 *.swp

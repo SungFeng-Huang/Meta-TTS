@@ -87,7 +87,15 @@ def split_reprocess(batch, idxs):
         sub_spk_ref_mels = torch.cat([
             spk_ref_mels[spk_ref_slice] for spk_ref_slice in sub_spk_ref_slices
         ], dim=0)
-        sub_speaker_args = (sub_spk_ref_mels, sub_spk_ref_slices)
+
+        # remap index of slices
+        remap_sub_spk_ref_slices = []
+        start = 0
+        for slice_obj in sub_spk_ref_slices:
+            end = start + slice_obj.stop - slice_obj.start
+            remap_sub_spk_ref_slices.append(slice(start, end))
+            start = end
+        sub_speaker_args = (sub_spk_ref_mels, remap_sub_spk_ref_slices)
     else:
         sub_speaker_args = speaker_args[idxs]
     sub_text_lens = text_lens[idxs]

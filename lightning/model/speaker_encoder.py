@@ -71,6 +71,28 @@ class SpeakerEncoder(pl.LightningModule):
         elif self.emb_type == "encoder" or self.emb_type == "dvec" or self.emb_type == "scratch_encoder":
             ref_mels, ref_slices = args
             partial_embeds = self.model(ref_mels)
+            if torch.isnan(partial_embeds).any():
+                print("partial_embeds NaN!")
+                print(partial_embeds.shape)
+                print("Num of NaN: ", torch.isnan(partial_embeds).sum().item())
+
             speaker_embeds = [partial_embeds[ref_slice].mean(dim=0) for ref_slice in ref_slices]
+            for ref_slice, spk_emb in zip(ref_slices, speaker_embeds):
+                if torch.isnan(spk_emb).any():
+                    print("0??")
+                    print(partial_embeds[ref_slice].shape)
+                    rs = partial_embeds[ref_slice].mean(dim=0)
+                    if torch.isnan(rs).any():
+                        print("ref slice NaN!")
+                        print(rs.shape)
+                        print("Num of NaN: ", torch.isnan(rs).sum().item())
+                    print("speaker_embeds NaN!")
+                    print(spk_emb.shape)
+                    print("Num of NaN: ", torch.isnan(spk_emb).sum().item())            
             speaker_emb = torch.stack([torch.nn.functional.normalize(spk_emb, dim=0) for spk_emb in speaker_embeds])
+            if torch.isnan(speaker_emb).any():
+                print("spk normalize NaN!")
+                print(speaker_emb.shape)
+                print("Num of NaN: ", torch.isnan(speaker_emb).sum().item())
+            
             return speaker_emb

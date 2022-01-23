@@ -3,12 +3,14 @@
 import os
 import json
 import torch
+import torch.nn as nn
 import numpy as np
 import pytorch_lightning as pl
 import learn2learn as l2l
 
 from learn2learn.algorithms.lightning import LightningMAML
 
+from .utils import MAML
 from utils.tools import get_mask_from_lengths
 from lightning.systems.base_adaptor import BaseAdaptorSystem
 from lightning.systems.utils import Task
@@ -22,13 +24,6 @@ class MetaSystem(BaseAdaptorSystem):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.init_codebook_type()
-
-    def on_after_batch_transfer(self, batch, dataloader_idx):
-        # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
-        # the same variable, they are not two variables with the same values.        
-        sup_batch, qry_batch, ref_phn_feats, lang_id = batch[0]
-        self.model.get_new_embedding(self.codebook_type, ref_phn_feats=ref_phn_feats, lang_id=lang_id)
-        return [(sup_batch, qry_batch)]
     
     def init_codebook_type(self):        
         codebook_config = self.algorithm_config["adapt"]["phoneme_emb"]
@@ -40,6 +35,17 @@ class MetaSystem(BaseAdaptorSystem):
             raise NotImplementedError
         self.adaptation_steps = self.algorithm_config["adapt"]["train"]["steps"]
 
+    def build_learner(self, batch):
+        _, _, ref_phn_feats, lang_id = batch[0]
+        embedding = self.embedding_model.get_new_embedding(self.codebook_type, ref_phn_feats=ref_phn_feats, lang_id=lang_id)
+        
+        emb_layer = nn.Embedding.from_pretrained(embedding, freeze=False, padding_idx=0).to(self.device)
+        adapt_dict = nn.ModuleDict({
+            k: getattr(self.model, k) for k in self.algorithm_config["adapt"]["modules"]
+        })
+        adapt_dict["embedding"] = emb_layer
+        return MAML(adapt_dict, lr=self.adaptation_lr)
+    
     # Second order gradients for RNNs
     @torch.backends.cudnn.flags(enabled=False)
     @torch.enable_grad()
@@ -50,7 +56,11 @@ class MetaSystem(BaseAdaptorSystem):
         # MAML
         # TODO: SGD data reuse for more steps
         if learner is None:
-            learner = self.learner.clone()
+            learner = self.build_learner(batch)
+            sup_batch, qry_batch, _, _ = batch[0]
+            batch = [(sup_batch, qry_batch)]
+            # learner = self.learner.clone()
+            learner = learner.clone()
             learner.train()
 
         if task is None:

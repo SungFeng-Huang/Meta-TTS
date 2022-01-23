@@ -25,7 +25,6 @@ adapt:
     stochastic: True
 
   modules:
-    - emb_generator
     - encoder
     - mel_linear
     - postnet

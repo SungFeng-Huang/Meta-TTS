@@ -21,11 +21,10 @@ adapt:
   imaml:
     K: 5  # CG steps  # TODO: need tuning
     reg_param: 1  # TODO: need tuning
-    batch_size: 5
+    batch_size: 2
     stochastic: True
 
   modules:
-    - emb_generator
     - encoder
     - mel_linear
     - postnet

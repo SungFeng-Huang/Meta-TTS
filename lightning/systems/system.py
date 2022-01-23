@@ -3,6 +3,7 @@
 import os
 import json
 import torch
+import torch.nn.functional as F
 import numpy as np
 import pytorch_lightning as pl
 import learn2learn as l2l
@@ -15,6 +16,7 @@ from argparse import Namespace
 from pytorch_lightning.callbacks.progress import ProgressBar
 from pytorch_lightning.callbacks import LearningRateMonitor, GPUStatsMonitor, ModelCheckpoint
 
+from lightning.model.phoneme_embedding import PhonemeEmbedding
 from lightning.model import FastSpeech2Loss, FastSpeech2
 from lightning.callbacks import GlobalProgressBar, Saver
 from lightning.optimizer import get_optimizer
@@ -35,6 +37,7 @@ class System(pl.LightningModule):
         self.algorithm_config = algorithm_config
         self.save_hyperparameters()
 
+        self.embedding_model = PhonemeEmbedding(model_config, algorithm_config)
         self.model = FastSpeech2(preprocess_config, model_config, algorithm_config)
         self.loss_func = FastSpeech2Loss(preprocess_config, model_config)
 
@@ -51,7 +54,8 @@ class System(pl.LightningModule):
         return self.model(*args, **kwargs)
 
     def common_step(self, batch, batch_idx, train=True):
-        output = self(*(batch[2:]))
+        emb_texts = F.embedding(batch[3], self.embedding_model.get_new_embedding("table"))
+        output = self(batch[2], emb_texts, *(batch[4:]))
         loss = self.loss_func(batch, output)
         return loss, output
 
