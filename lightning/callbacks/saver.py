@@ -33,6 +33,7 @@ class Saver(Callback):
         os.makedirs(self.log_dir, exist_ok=True)
         os.makedirs(self.result_dir, exist_ok=True)
         print("Log directory:", self.log_dir)
+        print("Result directory:", self.result_dir)
 
         self.val_loss_dicts = []
         self.log_loss_dicts = []
