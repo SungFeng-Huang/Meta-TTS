@@ -117,7 +117,7 @@ learn2learn/
 .comet.config
 lightning_logs/
 raw_data/
-output/
+output
 preprocessed_data/miniAISHELL-3/
 preprocessed_data/miniLibriTTS/
 preprocessed_data/LibriTTS

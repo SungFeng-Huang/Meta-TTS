@@ -24,6 +24,7 @@ class WavsToDvector:
         self.n_speaker = config.n_speaker # number of speakers ex: 39
         self.mode_list = config.mode_list
         self.step_list = config.step_list
+        self.mode_step_list = config.mode_step_list
         # self.use_new_pair = args.new_pair
         self.use_new_pair = False
 
@@ -63,10 +64,11 @@ class WavsToDvector:
             if not os.path.exists(f'npy/{self.corpus}/{mode}_dvector.npy'):
                 print(f'\tSaving to: \n\t\tnpy/{self.corpus}/{mode}_dvector.npy')
                 np.save(f'npy/{self.corpus}/{mode}_dvector.npy', dvector_list_dict[mode], allow_pickle=True)
-        for mode in self.mode_list:
-            for step in self.step_list:
-                if mode in ['scratch_encoder', 'encoder', 'dvec'] and step != 0:
-                    continue
+
+        for mode, steps in self.mode_step_list:
+            for step in steps:
+                # if mode in ['scratch_encoder', 'encoder', 'dvec'] and step != 0:
+                    # continue
                 if os.path.exists(f'npy/{self.corpus}/{mode}_step{step}_dvector.npy'):
                     print(f'Getting dvector of mode: {mode}, step: {step}')
                     print(f'\tLoading from: \n\t\tnpy/{self.corpus}/{mode}_step{step}_dvector.npy')
@@ -293,4 +295,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
     main = WavsToDvector(args)
     #main.get_dvector()
-    # main.load_dvector()
