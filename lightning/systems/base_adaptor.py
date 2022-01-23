@@ -148,6 +148,7 @@ class BaseAdaptorSystem(System):
         else:
             outputs = self._test_step(batch, batch_idx)
             all_outputs.append(outputs)
+        torch.distributed.barrier()
 
         return all_outputs
 

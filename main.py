@@ -91,7 +91,7 @@ def main(args, configs):
             train_config["path"]["log_path"], "meta", args.exp_key
         )
         result_dir = os.path.join(
-            train_config['path']['result_path'], args.exp_key
+            train_config['path']['result_path'], args.exp_key, algorithm_config["name"]
         )
 
     # Get dataset

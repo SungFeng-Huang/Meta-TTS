@@ -1,5 +1,5 @@
-name: meta_emb_va_d table
-type: meta  # meta/baseline/imaml, get_system
+name: base_emb_vad-train_all
+type: baseline  # meta/baseline/imaml, get_system
 
 _phn_emb_config:
   embedding: &embedding
@@ -8,7 +8,7 @@ _phn_emb_config:
 
 adapt:
   type: spk # spk/lang
-  #class: MAML # MAML/iMAML, not used
+  #class: iMAML # MAML/iMAML, not used
   speaker_emb: table # shared/table/encoder
   phoneme_emb: *embedding  # *embedding/*codebook
   modules:
