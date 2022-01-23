@@ -1,0 +1,38 @@
+name: base_emb_va_d-avg_train_spk_emb
+type: baseline  # meta/baseline/imaml, get_system
+
+_phn_emb_config:
+  embedding: &embedding
+    type: embedding
+    refresh: False
+
+adapt:
+  type: spk # spk/lang
+  #class: iMAML # MAML/iMAML, not used
+  speaker_emb: table # shared/table/encoder
+  phoneme_emb: *embedding  # *embedding/*codebook
+  modules:
+    - speaker_emb
+    - variance_adaptor
+    - decoder
+    - mel_linear
+    - postnet
+
+  task: &task
+    ways: 1
+    shots: 5
+    queries: 5
+    lr: 0.001
+
+  train:
+    << : *task
+    steps: 5
+    meta_batch_size: 8
+
+  test:
+    << : *task
+    queries: 1
+    steps: 100 # max adaptation steps for testing
+    saving_steps: [5, 10, 20, 50, 100, 200, 400, 600, 800, 1000]
+    avg_train_spk_emb: True
+    1-shot: False
