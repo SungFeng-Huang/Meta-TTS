@@ -1,5 +1,5 @@
-name: meta
-type: meta # meta/baseline/imaml
+name: dual
+type: dual # meta/baseline/imaml
 
 _phn_emb_config:
   embedding: &embedding

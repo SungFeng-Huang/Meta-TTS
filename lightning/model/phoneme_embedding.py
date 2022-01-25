@@ -10,7 +10,7 @@ import pytorch_lightning as pl
 
 import transformer.Constants as Constants
 from transformer import Encoder, Decoder, PostNet
-from transformer.Modules import ScaledDotProductAttention
+from transformer.Modules import ScaledDotProductAttention, MultiheadAttention
 from text.symbols import symbols
 from text.define import LANG_ID2SYMBOLS
 
@@ -166,6 +166,8 @@ class BaseEmbeddings(pl.LightningModule):
                     self.embeddings["soft"] = SoftAttCodebook(model_config, algorithm_config)
                 elif self.codebook_config["attention"]["type"] == "soft2":
                     self.embeddings["soft2"] = SoftAttCodebook2(model_config, algorithm_config)
+                elif self.codebook_config["attention"]["type"] == "soft-m":
+                    self.embeddings["soft-m"] = SoftMultiAttCodebook(model_config, algorithm_config)
             elif self.codebook_config["type"] == "embedding":
                 for lang_id, v in LANG_ID2SYMBOLS.items():
                     if len(v) > 0:
@@ -186,7 +188,8 @@ class PhonemeEmbedding(pl.LightningModule):
         self.register_func("table-sep", self.get_table_sep)
         self.register_func("hard", partial(self.get_from_codebook, "hard"))
         self.register_func("soft", partial(self.get_from_codebook, "soft"))
-        self.register_func("soft2", partial(self.get_from_codebook, "soft2"))
+        # self.register_func("soft2", partial(self.get_from_codebook, "soft2"))
+        self.register_func("soft-m", partial(self.get_from_codebook, "soft-m"))
         self.register_func("hard-s", partial(self.get_from_codebook, "hard"))
         print("PhonemeEmbedding", self.hub)
 
@@ -246,7 +249,7 @@ class HardAttCodebook(pl.LightningModule):
         ], self.codebook_size)
         self.att_banks = nn.Parameter(centroids)
 
-        self.attention = ScaledDotProductAttention(temperature=0.03)
+        self.attention = ScaledDotProductAttention(temperature=0.1)
         self.soft = False
 
     def get_new_embedding(self, ref, *args, **kwargs):
@@ -293,18 +296,18 @@ class HardAttCodebook(pl.LightningModule):
             v = self.emb_banks.unsqueeze(0)
 
             weighted_embedding, attn = self.attention(q, k, v)
-            with torch.no_grad():
-                weighted_embedding[Constants.PAD].fill_(0)
+            weighted_embedding = weighted_embedding.squeeze(0)
+            weighted_embedding[Constants.PAD].fill_(0)
             # print(weighted_embedding.shape)
             # print(normed_ref.shape)
             # print(attn.squeeze().shape)
             # print(torch.max(attn.squeeze(), dim=1))
             # print(torch.sum(ref))
             # print(self.att_banks)
-            return weighted_embedding.squeeze(0)
+            return weighted_embedding
 
 
-class SoftAttCodebook(pl.LightningModule):
+class SoftAttCodebook2(pl.LightningModule):
     def __init__(self, model_config, algorithm_config):
         super().__init__()
         # Attention layer
@@ -360,7 +363,7 @@ class SoftAttCodebook(pl.LightningModule):
         return weighted_embedding.squeeze(0)
 
 
-class SoftAttCodebook2(pl.LightningModule):
+class SoftAttCodebook(pl.LightningModule):
     def __init__(self, model_config, algorithm_config):
         super().__init__()
         # Attention layer
@@ -383,14 +386,8 @@ class SoftAttCodebook2(pl.LightningModule):
             # "preprocessed_data/GlobalPhone/de/train_phoneme-features.npy",
         ], self.codebook_size)
         self.att_banks = nn.Parameter(centroids)
-        # self.att_banks.requires_grad = False
 
-        # Since we use cosine similarity, do not need sqrt(d_k) factor as in paper.
-        # self.attention = ScaledDotProductAttention(
-        #     temperature=np.power(self.d_word_vec, 0.5)
-        # )
-
-        self.attention = ScaledDotProductAttention(temperature=0.1)
+        self.attention = MultiheadAttention(temperature=0.1)
 
     def get_new_embedding(self, ref, *args, **kwargs):
         """ Soft attention weight. Better not share_att_banks.
@@ -411,17 +408,85 @@ class SoftAttCodebook2(pl.LightningModule):
         bank_norms = self.att_banks.norm(dim=1, keepdim=True)
         normed_banks = self.att_banks / bank_norms
 
-        q = normed_ref.unsqueeze(0)  # 1 x vocab_size x drepr
-        k = normed_banks.unsqueeze(0)  # 1 x codebook_size x drepr
-        v = self.emb_banks.unsqueeze(0)
+        q = normed_ref.unsqueeze(0).unsqueeze(0)  # 1 x 1 x vocab_size x drepr
+        k = normed_banks.unsqueeze(0).unsqueeze(0)  # 1 x 1 x codebook_size x drepr
+        v = self.emb_banks.unsqueeze(0).unsqueeze(0)
         weighted_embedding, attn = self.attention(q, k, v)
-        with torch.no_grad():
-            weighted_embedding[Constants.PAD].fill_(0)
+        weighted_embedding = weighted_embedding.squeeze(0).squeeze(0)
+        weighted_embedding[Constants.PAD].fill_(0)
         # print(attn.squeeze().shape)
         # print(torch.max(attn.squeeze(), dim=1))
         # print(torch.sum(ref))
         # print(self.att_banks)
-        return weighted_embedding.squeeze(0)
+        
+        if kwargs.get("return_asr", False):
+            asr_weighted_embedding, asr_attn = self.attention(q, k, k)
+            asr_weighted_embedding = asr_weighted_embedding.squeeze(0).squeeze(0)
+            asr_weighted_embedding[Constants.PAD].fill_(0)
+            return weighted_embedding, asr_weighted_embedding
+
+        return weighted_embedding
+
+
+class SoftMultiAttCodebook(pl.LightningModule):
+    def __init__(self, model_config, algorithm_config):
+        super().__init__()
+        # Multihead Attention layer (4 heads)
+        #   key: att_banks
+        #   value: emb_banks
+        #   query: refs
+        self.codebook_config = algorithm_config["adapt"]["phoneme_emb"]
+        self.codebook_size = self.codebook_config["size"]
+        self.d_word_vec = model_config["transformer"]["encoder_hidden"]
+        self.num_heads = 4
+        assert self.d_word_vec % self.num_heads == 0
+
+        self.emb_banks = nn.Parameter(torch.randn(self.codebook_size, self.d_word_vec))
+
+        self.d_feat = self.codebook_config["representation_dim"]
+        self.q_linear = nn.Linear(self.d_feat, self.d_word_vec)
+        self.k_linear = nn.Linear(self.d_feat, self.d_word_vec)
+
+        # att(feats, att_banks) -> token_id weights -> emb_banks
+        centroids = load_hubert_centroids([
+            "preprocessed_data/LibriTTS/train-clean-100_phoneme-features.npy",
+            "preprocessed_data/AISHELL-3/train_phoneme-features.npy",
+            "preprocessed_data/GlobalPhone/fr/train_phoneme-features.npy",
+            # "preprocessed_data/GlobalPhone/de/train_phoneme-features.npy",
+        ], self.codebook_size)
+        self.att_banks = nn.Parameter(centroids)
+
+        self.attention = MultiheadAttention(temperature=0.1)
+
+    def get_new_embedding(self, ref, *args, **kwargs):
+        """ Soft attention weight. Better not share_att_banks.
+        key: self.att_banks
+        value: self.emb_banks
+        query: ref
+        """
+        try:
+            assert ref.device == self.device
+        except:
+            ref = ref.to(device=self.device)
+        ref[ref != ref] = 0
+
+        q = self.q_linear(ref).view(-1, self.num_heads, self.d_word_vec // self.num_heads)
+        q = q.transpose(0, 1).unsqueeze(0).contiguous()  # 1 x nH x vocab_size x dword // nH
+        k = self.k_linear(self.att_banks).view(-1, self.num_heads, self.d_word_vec // self.num_heads)
+        k = k.transpose(0, 1).unsqueeze(0).contiguous()  # 1 x nH x codebook_size x dword // nH
+        v = self.emb_banks.view(-1, self.num_heads, self.d_word_vec // self.num_heads)
+        v = v.transpose(0, 1).unsqueeze(0).contiguous()
+        weighted_embedding, attn = self.attention(q, k, v)
+        weighted_embedding = weighted_embedding.squeeze(0).transpose(0, 1).contiguous().view(-1, self.d_word_vec)
+        weighted_embedding[Constants.PAD].fill_(0)
+
+        if kwargs.get("return_asr", False):
+            asr_weighted_embedding, asr_attn = self.attention(q, k, k)
+            asr_weighted_embedding = asr_weighted_embedding.squeeze(0).transpose(0, 1).contiguous().view(-1, self.d_word_vec)
+            asr_weighted_embedding[Constants.PAD].fill_(0)
+            return weighted_embedding, asr_weighted_embedding
+        
+        return weighted_embedding
 
 
 def load_hubert_centroids(paths, size):

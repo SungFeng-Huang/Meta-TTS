@@ -1,11 +1,13 @@
 from .baseline import BaselineSystem
 from .meta import MetaSystem
 from .imaml import IMAMLSystem
+from .dual import DualSystem
 
 SYSTEM = {
     "meta": MetaSystem,
     "imaml": IMAMLSystem,
     "baseline": BaselineSystem,
+    "dual": DualSystem,
 }
 
 # def get_system(algorithm, preprocess_config, model_config, train_config, algorithm_config, log_dir, result_dir):
