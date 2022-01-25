@@ -3,6 +3,7 @@
 import os
 import json
 import torch
+import torch.nn as nn
 import numpy as np
 import pytorch_lightning as pl
 import learn2learn as l2l
@@ -13,6 +14,7 @@ from torch.nn import Module
 from learn2learn.algorithms.lightning import LightningMAML
 from hypergrad import update_tensor_grads
 
+from .utils import MAML
 from utils.tools import get_mask_from_lengths
 from lightning.utils import loss2dict
 from lightning.systems.base_adaptor import BaseAdaptorSystem
@@ -28,12 +30,12 @@ class IMAMLSystem(BaseAdaptorSystem):
         self.automatic_optimization = False
         self.init_codebook_type()
 
-    def on_after_batch_transfer(self, batch, dataloader_idx):
-        # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
-        # the same variable, they are not two variables with the same values.        
-        sup_batch, qry_batch, ref_phn_feats, lang_id = batch[0]
-        self.model.get_new_embedding(self.codebook_type, ref_phn_feats=ref_phn_feats, lang_id=lang_id)
-        return [(sup_batch, qry_batch)]
+    # def on_after_batch_transfer(self, batch, dataloader_idx):
+    #     # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
+    #     # the same variable, they are not two variables with the same values.        
+    #     sup_batch, qry_batch, ref_phn_feats, lang_id = batch[0]
+    #     self.model.get_new_embedding(self.codebook_type, ref_phn_feats=ref_phn_feats, lang_id=lang_id)
+    #     return [(sup_batch, qry_batch)]
     
     def init_codebook_type(self):        
         codebook_config = self.algorithm_config["adapt"]["phoneme_emb"]
@@ -45,6 +47,17 @@ class IMAMLSystem(BaseAdaptorSystem):
             raise NotImplementedError
         self.adaptation_steps = self.algorithm_config["adapt"]["train"]["steps"]
 
+    def build_learner(self, batch):
+        _, _, ref_phn_feats, lang_id = batch[0]
+        embedding = self.embedding_model.get_new_embedding(self.codebook_type, ref_phn_feats=ref_phn_feats, lang_id=lang_id)
+        
+        emb_layer = nn.Embedding.from_pretrained(embedding, freeze=False, padding_idx=0).to(self.device)
+        adapt_dict = nn.ModuleDict({
+            k: getattr(self.model, k) for k in self.algorithm_config["adapt"]["modules"]
+        })
+        adapt_dict["embedding"] = emb_layer
+        return MAML(adapt_dict, lr=self.adaptation_lr)
+    
     def bias_reg_f(self, learner):
         # l2 biased regularization
         return sum([((b - p) ** 2).sum()
@@ -56,8 +69,11 @@ class IMAMLSystem(BaseAdaptorSystem):
     @torch.backends.cudnn.flags(enabled=False)
     @torch.enable_grad()
     def adapt(self, batch, adaptation_steps=5, learner=None, task=None, train=True):
-        """ Regularized adapt for iMAML. """
+        """ Regularized adapt for iMAML. """        
         if learner is None:
+            self.learner = self.build_learner(batch)
+            sup_batch, qry_batch, _, _ = batch[0]
+            batch = [(sup_batch, qry_batch)]
             learner = self.learner.clone()
             learner.train()
 
@@ -115,7 +131,7 @@ class IMAMLSystem(BaseAdaptorSystem):
             Output: query loss.
             """
             mini_batch = qry_data
-            preds = self.forward_learner(learner, sup_data[2], *mini_batch[3:], average_spk_emb=True)
+            preds = self.forward_learner(learner, *mini_batch[2:], average_spk_emb=True)
             losses = self.loss_func(mini_batch, preds)
             return losses[0], losses, preds
             

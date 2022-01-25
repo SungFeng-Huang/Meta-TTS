@@ -168,23 +168,29 @@ class BaseAdaptorSystem(System):
     def test_step(self, batch, batch_idx):
         outputs = {}
 
+        learner = self.build_learner(batch)
+        sup_batch, qry_batch, _, _ = batch[0]
+        batch = [(sup_batch, qry_batch)]
+        
         sup_batch = batch[0][0][0]
         qry_batch = batch[0][1][0]
         outputs['_batch'] = qry_batch
 
         # Evaluating the initial model
         # predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
-        predictions = self.forward_learner(self.learner, *qry_batch[2:], average_spk_emb=True)
+        predictions = self.forward_learner(learner, *qry_batch[2:], average_spk_emb=True)
         valid_error = self.loss_func(qry_batch, predictions)
         outputs[f"step_0"] = {"recon": {"losses": valid_error, "output": predictions}}
 
         # synth_samples & save & log
         # predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
-        predictions = self.forward_learner(self.learner, *qry_batch[2:6], average_spk_emb=True)
+        predictions = self.forward_learner(learner, *qry_batch[2:6], average_spk_emb=True)
         outputs[f"step_0"].update({"synth": {"output": predictions}})
 
         # Adapt
-        learner = None
+        # learner = None
+        learner = learner.clone()
+        learner.train()
         for ft_step in range(self.adaptation_steps, self.test_adaptation_steps+1, self.adaptation_steps):
             learner = self.adapt(batch, self.adaptation_steps, learner=learner, train=False)
 

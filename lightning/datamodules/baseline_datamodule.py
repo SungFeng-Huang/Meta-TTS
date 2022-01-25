@@ -86,7 +86,7 @@ class BaselineDataModule(BaseDataModule):
             batch_size=batch_size//torch.cuda.device_count(),
             shuffle=True,
             drop_last=True,
-            num_workers=0,
+            num_workers=4,
             collate_fn=self.collate.get_collate(False),
         )
         return self.train_loader
@@ -99,7 +99,7 @@ class BaselineDataModule(BaseDataModule):
             batch_size=batch_size//torch.cuda.device_count(),
             shuffle=False,
             drop_last=False,
-            num_workers=0,
+            num_workers=4,
             collate_fn=self.collate.get_collate(False),
         )
         return self.val_loader
@@ -111,7 +111,7 @@ class BaselineDataModule(BaseDataModule):
             self.test_task_dataset,
             batch_size=1,
             shuffle=False,
-            num_workers=0,
+            num_workers=4,
             collate_fn=lambda batch: batch,
         )
         return self.test_loader

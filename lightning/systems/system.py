@@ -54,7 +54,7 @@ class System(pl.LightningModule):
         return self.model(*args, **kwargs)
 
     def common_step(self, batch, batch_idx, train=True):
-        emb_texts = F.embedding(batch[3], self.embedding_model.get_new_embedding("table"))
+        emb_texts = F.embedding(batch[3], self.embedding_model.get_new_embedding("table"), padding_idx=0)
         output = self(batch[2], emb_texts, *(batch[4:]))
         loss = self.loss_func(batch, output)
         return loss, output

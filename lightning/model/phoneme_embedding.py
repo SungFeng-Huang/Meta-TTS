@@ -158,8 +158,10 @@ class BaseEmbeddings(pl.LightningModule):
         elif algorithm_config["adapt"]["type"] == "lang":
             self.codebook_config = algorithm_config["adapt"]["phoneme_emb"]
             if self.codebook_config["type"] == "codebook":
-                if self.codebook_config["attention"]["type"] == "hard":
+                if self.codebook_config["attention"]["type"] in ["hard", "hard-s"]:
                     self.embeddings["hard"] = HardAttCodebook(model_config, algorithm_config)
+                    if self.codebook_config["attention"]["type"] == "hard-s":
+                        self.embeddings["hard"].soft = True
                 elif self.codebook_config["attention"]["type"] == "soft":
                     self.embeddings["soft"] = SoftAttCodebook(model_config, algorithm_config)
                 elif self.codebook_config["attention"]["type"] == "soft2":
@@ -185,6 +187,7 @@ class PhonemeEmbedding(pl.LightningModule):
         self.register_func("hard", partial(self.get_from_codebook, "hard"))
         self.register_func("soft", partial(self.get_from_codebook, "soft"))
         self.register_func("soft2", partial(self.get_from_codebook, "soft2"))
+        self.register_func("hard-s", partial(self.get_from_codebook, "hard"))
         print("PhonemeEmbedding", self.hub)
 
     def register_func(self, mode, func):
@@ -209,11 +212,15 @@ class TablePhonemeEmbedding(pl.LightningModule):
         super().__init__()
         self.d_word_vec = model_config["transformer"]["encoder_hidden"]
         self.codebook_size = len(LANG_ID2SYMBOLS[lang_id])
-        self.banks = nn.Parameter(torch.randn(self.codebook_size, self.d_word_vec))
+        w_init = torch.randn(self.codebook_size, self.d_word_vec)
+        w_init[Constants.PAD].fill_(0)
+        self.banks = nn.Parameter(w_init)
 
     def get_new_embedding(self, init=False):
         if init:
-            return torch.randn(self.codebook_size, self.d_word_vec).to(self.device)
+            w_init = torch.randn(self.codebook_size, self.d_word_vec)
+            w_init[Constants.PAD].fill_(0)
+            return w_init.to(self.device)
         else:
             return self.banks.clone()
 
@@ -239,6 +246,9 @@ class HardAttCodebook(pl.LightningModule):
         ], self.codebook_size)
         self.att_banks = nn.Parameter(centroids)
 
+        self.attention = ScaledDotProductAttention(temperature=0.03)
+        self.soft = False
+
     def get_new_embedding(self, ref, *args, **kwargs):
         try:
             assert ref.device == self.device
@@ -246,28 +256,52 @@ class HardAttCodebook(pl.LightningModule):
             ref = ref.to(device=self.device)
         ref[ref != ref] = 0
 
-        ref_norm = ref.norm(dim=1, keepdim=True)
-        ref_mask, _ = torch.nonzero(ref_norm, as_tuple=True)
-        normed_ref = ref[ref_mask] / ref_norm[ref_mask]
+        if not self.soft:
+            # normalize
+            ref_norm = ref.norm(dim=1, keepdim=True)
+            ref_mask, _ = torch.nonzero(ref_norm, as_tuple=True)
+            normed_ref = ref[ref_mask] / ref_norm[ref_mask]
 
-        bank_norms = self.att_banks.norm(dim=1, keepdim=True)
-        normed_banks = self.att_banks / bank_norms
+            bank_norms = self.att_banks.norm(dim=1, keepdim=True)
+            normed_banks = self.att_banks / bank_norms
 
-        similarity = normed_ref @ normed_banks.T
+            similarity = normed_ref @ normed_banks.T
 
-        with torch.no_grad():
-            weighting_matrix = torch.zeros(
-                ref.shape[0], self.att_banks.shape[0],
-                device=self.device
-            )
-            # NOTE: Can't directly assign = 1 since need to ensure tensors on the same device, use ones_like() instead. 
-            weighting_matrix[ref_mask, similarity.argmax(1)] = torch.ones_like(ref_mask).float()
-            # padding_idx
-            weighting_matrix[Constants.PAD].fill_(0)
-        weighted_embedding = weighting_matrix @ self.emb_banks
-        # print(torch.sum(ref))
-        # print(torch.sum(self.att_banks, axis=1))
-        return weighted_embedding
+            with torch.no_grad():
+                weighting_matrix = torch.zeros(
+                    ref.shape[0], self.att_banks.shape[0],
+                    device=self.device
+                )
+                # NOTE: Can't directly assign = 1 since need to ensure tensors on the same device, use ones_like() instead. 
+                weighting_matrix[ref_mask, similarity.argmax(1)] = torch.ones_like(ref_mask).float()
+                # padding_idx
+                weighting_matrix[Constants.PAD].fill_(0)
+            weighted_embedding = weighting_matrix @ self.emb_banks
+            # print(torch.sum(ref))
+            # print(torch.sum(self.att_banks, axis=1))
+            return weighted_embedding
+        else:
+            # normalize
+            ref_norms = ref.norm(dim=1, keepdim=True) + 1e-6
+            normed_ref = ref / ref_norms
+
+            bank_norms = self.att_banks.norm(dim=1, keepdim=True)
+            normed_banks = self.att_banks / bank_norms
+
+            q = normed_ref.unsqueeze(0)  # 1 x vocab_size x drepr
+            k = normed_banks.unsqueeze(0)  # 1 x codebook_size x drepr
+            v = self.emb_banks.unsqueeze(0)
+
+            weighted_embedding, attn = self.attention(q, k, v)
+            with torch.no_grad():
+                weighted_embedding[Constants.PAD].fill_(0)
+            # print(weighted_embedding.shape)
+            # print(normed_ref.shape)
+            # print(attn.squeeze().shape)
+            # print(torch.max(attn.squeeze(), dim=1))
+            # print(torch.sum(ref))
+            # print(self.att_banks)
+            return weighted_embedding.squeeze(0)
 
 
 class SoftAttCodebook(pl.LightningModule):

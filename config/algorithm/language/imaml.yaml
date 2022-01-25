@@ -1,27 +1,25 @@
-name: dev meta_emb_va_d table
-type: meta # meta/baseline/imaml
-#meta_type: spk
-#
+name: imaml
+type: imaml # meta/baseline/imaml
+
 _phn_emb_config:
   embedding: &embedding
     type: embedding
     refresh: False
   codebook: &codebook
     type: codebook
-    size: 30
+    size: 100
     representation_dim: 1024
     attention:
       type: hard
       share: False
 
-pretrain: 20000
 adapt:
   type: lang # spk/lang
-  class: MAML # MAML/iMAML
-  speaker_emb: table # shared/table/encoder
+  class: iMAML # MAML/iMAML
+  speaker_emb: dvec # shared/table/encoder
   phoneme_emb: *codebook  # *embedding/*codebook
   imaml:
-    K: 5  # CG steps  # TODO: need tuning
+    K: 20  # CG steps  # TODO: need tuning
     reg_param: 1  # TODO: need tuning
     batch_size: 5
     stochastic: True
@@ -39,7 +37,7 @@ adapt:
 
   train:
     << : *task
-    steps: 5
+    steps: 50
     meta_batch_size: 1
 
   test:

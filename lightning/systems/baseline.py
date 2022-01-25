@@ -3,10 +3,12 @@
 import os
 import json
 import torch
+import torch.nn as nn
 import numpy as np
 import pytorch_lightning as pl
 import learn2learn as l2l
 
+from .utils import MAML
 from utils.tools import get_mask_from_lengths
 from lightning.systems.base_adaptor import BaseAdaptorSystem
 from lightning.utils import loss2dict
@@ -19,6 +21,16 @@ class BaselineSystem(BaseAdaptorSystem):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def build_learner(self, *args, **kwargs):
+        embedding = self.embedding_model.get_new_embedding("table")
+        
+        emb_layer = nn.Embedding.from_pretrained(embedding, freeze=False, padding_idx=0).to(self.device)
+        adapt_dict = nn.ModuleDict({
+            k: getattr(self.model, k) for k in self.algorithm_config["adapt"]["modules"]
+        })
+        adapt_dict["embedding"] = emb_layer
+        return MAML(adapt_dict, lr=self.adaptation_lr)
+    
     def on_after_batch_transfer(self, batch, dataloader_idx):
         return batch
     

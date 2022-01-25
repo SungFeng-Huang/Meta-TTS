@@ -188,8 +188,6 @@ class Saver(Callback):
             if "recon" in outputs[f"step_{ft_step}"]:
                 valid_error = outputs[f"step_{ft_step}"]["recon"]["losses"]
                 loss_dicts.append({"Step": ft_step, **loss2dict(valid_error)})
-            print("recon check")
-            print(loss2dict(valid_error))
 
             if "synth" in outputs[f"step_{ft_step}"]:
                 predictions = outputs[f"step_{ft_step}"]["synth"]["output"]
@@ -197,9 +195,6 @@ class Saver(Callback):
                     _batch, predictions, vocoder, self.preprocess_config,
                     figure_dir, audio_dir, f"step_{global_step}-FTstep_{ft_step}"
                 )
-            print("synth check")
-            # if ft_step == 0:
-            #     break
 
         df = pd.DataFrame(loss_dicts, columns=["Step"] + CSV_COLUMNS).set_index("Step")
         df.to_csv(csv_file_path, mode='a', header=True, index=True)
