@@ -50,9 +50,6 @@ class MetaSystem(BaseAdaptorSystem):
     @torch.backends.cudnn.flags(enabled=False)
     @torch.enable_grad()
     def adapt(self, batch, adaptation_steps=5, learner=None, task=None, train=True):
-        # TODO: overwrite for supporting SGD and iMAML
-        # return super().adapt(batch, adaptation_steps, learner, train)
-
         # MAML
         # TODO: SGD data reuse for more steps
         if learner is None:
@@ -63,15 +60,24 @@ class MetaSystem(BaseAdaptorSystem):
             learner = learner.clone()
             learner.train()
 
-        if task is None:
-            sup_data = batch[0][0][0]
-            qry_data = batch[0][1][0]
-            task = Task(sup_data=sup_data,
-                        qry_data=qry_data,
-                        batch_size=self.algorithm_config["adapt"]["imaml"]["batch_size"]) # The batch size is borrowed from the imaml config.
+        # if task is None:
+        #     sup_data = batch[0][0][0]
+        #     qry_data = batch[0][1][0]
+        #     task = Task(sup_data=sup_data,
+        #                 qry_data=qry_data,
+        #                 batch_size=self.algorithm_config["adapt"]["imaml"]["batch_size"]) # The batch size is borrowed from the imaml config.
+
+        # print("Mel linear grad")
+        # for param in learner.module.mel_linear.parameters():
+        #     print(param.requires_grad)
+        # print("")
+        # print(learner.module.embedding._parameters["weight"].shape)
+        # print(learner.module.embedding._parameters["weight"].requires_grad)
+        # print(torch.sum(learner.module.embedding._parameters["weight"]))
 
         first_order = not train
         for step in range(adaptation_steps):
+            print("step start")
             mini_batch = task.next_batch()
 
             preds = self.forward_learner(learner, *mini_batch[2:])
@@ -80,6 +86,7 @@ class MetaSystem(BaseAdaptorSystem):
                 train_error[0], first_order=first_order,
                 allow_unused=False, allow_nograd=True
             )
+            print("step end")
         return learner
 
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):

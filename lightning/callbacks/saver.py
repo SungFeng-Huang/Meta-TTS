@@ -195,6 +195,12 @@ class Saver(Callback):
                     _batch, predictions, vocoder, self.preprocess_config,
                     figure_dir, audio_dir, f"step_{global_step}-FTstep_{ft_step}"
                 )
+            if "synth_fit" in outputs[f"step_{ft_step}"]:
+                predictions = outputs[f"step_{ft_step}"]["synth_fit"]["output"]
+                synth_samples(
+                    _batch, predictions, vocoder, self.preprocess_config,
+                    figure_dir, audio_dir, f"step_{global_step}-FTstep_{ft_step}-fit"
+                )
 
         df = pd.DataFrame(loss_dicts, columns=["Step"] + CSV_COLUMNS).set_index("Step")
         df.to_csv(csv_file_path, mode='a', header=True, index=True)

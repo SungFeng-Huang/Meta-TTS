@@ -42,5 +42,7 @@ adapt:
 
   test:
     << : *task
-    queries: 1
-    steps: 100 # max adaptation steps for testing
+    batch_size: 4
+    shots: 64
+    queries: 4
+    steps: 500 # max adaptation steps for testing

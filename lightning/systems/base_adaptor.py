@@ -13,6 +13,7 @@ from resemblyzer import VoiceEncoder
 
 from .utils import MAML
 from utils.tools import get_mask_from_lengths
+from lightning.systems.utils import Task
 from lightning.systems.system import System
 from lightning.utils import loss2dict
 
@@ -128,25 +129,29 @@ class BaseAdaptorSystem(System):
     # Second order gradients for RNNs
     @torch.backends.cudnn.flags(enabled=False)
     @torch.enable_grad()
-    def adapt(self, batch, adaptation_steps=5, learner=None, train=True):
+    def adapt(self, batch, adaptation_steps=5, learner=None, task=None, train=True):
         if learner is None:
             learner = self.learner.clone()
             learner.train()
 
         # Adapt the classifier
-        sup_batch = batch[0][0][0]
         first_order = not train
         for step in range(adaptation_steps):
-            preds = self.forward_learner(learner, *sup_batch[2:])
-            train_error = self.loss_func(sup_batch, preds)
+            mini_batch = task.next_batch()
+            preds = self.forward_learner(learner, *mini_batch[2:])
+            train_error = self.loss_func(mini_batch, preds)
             learner.adapt_(train_error[0], first_order=first_order, allow_unused=False, allow_nograd=True)
         return learner
 
     def meta_learn(self, batch, batch_idx, train=True):
-        learner = self.adapt(batch, min(self.adaptation_steps, self.test_adaptation_steps), train=train)
-
         sup_batch = batch[0][0][0]
         qry_batch = batch[0][1][0]
+        task = Task(sup_data=sup_batch,
+                    qry_data=qry_batch,
+                    batch_size=self.algorithm_config["adapt"]["imaml"]["batch_size"]) # The batch size is borrowed from the imaml config.
+
+
+        learner = self.adapt(batch, min(self.adaptation_steps, self.test_adaptation_steps), task=task, train=train)
 
         # Evaluating the adapted model
         # Use speaker embedding of support set
@@ -165,6 +170,7 @@ class BaseAdaptorSystem(System):
     def on_test_batch_start(self, batch, batch_idx, dataloader_idx):
         self._on_meta_batch_start(batch)
 
+    @torch.enable_grad()
     def test_step(self, batch, batch_idx):
         outputs = {}
 
@@ -191,8 +197,14 @@ class BaseAdaptorSystem(System):
         # learner = None
         learner = learner.clone()
         learner.train()
+        task = Task(sup_data=sup_batch,
+                    qry_data=qry_batch,
+                    batch_size=self.algorithm_config["adapt"]["test"]["batch_size"])
+        fit_batch = task.next_batch()
+
         for ft_step in range(self.adaptation_steps, self.test_adaptation_steps+1, self.adaptation_steps):
-            learner = self.adapt(batch, self.adaptation_steps, learner=learner, train=False)
+            print(f"Step: {ft_step}...")
+            learner = self.adapt(batch, self.adaptation_steps, learner=learner, task=task, train=False)
 
             # Evaluating the adapted model
             # predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
@@ -200,9 +212,12 @@ class BaseAdaptorSystem(System):
             valid_error = self.loss_func(qry_batch, predictions)
             outputs[f"step_{ft_step}"] = {"recon": {"losses": valid_error, "output": predictions}}
 
-            if ft_step in [5, 10, 20, 50, 100]:
+            # if ft_step in [5, 10, 20, 50, 100]:
+            if ft_step in [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]:
                 # synth_samples & save & log
                 # predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+                fit_preds = self.forward_learner(learner, *fit_batch[2:6], average_spk_emb=True)
+                outputs[f"step_{ft_step}"].update({"synth_fit": {"output": fit_preds}})
                 predictions = self.forward_learner(learner, *qry_batch[2:6], average_spk_emb=True)
                 outputs[f"step_{ft_step}"].update({"synth": {"output": predictions}})
         del learner

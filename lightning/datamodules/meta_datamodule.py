@@ -57,7 +57,7 @@ class MetaDataModule(BaseDataModule):
         # self.test_dataset = ConcatDataset(self.test_datasets)
         self.test_task_dataset = few_shot_task_dataset(
             self.test_dataset, self.test_ways, self.test_shots, self.test_queries,
-            n_tasks_per_label=16, type=self.meta_type
+            n_tasks_per_label=2, type=self.meta_type
         )
         with seed_all(43):
             self.test_SQids2Tid = prefetch_tasks(self.test_task_dataset, 'test', self.result_dir)
@@ -91,7 +91,6 @@ class MetaDataModule(BaseDataModule):
             self.test_task_dataset,
             batch_size=1,
             shuffle=False,
-            num_workers=4,
             collate_fn=lambda batch: batch,
         )
         return self.test_loader
