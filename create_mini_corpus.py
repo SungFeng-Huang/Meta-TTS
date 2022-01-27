@@ -14,11 +14,11 @@ TASKS = {
     #     "test": "preprocessed_data/LibriTTS/test-clean.txt",
     # },
     # "miniVCTK": "preprocessed_data/VCTK/all.txt",
-    "miniAISHELL-3": {
-        "train": "preprocessed_data/AISHELL-3/train.txt",
-        "val": "preprocessed_data/AISHELL-3/val.txt",
-        "test": "preprocessed_data/AISHELL-3/val.txt",
-    },
+    # "miniAISHELL-3": {
+    #     "train": "preprocessed_data/AISHELL-3/train.txt",
+    #     "val": "preprocessed_data/AISHELL-3/val.txt",
+    #     "test": "preprocessed_data/AISHELL-3/val.txt",
+    # },
 
     # "miniCV-french": "preprocessed_data/CommonVoice/fr/train.txt",
     # "miniCV-german": "preprocessed_data/CommonVoice/de/train.txt",
@@ -51,6 +51,11 @@ TASKS = {
     #     "val": "preprocessed_data/GlobalPhone/cz/train.txt",
     #     "test": "preprocessed_data/GlobalPhone/cz/train.txt",
     # },
+    "miniJVS": {
+        "train": "preprocessed_data/JVS/train.txt",
+        "val": "preprocessed_data/JVS/train.txt",
+        "test": "preprocessed_data/JVS/train.txt",
+    },
 }
 
 for corpus_name, sets in TASKS.items():

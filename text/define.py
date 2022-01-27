@@ -21,6 +21,6 @@ LANG_ID2SYMBOLS = {
     3: common_symbols + get_phoneme_set("../MFA/lexicon/German/phoneset.txt"),
     4: [],
     5: common_symbols + get_phoneme_set("../MFA/lexicon/Spanish/phoneset.txt"),
-    6: [],
+    6: common_symbols + get_phoneme_set("../MFA/lexicon/JVS-phoneset.txt"),
     7: common_symbols + get_phoneme_set("../MFA/lexicon/Czech/phoneset.txt"),
 }

@@ -1,8 +1,8 @@
 from tqdm import tqdm
 
 
-info_path = 'preprocessed_data/CSS10/french/train.txt'
-gt_phn_path = '../MFA/lexicon/French/phoneset.txt'
+info_path = 'preprocessed_data/JVS/train.txt'
+gt_phn_path = '../MFA/lexicon/JVS-phoneset.txt'
 
 phoneset = set()
 with open(info_path, 'r', encoding='utf-8') as f:
@@ -21,6 +21,3 @@ with open(gt_phn_path, 'r', encoding='utf-8') as f:
         std_phoneset.add(line.strip())
 print(std_phoneset - phoneset)
 print(phoneset - std_phoneset)
-with open('myphoneset.txt', 'w', encoding='utf-8') as f:
-    for ph in phoneset:
-        f.write(ph + '\n')

@@ -10,7 +10,7 @@ _phn_emb_config:
     size: 100
     representation_dim: 1024
     attention:
-      type: soft-m
+      type: hard
       share: False
 
 adapt:
@@ -37,7 +37,7 @@ adapt:
 
   train:
     << : *task
-    steps: 0
+    steps: 5
     meta_batch_size: 1
 
   test:
