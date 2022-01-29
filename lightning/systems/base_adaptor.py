@@ -6,6 +6,7 @@ import torch
 import numpy as np
 import pytorch_lightning as pl
 import learn2learn as l2l
+from tqdm import tqdm
 
 from tqdm import tqdm
 from resemblyzer import VoiceEncoder
@@ -134,7 +135,6 @@ class BaseAdaptorSystem(System):
             learner = self.learner.clone()
             learner.train()
 
-        learner.train()
         # Adapt the classifier
         first_order = not train
         for step in range(adaptation_steps):
@@ -171,6 +171,7 @@ class BaseAdaptorSystem(System):
     def on_test_batch_start(self, batch, batch_idx, dataloader_idx):
         self._on_meta_batch_start(batch)
 
+    @torch.enable_grad()
     def test_step(self, batch, batch_idx):
         outputs = {}
 
@@ -184,14 +185,19 @@ class BaseAdaptorSystem(System):
 
         # Evaluating the initial model
         # predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
-        predictions = self.forward_learner(learner, *qry_batch[2:], average_spk_emb=True)
-        valid_error = self.loss_func(qry_batch, predictions)
-        outputs[f"step_0"] = {"recon": {"losses": valid_error, "output": predictions}}
-
-        # synth_samples & save & log
-        # predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
-        predictions = self.forward_learner(learner, *qry_batch[2:6], average_spk_emb=True)
-        outputs[f"step_0"].update({"synth": {"output": predictions}})
+        learner.eval()
+        self.model.eval()
+        with torch.no_grad():
+            predictions = self.forward_learner(learner, *qry_batch[2:], average_spk_emb=True)
+            valid_error = self.loss_func(qry_batch, predictions)
+            outputs[f"step_0"] = {"recon": {"losses": valid_error, "output": predictions}}
+      
+            # synth_samples & save & log
+            # predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+            predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+            outputs[f"step_0"].update({"synth": {"output": predictions}})
+        learner.train()
+        self.model.train()
 
         # Adapt
         # learner = None
@@ -203,28 +209,38 @@ class BaseAdaptorSystem(System):
         # evaluate training data
         fit_batch = task.next_batch()
         outputs['_batch_fit'] = fit_batch
-        predictions = self.forward_learner(learner, *fit_batch[2:], average_spk_emb=True)
-        outputs[f"step_0"].update({"recon-fit": {"output": predictions}})
 
-        for ft_step in range(self.adaptation_steps, self.test_adaptation_steps+1, self.adaptation_steps):
-            print(f"Step: {ft_step}...")
+        learner.eval()
+        self.model.eval()
+        with torch.no_grad():
+            predictions = self.forward_learner(learner, *fit_batch[2:], average_spk_emb=True)
+            outputs[f"step_0"].update({"recon-fit": {"output": predictions}})
+        learner.train()
+        self.model.train()
+
+        ft_steps = [100, 250, 500, 750, 1000]
+        self.test_adaptation_steps = max(ft_steps)
+        for ft_step in tqdm(range(self.adaptation_steps, self.test_adaptation_steps+1, self.adaptation_steps)):
             learner = self.adapt(batch, self.adaptation_steps, learner=learner, task=task, train=False)
+            
+            learner.eval()
+            self.model.eval()
+            with torch.no_grad():
+                # Evaluating the adapted model
+                # predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
+                predictions = self.forward_learner(learner, *qry_batch[2:], average_spk_emb=True)
+                valid_error = self.loss_func(qry_batch, predictions)
+                outputs[f"step_{ft_step}"] = {"recon": {"losses": valid_error}}
 
-            # Evaluating the adapted model
-            # predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
-            predictions = self.forward_learner(learner, *qry_batch[2:], average_spk_emb=True)
-            valid_error = self.loss_func(qry_batch, predictions)
-            outputs[f"step_{ft_step}"] = {"recon": {"losses": valid_error}}
-
-            # if ft_step in [5, 10, 20, 50, 100]:
-            if ft_step in [10, 50, 500]:
-            # if ft_step in [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]:
-                # synth_samples & save & log
-                # predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
-                fit_preds = self.forward_learner(learner, *fit_batch[2:6], average_spk_emb=True)
-                outputs[f"step_{ft_step}"].update({"synth-fit": {"output": fit_preds}})
-                predictions = self.forward_learner(learner, *qry_batch[2:6], average_spk_emb=True)
-                outputs[f"step_{ft_step}"].update({"synth": {"output": predictions}})
+                if ft_step in ft_steps:
+                    # synth_samples & save & log
+                    # predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+                    fit_preds = self.forward_learner(learner, *fit_batch[2:6], average_spk_emb=True)
+                    outputs[f"step_{ft_step}"].update({"synth-fit": {"output": fit_preds}})
+                    predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+                    outputs[f"step_{ft_step}"].update({"synth": {"output": predictions}})
+            learner.train()
+            self.model.train()
         del learner
 
         return outputs
