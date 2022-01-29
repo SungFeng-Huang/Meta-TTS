@@ -168,14 +168,18 @@ class Saver(Callback):
 
         figure_dir = os.path.join(self.result_dir, "figure", "Testing", f"step_{global_step}", task_id)
         audio_dir = os.path.join(self.result_dir, "audio", "Testing", f"step_{global_step}", task_id)
+        figure_fit_dir = os.path.join(self.result_dir, "figure-fit", "Testing", f"step_{global_step}", task_id)
+        audio_fit_dir = os.path.join(self.result_dir, "audio-fit", "Testing", f"step_{global_step}", task_id)
         log_dir = os.path.join(self.result_dir, "csv", "Testing", f"step_{global_step}")
         os.makedirs(figure_dir, exist_ok=True)
         os.makedirs(audio_dir, exist_ok=True)
+        os.makedirs(figure_fit_dir, exist_ok=True)
+        os.makedirs(audio_fit_dir, exist_ok=True)
         os.makedirs(log_dir, exist_ok=True)
         csv_file_path = os.path.join(log_dir, f"{task_id}.csv")
 
         loss_dicts = []
-        _batch = outputs["_batch"]
+        _batch, _batch_fit = outputs["_batch"], outputs["_batch_fit"]
 
         for ft_step in range(0, test_adaptation_steps+1, adaptation_steps):
             if ft_step == 0:
@@ -183,6 +187,11 @@ class Saver(Callback):
                 recon_samples(
                     _batch, predictions, vocoder, self.preprocess_config,
                     figure_dir, audio_dir
+                )
+                predictions = outputs[f"step_{ft_step}"]["recon-fit"]["output"]
+                recon_samples(
+                    _batch_fit, predictions, vocoder, self.preprocess_config,
+                    figure_fit_dir, audio_fit_dir
                 )
 
             if "recon" in outputs[f"step_{ft_step}"]:
@@ -195,11 +204,11 @@ class Saver(Callback):
                     _batch, predictions, vocoder, self.preprocess_config,
                     figure_dir, audio_dir, f"step_{global_step}-FTstep_{ft_step}"
                 )
-            if "synth_fit" in outputs[f"step_{ft_step}"]:
-                predictions = outputs[f"step_{ft_step}"]["synth_fit"]["output"]
+            if "synth-fit" in outputs[f"step_{ft_step}"]:
+                predictions = outputs[f"step_{ft_step}"]["synth-fit"]["output"]
                 synth_samples(
-                    _batch, predictions, vocoder, self.preprocess_config,
-                    figure_dir, audio_dir, f"step_{global_step}-FTstep_{ft_step}-fit"
+                    _batch_fit, predictions, vocoder, self.preprocess_config,
+                    figure_fit_dir, audio_fit_dir, f"step_{global_step}-FTstep_{ft_step}"
                 )
 
         df = pd.DataFrame(loss_dicts, columns=["Step"] + CSV_COLUMNS).set_index("Step")

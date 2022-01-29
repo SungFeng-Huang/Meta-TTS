@@ -77,7 +77,6 @@ class MetaSystem(BaseAdaptorSystem):
 
         first_order = not train
         for step in range(adaptation_steps):
-            print("step start")
             mini_batch = task.next_batch()
 
             preds = self.forward_learner(learner, *mini_batch[2:])
@@ -86,7 +85,6 @@ class MetaSystem(BaseAdaptorSystem):
                 train_error[0], first_order=first_order,
                 allow_unused=False, allow_nograd=True
             )
-            print("step end")
         return learner
 
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
