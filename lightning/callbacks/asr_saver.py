@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 from pytorch_lightning.callbacks import Callback
 from pytorch_lightning.loggers.base import merge_dicts
+from pytorch_lightning.utilities import rank_zero_only
 
 from lightning.utils import asr_loss2dict as loss2dict
 from text.define import LANG_ID2SYMBOLS
