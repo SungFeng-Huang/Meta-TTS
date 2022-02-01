@@ -71,8 +71,17 @@ class Saver(Callback):
 
     def on_validation_epoch_start(self, trainer, pl_module):
         self.val_loss_dicts = []
+    
+    def set_baseline_saver(self):
+        self.fn = self._on_validation_batch_end_baseline
+    
+    def set_meta_saver(self):
+        self.fn = self._on_validation_batch_end_meta
 
     def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+        self.fn(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
+
+    def _on_validation_batch_end_meta(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         loss = outputs['losses']
         output = outputs['output']
         _batch = outputs['_batch']  # batch or qry_batch
@@ -103,7 +112,7 @@ class Saver(Callback):
             self.log_audio(logger, "Validation", step, basename, "synthesized", wav_prediction, metadata)
             plt.close(fig)
 
-    def on_validation_batch_end2(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def _on_validation_batch_end_baseline(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         loss = outputs['losses']
         output = outputs['output']
         _batch = outputs['_batch']  # batch or qry_batch

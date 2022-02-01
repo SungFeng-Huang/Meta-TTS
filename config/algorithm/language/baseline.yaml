@@ -26,8 +26,6 @@ adapt:
 
   modules:
     - encoder
-    - variance_adaptor
-    - decoder
     - mel_linear
     - postnet
 

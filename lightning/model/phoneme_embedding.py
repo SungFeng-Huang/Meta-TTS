@@ -2,6 +2,7 @@ import os
 import numpy as np
 import json
 from functools import partial
+from typing import TypedDict, List
 
 import torch
 from torch import nn
@@ -209,6 +210,12 @@ class PhonemeEmbedding(pl.LightningModule):
     def get_new_embedding(self, mode, *args, **kwargs):
         return self.get_new_embedding_funcs[mode](*args, **kwargs)
 
+    def get_matching(self, mode, *args, **kwargs):
+        assert mode in ["hard", "hard-s", "soft", "soft-m", "hard-m"]
+        if mode == "hard-s":
+            mode = "hard"
+        return self.hub.embeddings[mode].get_matching(kwargs["ref_phn_feats"], kwargs['lang_id'])
+
 
 class TablePhonemeEmbedding(pl.LightningModule):
     def __init__(self, model_config, algorithm_config, lang_id):
@@ -302,9 +309,69 @@ class HardAttCodebook(pl.LightningModule):
             # print(normed_ref.shape)
             # print(attn.squeeze().shape)
             # print(torch.max(attn.squeeze(), dim=1))
-            # print(torch.sum(ref))
             # print(self.att_banks)
             return weighted_embedding
+
+    def get_matching(self, ref, lang_id, *args, **kwargs):
+        try:
+            assert ref.device == self.device
+        except:
+            ref = ref.to(device=self.device)
+        ref[ref != ref] = 0
+
+        if not self.soft:
+            # normalize
+            ref_norm = ref.norm(dim=1, keepdim=True)
+            ref_mask, _ = torch.nonzero(ref_norm, as_tuple=True)
+            normed_ref = ref[ref_mask] / ref_norm[ref_mask]
+
+            bank_norms = self.att_banks.norm(dim=1, keepdim=True)
+            normed_banks = self.att_banks / bank_norms
+
+            similarity = normed_ref @ normed_banks.T
+
+            with torch.no_grad():
+                weighting_matrix = torch.zeros(
+                    ref.shape[0], self.att_banks.shape[0],
+                    device=self.device
+                )
+                # NOTE: Can't directly assign = 1 since need to ensure tensors on the same device, use ones_like() instead. 
+                weighting_matrix[ref_mask, similarity.argmax(1)] = torch.ones_like(ref_mask).float()
+                # padding_idx
+                weighting_matrix[Constants.PAD].fill_(0)
+
+            mask = torch.nonzero(ref.sum(dim=1), as_tuple=True)
+            info = MatchingGraphInfo({
+                "title": "Attention",
+                "y_labels": [LANG_ID2SYMBOLS[lang_id][int(m)] for m in mask[0]],
+                "x_labels": [str(i) for i in range(1, self.codebook_size + 1)],
+                "attn": weighting_matrix[mask].detach().cpu().numpy(),
+                "quantized": True,
+            })
+            return [info]
+        else:
+            # normalize
+            ref_norms = ref.norm(dim=1, keepdim=True) + 1e-6
+            normed_ref = ref / ref_norms
+
+            bank_norms = self.att_banks.norm(dim=1, keepdim=True)
+            normed_banks = self.att_banks / bank_norms
+
+            q = normed_ref.unsqueeze(0)  # 1 x vocab_size x drepr
+            k = normed_banks.unsqueeze(0)  # 1 x codebook_size x drepr
+            v = self.emb_banks.unsqueeze(0)
+            _, attn = self.attention(q, k, v)   
+
+            mask = torch.nonzero(ref.sum(dim=1), as_tuple=True)
+            attn = attn.squeeze(0)
+            info = MatchingGraphInfo({
+                "title": "Attention",
+                "y_labels": [LANG_ID2SYMBOLS[lang_id][int(m)] for m in mask[0]],
+                "x_labels": [str(i) for i in range(1, self.codebook_size + 1)],
+                "attn": attn[mask].detach().cpu().numpy(),
+                "quantized": False,
+            })
+            return [info]
 
 
 class SoftAttCodebook2(pl.LightningModule):
@@ -417,15 +484,45 @@ class SoftAttCodebook(pl.LightningModule):
         # print(attn.squeeze().shape)
         # print(torch.max(attn.squeeze(), dim=1))
         # print(torch.sum(ref))
-        # print(self.att_banks)
+        # print(torch.sum(self.att_banks))
         
-        if kwargs.get("return_asr", False):
-            asr_weighted_embedding, asr_attn = self.attention(q, k, k)
-            asr_weighted_embedding = asr_weighted_embedding.squeeze(0).squeeze(0)
-            asr_weighted_embedding[Constants.PAD].fill_(0)
-            return weighted_embedding, asr_weighted_embedding
+        # if kwargs.get("return_asr", False):
+        #     asr_weighted_embedding, asr_attn = self.attention(q, k, k)
+        #     asr_weighted_embedding = asr_weighted_embedding.squeeze(0).squeeze(0)
+        #     asr_weighted_embedding[Constants.PAD].fill_(0)
+        #     return weighted_embedding, asr_weighted_embedding
 
         return weighted_embedding
+
+    def get_matching(self, ref, lang_id, *args, **kwargs):
+        try:
+            assert ref.device == self.device
+        except:
+            ref = ref.to(device=self.device)
+        ref[ref != ref] = 0
+
+        # normalize
+        ref_norms = ref.norm(dim=1, keepdim=True) + 1e-6
+        normed_ref = ref / ref_norms
+
+        bank_norms = self.att_banks.norm(dim=1, keepdim=True)
+        normed_banks = self.att_banks / bank_norms
+
+        q = normed_ref.unsqueeze(0).unsqueeze(0)  # 1 x 1 x vocab_size x drepr
+        k = normed_banks.unsqueeze(0).unsqueeze(0)  # 1 x 1 x codebook_size x drepr
+        v = self.emb_banks.unsqueeze(0).unsqueeze(0)
+        _, attn = self.attention(q, k, v)
+
+        mask = torch.nonzero(ref.sum(dim=1), as_tuple=True)
+        attn = attn.squeeze(0).squeeze(0)
+        info = MatchingGraphInfo({
+            "title": "Attention",
+            "y_labels": [LANG_ID2SYMBOLS[lang_id][int(m)] for m in mask[0]],
+            "x_labels": [str(i) for i in range(1, self.codebook_size + 1)],
+            "attn": attn[mask].detach().cpu().numpy(),
+            "quantized": False,
+        })
+        return [info]
 
 
 class SoftMultiAttCodebook(pl.LightningModule):
@@ -480,13 +577,38 @@ class SoftMultiAttCodebook(pl.LightningModule):
         weighted_embedding = weighted_embedding.squeeze(0).transpose(0, 1).contiguous().view(-1, self.d_word_vec)
         weighted_embedding[Constants.PAD].fill_(0)
 
-        if kwargs.get("return_asr", False):
-            asr_weighted_embedding, asr_attn = self.attention(q, k, k)
-            asr_weighted_embedding = asr_weighted_embedding.squeeze(0).transpose(0, 1).contiguous().view(-1, self.d_word_vec)
-            asr_weighted_embedding[Constants.PAD].fill_(0)
-            return weighted_embedding, asr_weighted_embedding
+        # print(torch.sum(self.att_banks), torch.sum(self.emb_banks))
         
         return weighted_embedding
+
+    def get_matching(self, ref, lang_id, *args, **kwargs):
+        try:
+            assert ref.device == self.device
+        except:
+            ref = ref.to(device=self.device)
+        ref[ref != ref] = 0
+
+        q = self.q_linear(ref).view(-1, self.num_heads, self.d_word_vec // self.num_heads)
+        q = q.transpose(0, 1).unsqueeze(0).contiguous()  # 1 x nH x vocab_size x dword // nH
+        k = self.k_linear(self.att_banks).view(-1, self.num_heads, self.d_word_vec // self.num_heads)
+        k = k.transpose(0, 1).unsqueeze(0).contiguous()  # 1 x nH x codebook_size x dword // nH
+        v = self.emb_banks.view(-1, self.num_heads, self.d_word_vec // self.num_heads)
+        v = v.transpose(0, 1).unsqueeze(0).contiguous()
+        _, attn = self.attention(q, k, v)
+
+        mask = torch.nonzero(ref.sum(dim=1), as_tuple=True)
+        attn = attn.squeeze(0)
+        infos = []
+        for i in range(self.num_heads):
+            info = MatchingGraphInfo({
+                "title": f"Head-{i}",
+                "y_labels": [LANG_ID2SYMBOLS[lang_id][int(m)] for m in mask[0]],
+                "x_labels": [str(i) for i in range(1, self.codebook_size + 1)],
+                "attn": attn[i][mask].detach().cpu().numpy(),
+                "quantized": False,
+            })
+            infos.append(info)
+        return infos
 
 
 def load_hubert_centroids(paths, size):
@@ -496,3 +618,11 @@ def load_hubert_centroids(paths, size):
     kmeans = KMeans(n_clusters=size, random_state=0).fit(repr)
     centers = kmeans.cluster_centers_
     return torch.from_numpy(centers)
+
+
+class MatchingGraphInfo(TypedDict):
+    title: str
+    x_labels: List[str]
+    y_labels: List[str]
+    attn: np.array
+    quantized: bool

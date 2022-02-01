@@ -34,7 +34,7 @@ def few_shot_task_dataset(_dataset, ways, shots, queries, n_tasks_per_label=-1, 
             if len(indices) >= shots+queries:
                 # 1-way-K-shots-Q-queries transforms per label
                 transforms = [
-                    FusedNWaysKShots(meta_dataset, n=ways, k=shots+queries, replacement=True, filter_labels=[label]),
+                    FusedNWaysKShots(meta_dataset, n=ways, k=shots+queries, replacement=False, filter_labels=[label]),
                     LoadData(meta_dataset),
                 ]
                 # 1-way-K-shots-Q-queries task dataset

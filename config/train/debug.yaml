@@ -1,0 +1,4 @@
+path:
+  ckpt_path: "./output/ckpt/debug"
+  log_path: "./output/log/debug"
+  result_path: "./output/result/debug"

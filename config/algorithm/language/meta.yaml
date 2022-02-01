@@ -7,10 +7,10 @@ _phn_emb_config:
     refresh: False
   codebook: &codebook
     type: codebook
-    size: 100
+    size: 10
     representation_dim: 1024
     attention:
-      type: hard
+      type: soft-m
       share: False
 
 adapt:
@@ -37,7 +37,7 @@ adapt:
 
   train:
     << : *task
-    steps: 5
+    steps: 0
     meta_batch_size: 1
 
   test:
