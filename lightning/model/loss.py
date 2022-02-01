@@ -90,3 +90,16 @@ class FastSpeech2Loss(nn.Module):
             energy_loss,
             duration_loss,
         )
+
+
+class PhonemeClassificationLoss(nn.Module):
+    """ Cross Entropy Loss """
+
+    def __init__(self):
+        super().__init__()
+        self.loss = nn.CrossEntropyLoss(ignore_index=0)
+
+    def forward(self, batch, preds):
+        preds = preds.transpose(1, 2)  # B, N, L
+        target = batch[3]  # B, L
+        return self.loss(preds, target)

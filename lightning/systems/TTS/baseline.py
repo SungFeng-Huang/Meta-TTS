@@ -50,7 +50,8 @@ class BaselineSystem(AdaptorSystem):
     def build_learner(self, *args, **kwargs):
         embedding = self.embedding_model.get_new_embedding("table")
         
-        emb_layer = nn.Embedding.from_pretrained(embedding, freeze=False, padding_idx=0).to(self.device)
+        emb_layer = nn.Embedding(*embedding.shape, padding_idx=0).to(self.device)
+        emb_layer._parameters['weight'] = embedding
         adapt_dict = nn.ModuleDict({
             k: getattr(self.model, k) for k in self.algorithm_config["adapt"]["modules"]
         })

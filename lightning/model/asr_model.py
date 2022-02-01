@@ -118,19 +118,21 @@ class ASRRefHead(pl.LightningModule):
         self.codebook = Codebook(self.codebook_size, self.d_feat, 
                                 self.d_word_vec, num_heads=4, temperature=0.1)
         self.banks = SoftBank(self.codebook_size, self.d_word_vec, num_heads=4)
-        self.tables = nn.ModuleDict({
-            f"table-{lang_id}": nn.Parameters(torch.randn(len(v), self.d_word_vec))
+        self.tables = nn.ParameterDict({
+            f"table-{lang_id}": nn.Parameter(torch.randn(len(v), self.d_word_vec))
         for lang_id, v in LANG_ID2SYMBOLS.items() if len(v) > 0})
         self.softmax = nn.Softmax(dim=2)
 
     def forward(self, batch, ref, lang_id, mask=None):
+        ref = ref.unsqueeze(0)  # 1, N, d_feat
         attn = self.codebook(ref, mask)
-        embedding = self.banks(attn, pad=True)
-        emb_texts = F.embedding(batch[3], embedding, padding_idx=Constants.PAD)
-        diff = (emb_texts.unsqueeze(2) - self.tables[lang_id].unsqueeze(0).unsqueeze(0)) ** 2  # B, L, N, d_word_vec
+        embedding = self.banks(attn, pad=True)  # 1, N, d_word_vec
+        emb_texts = F.embedding(batch[3], embedding.squeeze(0), padding_idx=Constants.PAD)
+        diff = (emb_texts.unsqueeze(2) - self.tables[f"table-{lang_id}"].unsqueeze(0).unsqueeze(0)) ** 2  # B, L, N, d_word_vec
         mse = diff.mean(dim=3)  # B, L, N
+        # print("Score shape: ", mse.shape)
         return -mse
-        
+
 
 class ASRHead(pl.LightningModule):
     """

@@ -1,0 +1,4 @@
+path:
+  ckpt_path: "./output/ckpt/asr"
+  log_path: "./output/log/asr"
+  result_path: "./output/result/asr"

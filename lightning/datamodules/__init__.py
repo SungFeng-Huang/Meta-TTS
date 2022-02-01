@@ -7,6 +7,8 @@ DATA_MODULE = {
     "base": BaseDataModule,
     "meta": MetaDataModule,
     "imaml": MetaDataModule,
+    "asr-codebook": MetaDataModule,
+    "asr-baseline": BaselineDataModule,
     "baseline": BaselineDataModule,
 }
 

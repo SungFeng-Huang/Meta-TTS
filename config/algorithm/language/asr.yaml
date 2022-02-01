@@ -1,0 +1,49 @@
+name: asr-codebook
+type: asr-codebook
+
+# Ignore the settings below
+_phn_emb_config:
+  embedding: &embedding
+    type: embedding
+    refresh: False
+  codebook: &codebook
+    type: codebook
+    size: 100
+    representation_dim: 1024
+    attention:
+      type: hard
+      share: False
+
+adapt:
+  type: lang # spk/lang
+  class: MAML # MAML/iMAML
+  speaker_emb: dvec # shared/table/encoder/dvec
+  phoneme_emb: *codebook  # *embedding/*codebook
+  imaml:
+    K: 5  # CG steps  # TODO: need tuning
+    reg_param: 1  # TODO: need tuning
+    batch_size: 5
+    stochastic: True
+
+  modules:
+    - encoder
+    - mel_linear
+    - postnet
+
+  task: &task
+    ways: 1
+    shots: 20
+    queries: 5
+    lr: 0.001
+
+  train:
+    << : *task
+    steps: 5
+    meta_batch_size: 1
+
+  test:
+    << : *task
+    batch_size: 4
+    shots: 64
+    queries: 4
+    steps: 500 # max adaptation steps for testing

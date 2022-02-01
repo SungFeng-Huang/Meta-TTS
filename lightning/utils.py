@@ -89,3 +89,5 @@ def dict2str(tblog_dict):
     return message
 
 
+def asr_loss2dict(loss):
+    return {"Total Loss": loss.item()}

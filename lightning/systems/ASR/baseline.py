@@ -9,7 +9,7 @@ from ..utils import MAML
 from utils.tools import get_mask_from_lengths
 from ..system2 import System
 from lightning.systems.utils import Task
-from lightning.utils import loss2dict, LightningMelGAN
+from lightning.utils import asr_loss2dict as loss2dict
 from lightning.model.phoneme_embedding import PhonemeEmbedding
 from lightning.model import FastSpeech2Loss, FastSpeech2
 from lightning.callbacks import Saver
