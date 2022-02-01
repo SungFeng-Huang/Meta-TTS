@@ -45,7 +45,7 @@ class CodebookSystem(System):
         # Log metrics to CometLogger
         loss_dict = {f"Train/{k}": v for k, v in loss2dict(train_loss).items()}
         self.log_dict(loss_dict, sync_dist=True)
-        return {'loss': train_loss, 'losses': train_loss, 'output': predictions, '_batch': qry_batch}
+        return {'loss': train_loss, 'losses': train_loss, 'output': predictions, '_batch': qry_batch, 'lang_id': batch[0][3]}
 
     def validation_step(self, batch, batch_idx):
         val_loss, predictions = self.common_step(batch, batch_idx)
@@ -54,4 +54,4 @@ class CodebookSystem(System):
         # Log metrics to CometLogger
         loss_dict = {f"Val/{k}": v for k, v in loss2dict(val_loss).items()}
         self.log_dict(loss_dict, sync_dist=True)
-        return {'losses': val_loss, 'output': predictions, '_batch': qry_batch}
+        return {'losses': val_loss, 'output': predictions, '_batch': qry_batch, 'lang_id': batch[0][3]}
