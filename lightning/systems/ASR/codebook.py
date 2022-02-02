@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import torch
+import matplotlib.pyplot as plt
 from lightning.model.asr_model import ASRRefHead
 
 from ..system2 import System
@@ -52,6 +53,7 @@ class CodebookSystem(System):
         return {'loss': train_loss, 'losses': train_loss, 'output': predictions, '_batch': qry_batch, 'lang_id': batch[0][3]}
 
     def validation_step(self, batch, batch_idx):
+        self.log_matching(batch, batch_idx)
         val_loss, predictions = self.common_step(batch, batch_idx)
         qry_batch = batch[0][1][0]
 
@@ -65,6 +67,20 @@ class CodebookSystem(System):
         matching = self.model.get_matching(ref_phn_feats=ref_phn_feats, lang_id=lang_id)
         self.codebook_analyzer.visualize_matching(batch_idx, matching)
         return None
+
+    def log_matching(self, batch, batch_idx, stage="val"):
+        step = self.global_step + 1
+        _, _, ref_phn_feats, lang_id = batch[0]
+        matchings = self.model.get_matching(ref_phn_feats=ref_phn_feats, lang_id=lang_id)
+        for matching in matchings:
+            fig = self.codebook_analyzer.plot_matching(matching, quantized=False)
+            figure_name = f"{stage}/step_{step}_{batch_idx:03d}_{matching['title']}"
+            self.logger[0].experiment.log_figure(
+                figure_name=figure_name,
+                figure=fig,
+                step=step,
+            )
+            plt.close(fig)
 
     @torch.enable_grad()
     def test_step(self, batch, batch_idx):

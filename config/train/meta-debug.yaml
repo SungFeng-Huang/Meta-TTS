@@ -12,5 +12,5 @@ step:
   total_step: 200
   log_step: 10
   synth_step: 100
-  val_step: 100
+  val_step: 50
   save_step: 100
