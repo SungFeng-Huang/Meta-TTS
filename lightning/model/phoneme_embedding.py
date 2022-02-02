@@ -2,13 +2,13 @@ import os
 import numpy as np
 import json
 from functools import partial
-from typing import TypedDict, List
 
 import torch
 from torch import nn
 
 import pytorch_lightning as pl
 
+from ..utils import MatchingGraphInfo
 import transformer.Constants as Constants
 from transformer import Encoder, Decoder, PostNet
 from transformer.Modules import ScaledDotProductAttention, MultiheadAttention
@@ -618,11 +618,3 @@ def load_hubert_centroids(paths, size):
     kmeans = KMeans(n_clusters=size, random_state=0).fit(repr)
     centers = kmeans.cluster_centers_
     return torch.from_numpy(centers)
-
-
-class MatchingGraphInfo(TypedDict):
-    title: str
-    x_labels: List[str]
-    y_labels: List[str]
-    attn: np.array
-    quantized: bool

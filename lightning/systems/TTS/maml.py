@@ -4,8 +4,7 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-from .utils import CodebookAnalyzer
-from ..utils import MAML
+from ..utils import MAML, CodebookAnalyzer
 from utils.tools import get_mask_from_lengths
 from ..adaptor import AdaptorSystem
 from lightning.systems.utils import Task
@@ -238,7 +237,7 @@ class MetaSystem(AdaptorSystem):
         self.model.train()
 
         # Determine fine tune checkpoints.
-        ft_steps = [50, 100]
+        ft_steps = [5]
         
         # Adapt
         learner = learner.clone()

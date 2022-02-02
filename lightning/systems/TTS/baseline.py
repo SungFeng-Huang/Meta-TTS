@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tqdm import tqdm
 
-from ..utils import MAML
+from ..utils import MAML, CodebookAnalyzer
 from utils.tools import get_mask_from_lengths
 from ..adaptor import AdaptorSystem
 from lightning.systems.utils import Task

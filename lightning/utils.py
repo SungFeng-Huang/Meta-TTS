@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import random
 from contextlib import contextmanager
+from typing import TypedDict, List
 
 
 class LightningMelGAN(pl.LightningModule):
@@ -91,3 +92,11 @@ def dict2str(tblog_dict):
 
 def asr_loss2dict(loss):
     return {"Total Loss": loss.item()}
+
+
+class MatchingGraphInfo(TypedDict):
+    title: str
+    x_labels: List[str]
+    y_labels: List[str]
+    attn: np.array
+    quantized: bool

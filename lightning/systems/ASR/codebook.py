@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+import torch
 from lightning.model.asr_model import ASRRefHead
 
 from ..system2 import System
+from ..utils import CodebookAnalyzer
 from lightning.model.loss import PhonemeClassificationLoss
 from lightning.callbacks.asr_saver import Saver
 from lightning.utils import asr_loss2dict as loss2dict
@@ -17,7 +19,9 @@ class CodebookSystem(System):
         super().__init__(*args, **kwargs)
 
         # tests
+        self.codebook_analyzer = CodebookAnalyzer(self.result_dir)
         self.test_list = {
+            "codebook visualization": self.visualize_matching,
         }
 
     def build_model(self):
@@ -55,3 +59,17 @@ class CodebookSystem(System):
         loss_dict = {f"Val/{k}": v for k, v in loss2dict(val_loss).items()}
         self.log_dict(loss_dict, sync_dist=True)
         return {'losses': val_loss, 'output': predictions, '_batch': qry_batch, 'lang_id': batch[0][3]}
+
+    def visualize_matching(self, batch, batch_idx):
+        _, _, ref_phn_feats, lang_id = batch[0]
+        matching = self.model.get_matching(ref_phn_feats=ref_phn_feats, lang_id=lang_id)
+        self.codebook_analyzer.visualize_matching(batch_idx, matching)
+        return None
+
+    @torch.enable_grad()
+    def test_step(self, batch, batch_idx):
+        outputs = {}
+        for test_name, test_fn in getattr(self, "test_list", {}).items(): 
+            outputs[test_name] = test_fn(batch, batch_idx)
+
+        return outputs

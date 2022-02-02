@@ -329,7 +329,6 @@ class LanguageTaskCollate:
 
         table = {i: [] for i in range(n_symbols)}
         for text, representation in zip(texts, representations):
-            # NOTE: len(text) == len(representation) ?
             for t, r in zip(text, representation):
                 table[int(t)].append(r)
 

@@ -37,7 +37,7 @@ adapt:
 
   train:
     << : *task
-    steps: 0
+    steps: 5
     meta_batch_size: 1
 
   test:
