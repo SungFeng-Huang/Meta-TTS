@@ -141,6 +141,12 @@ class ASRRefHead(pl.LightningModule):
         # print("Score shape: ", mse.shape)
         return -mse
 
+    def get_new_embedding(self, ref, lang_id, *args, **kwargs):
+        ref = ref.unsqueeze(0)  # 1, N, d_feat
+        attn = self.codebook(ref)
+        embedding = self.banks(attn, pad=True)  # 1, N, d_word_vec
+        return embedding.squeeze(0)
+
     def get_matching(self, ref_phn_feats, lang_id):
         mask = torch.nonzero(ref_phn_feats.sum(dim=1), as_tuple=True)
         ref = ref_phn_feats.unsqueeze(0)  # 1, N, d_feat

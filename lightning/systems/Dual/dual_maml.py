@@ -52,9 +52,9 @@ class DualMetaSystem(AdaptorSystem):
         _, _, ref_phn_feats, lang_id = batch[0]
         if freeze_banks:
             with torch.no_grad():  # freeze asr pretrained part
-                embedding = self.model.get_new_embedding(ref_phn_feats=ref_phn_feats, lang_id=lang_id)
+                embedding = self.model.get_new_embedding(ref_phn_feats, lang_id)
         else:
-            embedding = self.model.get_new_embedding(ref_phn_feats=ref_phn_feats, lang_id=lang_id)
+            embedding = self.model.get_new_embedding(ref_phn_feats, lang_id)
         
         # Directly assign weight here, do not turn embedding into nn.Parameters since gradients can not flow back!
         # e.g. do not use emb_layer.weights = ... or nn.Embedding.from_pretrained

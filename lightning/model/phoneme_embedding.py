@@ -542,25 +542,14 @@ class SoftMultiAttCodebook(pl.LightningModule):
 
         self.d_feat = self.codebook_config["representation_dim"]
         self.q_linear = nn.Linear(self.d_feat, self.d_word_vec)
-        self.k_linear = nn.Linear(self.d_feat, self.d_word_vec)
+        # self.k_linear = nn.Linear(self.d_feat, self.d_word_vec)
 
         # att(feats, att_banks) -> token_id weights -> emb_banks
-        centroids = load_hubert_centroids([
-            "preprocessed_data/LibriTTS/train-clean-100_phoneme-features.npy",
-            "preprocessed_data/AISHELL-3/train_phoneme-features.npy",
-            "preprocessed_data/GlobalPhone/fr/train_phoneme-features.npy",
-            # "preprocessed_data/GlobalPhone/de/train_phoneme-features.npy",
-        ], self.codebook_size)
-        self.att_banks = nn.Parameter(centroids)
+        self.att_banks = nn.Parameter(torch.randn(self.codebook_size, self.d_word_vec))
 
-        self.attention = MultiheadAttention(temperature=0.1)
+        self.attention = MultiheadAttention(temperature=(self.d_word_vec // self.num_heads) ** 0.5)
 
     def get_new_embedding(self, ref, *args, **kwargs):
-        """ Soft attention weight. Better not share_att_banks.
-        key: self.att_banks
-        value: self.emb_banks
-        query: ref
-        """
         try:
             assert ref.device == self.device
         except:
@@ -569,7 +558,7 @@ class SoftMultiAttCodebook(pl.LightningModule):
 
         q = self.q_linear(ref).view(-1, self.num_heads, self.d_word_vec // self.num_heads)
         q = q.transpose(0, 1).unsqueeze(0).contiguous()  # 1 x nH x vocab_size x dword // nH
-        k = self.k_linear(self.att_banks).view(-1, self.num_heads, self.d_word_vec // self.num_heads)
+        k = self.att_banks.view(-1, self.num_heads, self.d_word_vec // self.num_heads)
         k = k.transpose(0, 1).unsqueeze(0).contiguous()  # 1 x nH x codebook_size x dword // nH
         v = self.emb_banks.view(-1, self.num_heads, self.d_word_vec // self.num_heads)
         v = v.transpose(0, 1).unsqueeze(0).contiguous()
@@ -590,7 +579,7 @@ class SoftMultiAttCodebook(pl.LightningModule):
 
         q = self.q_linear(ref).view(-1, self.num_heads, self.d_word_vec // self.num_heads)
         q = q.transpose(0, 1).unsqueeze(0).contiguous()  # 1 x nH x vocab_size x dword // nH
-        k = self.k_linear(self.att_banks).view(-1, self.num_heads, self.d_word_vec // self.num_heads)
+        k = self.att_banks.view(-1, self.num_heads, self.d_word_vec // self.num_heads)
         k = k.transpose(0, 1).unsqueeze(0).contiguous()  # 1 x nH x codebook_size x dword // nH
         v = self.emb_banks.view(-1, self.num_heads, self.d_word_vec // self.num_heads)
         v = v.transpose(0, 1).unsqueeze(0).contiguous()
