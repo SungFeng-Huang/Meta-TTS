@@ -3,7 +3,7 @@
 from . import TTS
 from . import ASR
 from .imaml import IMAMLSystem
-from .dual import DualSystem
+from . import Dual
 
 SYSTEM = {
     "meta": TTS.maml.MetaSystem,
@@ -11,6 +11,7 @@ SYSTEM = {
     "baseline": TTS.baseline.BaselineSystem,
     "asr-codebook": ASR.codebook.CodebookSystem,
     "asr-baseline": ASR.baseline.BaselineSystem,
+    "dual-meta": Dual.dual_maml.DualMetaSystem,
 }
 
 # def get_system(algorithm, preprocess_config, model_config, train_config, algorithm_config, log_dir, result_dir):

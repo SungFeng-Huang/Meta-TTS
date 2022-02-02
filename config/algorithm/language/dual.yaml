@@ -1,5 +1,5 @@
-name: dual
-type: dual # meta/baseline/imaml
+name: dual-meta
+type: dual-meta
 
 _phn_emb_config:
   embedding: &embedding
@@ -31,8 +31,8 @@ adapt:
 
   task: &task
     ways: 1
-    shots: 20
-    queries: 5
+    shots: 64
+    queries: 16
     lr: 0.001
 
   train:
@@ -42,5 +42,7 @@ adapt:
 
   test:
     << : *task
-    queries: 1
+    batch_size: 4
+    shots: 64
+    queries: 4
     steps: 100 # max adaptation steps for testing
