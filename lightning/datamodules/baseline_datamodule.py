@@ -72,7 +72,7 @@ class BaselineDataModule(BaseDataModule):
         # self.test_dataset = ConcatDataset(self.test_datasets)
         self.test_task_dataset = few_shot_task_dataset(
             self.test_dataset, self.test_ways, self.test_shots, self.test_queries,
-            n_tasks_per_label=2, type=self.meta_type, re_id=True
+            n_tasks_per_label=1, type=self.meta_type, re_id=True
         )
         with seed_all(43):
             self.test_SQids2Tid = prefetch_tasks(self.test_task_dataset, 'test', self.result_dir)

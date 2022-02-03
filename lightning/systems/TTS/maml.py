@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+import os
 import torch
 import torch.nn as nn
 from tqdm import tqdm
+import copy
 
 from ..utils import MAML, CodebookAnalyzer
 from utils.tools import get_mask_from_lengths
@@ -12,7 +14,19 @@ from lightning.utils import loss2dict, LightningMelGAN
 from lightning.model.phoneme_embedding import PhonemeEmbedding
 from lightning.model import FastSpeech2Loss, FastSpeech2
 from lightning.callbacks import Saver
+from lightning.callbacks.utils import synth_samples
 
+
+STATSDICT = {
+    0: "./preprocessed_data/miniLibriTTS",
+    1: "./preprocessed_data/miniAISHELL-3",
+    2: "./preprocessed_data/miniGlobalPhone-fr",
+    3: "./preprocessed_data/miniGlobalPhone-de",
+    4: "",
+    5: "./preprocessed_data/miniGlobalPhone-es",
+    6: "./preprocessed_data/miniJVS",
+    7: "./preprocessed_data/miniGlobalPhone-cz",
+}
 
 class MetaSystem(AdaptorSystem):
     """ 
@@ -203,10 +217,21 @@ class MetaSystem(AdaptorSystem):
         learner = self.build_learner(batch)
         outputs = {}
 
-        sup_batch, qry_batch, _, _ = batch[0]
+        sup_batch, qry_batch, _, lang_id = batch[0]
         batch = [(sup_batch, qry_batch)]
         sup_batch = batch[0][0][0]
         qry_batch = batch[0][1][0]
+
+        # Create result directory
+        task_id = f"test_{batch_idx:03d}"
+        figure_dir = os.path.join(self.result_dir, "figure", "Testing", f"step_{self.test_global_step}", task_id)
+        audio_dir = os.path.join(self.result_dir, "audio", "Testing", f"step_{self.test_global_step}", task_id)
+        figure_fit_dir = os.path.join(self.result_dir, "figure-fit", "Testing", f"step_{self.test_global_step}", task_id)
+        audio_fit_dir = os.path.join(self.result_dir, "audio-fit", "Testing", f"step_{self.test_global_step}", task_id)
+        os.makedirs(figure_dir, exist_ok=True)
+        os.makedirs(audio_dir, exist_ok=True)
+        os.makedirs(figure_fit_dir, exist_ok=True)
+        os.makedirs(audio_fit_dir, exist_ok=True)
 
         # Build mini-batches
         task = Task(sup_data=sup_batch,
@@ -237,7 +262,7 @@ class MetaSystem(AdaptorSystem):
         self.model.train()
 
         # Determine fine tune checkpoints.
-        ft_steps = [5]
+        ft_steps = [50, 100] + list(range(250, 10001, 250))
         
         # Adapt
         learner = learner.clone()
@@ -257,9 +282,20 @@ class MetaSystem(AdaptorSystem):
                 # synth_samples & save & log
                 if ft_step in ft_steps:
                     fit_preds = self.forward_learner(learner, *fit_batch[2:], average_spk_emb=True)
-                    outputs[f"step_{ft_step}"].update({"synth-fit": {"output": fit_preds}})
+                    # outputs[f"step_{ft_step}"].update({"synth-fit": {"output": fit_preds}})
                     predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
-                    outputs[f"step_{ft_step}"].update({"synth": {"output": predictions}})
+                    # outputs[f"step_{ft_step}"].update({"synth": {"output": predictions}})
+
+                    config = copy.deepcopy(self.preprocess_config)
+                    config["path"]["preprocessed_path"] = STATSDICT[lang_id]
+                    synth_samples(
+                        fit_batch, fit_preds, self.vocoder, config,
+                        figure_fit_dir, audio_fit_dir, f"step_{self.test_global_step}-FTstep_{ft_step}"
+                    )
+                    synth_samples(
+                        qry_batch, predictions, self.vocoder, config,
+                        figure_dir, audio_dir, f"step_{self.test_global_step}-FTstep_{ft_step}"
+                    )
             learner.train()
             self.model.train()
         del learner
