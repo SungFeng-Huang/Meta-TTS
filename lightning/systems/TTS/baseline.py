@@ -240,7 +240,7 @@ class BaselineSystem(AdaptorSystem):
 
             predictions = self.forward_learner(learner, *qry_batch[2:], average_spk_emb=True)
             valid_error = self.loss_func(qry_batch, predictions)
-            outputs["step_0"].update({"recon": {"losses": valid_error}})
+            outputs["step_0"] = {"recon": {"losses": valid_error}}
       
             # synth_samples & save & log
             # No reference from unseen speaker, use reference from support set instead.
