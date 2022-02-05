@@ -192,6 +192,9 @@ class ASRCenterHead(pl.LightningModule):
             if len(v) > 0:
                 self.phn_mask_table[k][self.re_id_increment[k]:self.re_id_increment[k]+len(v)] = 1
 
+    def get_table(self, lang_id):
+        return self.tables[f"table-{lang_id}"]
+
     def get_concat_table(self):
         return torch.cat([self.tables[f"table-{k}"]  
                     for k, v in LANG_ID2SYMBOLS.items() if len(v) > 0], dim=0)

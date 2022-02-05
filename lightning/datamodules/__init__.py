@@ -11,6 +11,7 @@ DATA_MODULE = {
     "asr-codebook": MetaDataModule,
     "asr-baseline": BaselineV2DataModule,
     "asr-center": BaselineV2DataModule,
+    "asr-center-ref": MetaDataModule,
     "dual-meta": MetaDataModule,
     "baseline": BaselineDataModule,
 }

@@ -12,6 +12,7 @@ SYSTEM = {
     "asr-codebook": ASR.codebook.CodebookSystem,
     "asr-baseline": ASR.center.CenterSystem,
     "asr-center": ASR.center.CenterSystem,
+    "asr-center-ref": ASR.center_ref.CenterRefSystem,
     "dual-meta": Dual.dual_maml.DualMetaSystem,
 }
 
