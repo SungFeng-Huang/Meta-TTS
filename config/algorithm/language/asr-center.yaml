@@ -32,8 +32,8 @@ adapt:
 
   task: &task
     ways: 1
-    shots: 64
-    queries: 16
+    shots: 12
+    queries: 4
     lr: 0.001
 
   train:
