@@ -280,7 +280,7 @@ class MetaSystem(AdaptorSystem):
         self.model.train()
 
         # Determine fine tune checkpoints.
-        ft_steps = [50, 100] + list(range(250, 10001, 250))
+        ft_steps = [50, 100] + list(range(250, 5001, 250))
         
         # Adapt
         learner = learner.clone()

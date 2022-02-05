@@ -51,6 +51,28 @@ class Codebook(pl.LightningModule):
             attn = attn.masked_fill(mask, -np.inf)
         return self.softmax(attn)
 
+    def get_matching(self, ref, lang_id):
+        try:
+            assert ref.device == self.device
+        except:
+            ref = ref.to(device=self.device)
+        ref[ref != ref] = 0
+
+        mask = torch.nonzero(ref.sum(dim=1), as_tuple=True)
+        ref = ref.unsqueeze(0)  # 1, N, d_feat
+        attn = self.forward(ref).squeeze(0)  # nH, L, size
+        infos = []
+        for i in range(self.num_heads):
+            info = MatchingGraphInfo({
+                "title": f"Head-{i}",
+                "y_labels": [LANG_ID2SYMBOLS[lang_id][int(m)] for m in mask[0]],
+                "x_labels": [str(i) for i in range(1, self.size + 1)],
+                "attn": attn[i][mask].detach().cpu().numpy(),
+                "quantized": False,
+            })
+            infos.append(info)
+        return infos
+
 
 # class HardBank(pl.LightningModule):
 #     """

@@ -1,5 +1,5 @@
-name: asr-codebook
-type: asr-codebook
+name: asr-center-ref
+type: asr-center-ref
 
 # Ignore the settings below
 _phn_emb_config:

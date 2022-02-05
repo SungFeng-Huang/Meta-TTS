@@ -19,8 +19,9 @@ class CenterRefSystem(System):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.cluster = True
+        self.reg = 3
+        super().__init__(*args, **kwargs)
 
         # tests
         self.codebook_analyzer = CodebookAnalyzer(self.result_dir)
@@ -56,14 +57,14 @@ class CenterRefSystem(System):
         _, _, ref, lang_id = batch[0]
         qry_batch = batch[0][1][0]
 
-        attn = self.codebook(ref)
+        attn = self.codebook(ref.unsqueeze(0))
         embedding = self.banks(attn, pad=True).squeeze(0)  # N, d_word_vec
         emb_texts = F.embedding(qry_batch[3], embedding, padding_idx=0)  # B, L, d_word_vec
         predictions = self.asr_head(emb_texts, lang_ids=lang_id)
 
         valid_error = self.loss_func(qry_batch, predictions)
         if self.cluster:
-            valid_error += self.loss_func2(embedding, self.asr_head.get_table(lang_id))
+            valid_error += self.reg * self.loss_func2(embedding, self.asr_head.get_table(lang_id))
         return valid_error, predictions
     
     def training_step(self, batch, batch_idx):
@@ -92,17 +93,17 @@ class CenterRefSystem(System):
         return {'losses': val_loss, 'output': predictions, '_batch': qry_batch, 'lang_id': batch[0][3]}
 
     def visualize_matching(self, batch, batch_idx):
-        self.model.eval()
+        self.eval()
         with torch.no_grad():
             _, _, ref_phn_feats, lang_id = batch[0]
-            matching = self.model.get_matching(ref_phn_feats=ref_phn_feats, lang_id=lang_id)
+            matching = self.codebook.get_matching(ref=ref_phn_feats, lang_id=lang_id)
             self.codebook_analyzer.visualize_matching(batch_idx, matching)
         return None
 
     def log_matching(self, batch, batch_idx, stage="val"):
         step = self.global_step + 1
         _, _, ref_phn_feats, lang_id = batch[0]
-        matchings = self.model.get_matching(ref_phn_feats=ref_phn_feats, lang_id=lang_id)
+        matchings = self.codebook.get_matching(ref=ref_phn_feats, lang_id=lang_id)
         for matching in matchings:
             fig = self.codebook_analyzer.plot_matching(matching, quantized=False)
             figure_name = f"{stage}/step_{step}_{batch_idx:03d}_{matching['title']}"
@@ -125,13 +126,13 @@ class CenterRefSystem(System):
         if batch_idx == 0:  # Execute only once
             self.eval()
             with torch.no_grad():
-                head = self.model.tables["table-0"]
+                head = self.asr_head.tables["table-0"]
                 print("En Head norm:")
                 print(torch.mean(head ** 2, dim=1))
-                head = self.model.tables["table-2"]
+                head = self.asr_head.tables["table-2"]
                 print("Fr Head norm:")
                 print(torch.mean(head ** 2, dim=1))
-                head = self.model.tables["table-3"]
+                head = self.asr_head.tables["table-3"]
                 print("De Head norm:")
                 print(torch.mean(head ** 2, dim=1))
 
