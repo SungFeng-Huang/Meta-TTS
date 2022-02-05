@@ -14,7 +14,7 @@ from lightning.utils import loss2dict, LightningMelGAN
 from lightning.model.phoneme_embedding import PhonemeEmbedding
 from lightning.model import FastSpeech2Loss, FastSpeech2
 from lightning.callbacks import Saver
-from lightning.callbacks.utils import synth_samples
+from lightning.callbacks.utils import synth_samples, recon_samples
 
 
 STATSDICT = {
@@ -232,6 +232,8 @@ class MetaSystem(AdaptorSystem):
         os.makedirs(audio_dir, exist_ok=True)
         os.makedirs(figure_fit_dir, exist_ok=True)
         os.makedirs(audio_fit_dir, exist_ok=True)
+        config = copy.deepcopy(self.preprocess_config)
+        config["path"]["preprocessed_path"] = STATSDICT[lang_id]
 
         # Build mini-batches
         task = Task(sup_data=sup_batch,
@@ -247,17 +249,33 @@ class MetaSystem(AdaptorSystem):
         learner.eval()
         self.model.eval()
         with torch.no_grad():
-            predictions = self.forward_learner(learner, *fit_batch[2:], average_spk_emb=True)
-            outputs[f"step_0"] = {"recon-fit": {"output": predictions}}
+            fit_preds = self.forward_learner(learner, *fit_batch[2:], average_spk_emb=True)
+            # outputs["step_0"] = {"recon-fit": {"output": fit_preds}}
 
             predictions = self.forward_learner(learner, *qry_batch[2:], average_spk_emb=True)
             valid_error = self.loss_func(qry_batch, predictions)
-            outputs["step_0"].update({"recon": {"losses": valid_error, "output": predictions}})
+            outputs["step_0"] = {"recon": {"losses": valid_error}}
       
             # synth_samples & save & log
             # No reference from unseen speaker, use reference from support set instead.
             predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
-            outputs["step_0"].update({"synth": {"output": predictions}})
+            # outputs["step_0"].update({"synth": {"output": predictions}})
+            recon_samples(
+                fit_batch, fit_preds, self.vocoder, config,
+                figure_fit_dir, audio_fit_dir
+            )
+            recon_samples(
+                qry_batch, predictions, self.vocoder, config,
+                figure_dir, audio_dir
+            )
+            synth_samples(
+                fit_batch, fit_preds, self.vocoder, config,
+                figure_fit_dir, audio_fit_dir, f"step_{self.test_global_step}-FTstep_0"
+            )
+            synth_samples(
+                qry_batch, predictions, self.vocoder, config,
+                figure_dir, audio_dir, f"step_{self.test_global_step}-FTstep_0"
+            )
         learner.train()
         self.model.train()
 
@@ -286,8 +304,6 @@ class MetaSystem(AdaptorSystem):
                     predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
                     # outputs[f"step_{ft_step}"].update({"synth": {"output": predictions}})
 
-                    config = copy.deepcopy(self.preprocess_config)
-                    config["path"]["preprocessed_path"] = STATSDICT[lang_id]
                     synth_samples(
                         fit_batch, fit_preds, self.vocoder, config,
                         figure_fit_dir, audio_fit_dir, f"step_{self.test_global_step}-FTstep_{ft_step}"

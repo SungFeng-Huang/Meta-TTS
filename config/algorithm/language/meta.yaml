@@ -10,7 +10,7 @@ _phn_emb_config:
     size: 100
     representation_dim: 1024
     attention:
-      type: soft-m
+      type: hard
       share: False
 
 adapt:
@@ -26,6 +26,8 @@ adapt:
 
   modules:
     - encoder
+    - variance_adaptor
+    - decoder
     - mel_linear
     - postnet
 
