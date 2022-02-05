@@ -123,7 +123,6 @@ class ASRRefHead(pl.LightningModule):
         self.tables = nn.ParameterDict({
             f"table-{lang_id}": nn.Parameter(torch.randn(len(v), self.d_word_vec))
         for lang_id, v in LANG_ID2SYMBOLS.items() if len(v) > 0})
-        self.softmax = nn.Softmax(dim=2)
 
     def forward(self, batch, ref, lang_id, mask=None):
         """
@@ -164,35 +163,55 @@ class ASRRefHead(pl.LightningModule):
         return infos
 
 
-class ASRHead(pl.LightningModule):
+class ASRCenterHead(pl.LightningModule):
     """
-    Simple multilingual ASR head (w/o ref), related to input quality.
+    Simple monolingual/multilingual ASR head (w/o ref), related to input quality.
     """
-    def __init__(self, model_config, algorithm_config):
+    def __init__(self, dim, multilingual=True):
         super().__init__()
-        self.codebook_config = algorithm_config["adapt"]["phoneme_emb"]
-        self.codebook_size = self.codebook_config["size"]
-        self.d_feat = self.codebook_config["representation_dim"]
-        self.d_word_vec = model_config["transformer"]["encoder_hidden"]
-
-        self.num_heads = 4
-        self.codebook = Codebook(self.codebook_size, self.d_feat, 
-                                self.d_word_vec, num_heads=self.num_heads)
-        self.banks = SoftBank(self.codebook_size, self.d_word_vec, num_heads=self.num_heads)
+        self.dim = dim
+        self.multilingual = multilingual
         self.tables = nn.ParameterDict({
-            f"table-{lang_id}": nn.Parameter(torch.randn(len(v), self.d_word_vec))
+            f"table-{lang_id}": nn.Parameter(torch.randn(len(v), self.dim))
         for lang_id, v in LANG_ID2SYMBOLS.items() if len(v) > 0})
-        self.softmax = nn.Softmax(dim=2)
 
-    def forward(self, input, lang_id, mask=None):
+        # Create mask table (example below) only once
+        # [[1 1 1 0 0 0]
+        #  [0 0 0 1 0 0]
+        #  [0 0 0 0 1 1]]
+        # calculate re-id increment
+        increment = 0
+        self.re_id_increment = {}
+        for k, v in LANG_ID2SYMBOLS.items():
+            self.re_id_increment[k] = increment
+            increment += len(v)
+        self.n_symbols = increment
+
+        self.register_buffer('phn_mask_table', torch.zeros((len(LANG_ID2SYMBOLS), self.n_symbols)))
+        for k, v in LANG_ID2SYMBOLS.items():
+            if len(v) > 0:
+                self.phn_mask_table[k][self.re_id_increment[k]:self.re_id_increment[k]+len(v)] = 1
+
+    def get_concat_table(self):
+        return torch.cat([self.tables[f"table-{k}"]  
+                    for k, v in LANG_ID2SYMBOLS.items() if len(v) > 0], dim=0)
+    
+    def forward(self, input, lang_ids):
         """
         Input:
-            input: Tensor with shape (B, L, d_feat).
-            lang_id: Language ID.
+            input: Tensor with shape (B, L, dim).
+            lang_ids: Language IDs.
         """
-        attn = self.codebook(input, mask)
-        emb_texts = self.banks(attn, pad=True)  # B, L, d_word_vec
-        diff = (emb_texts.unsqueeze(2) - self.tables[f"table-{lang_id}"].unsqueeze(0).unsqueeze(0)) ** 2  # B, L, N, d_word_vec
-        mse = diff.mean(dim=3)  # B, L, N
+        # print("Input shape: ", input.shape)
+        if not self.multilingual:  # lang_ids is int
+            diff = (input.unsqueeze(2) - self.tables[f"table-{lang_ids}"].unsqueeze(0).unsqueeze(0)) ** 2  # B, L, N, dim
+            mse = diff.mean(dim=3)  # B, L, n_symbols
+        else:  # lang_ids is a list
+            phn_mask = self.phn_mask_table[lang_ids, :].unsqueeze(1)  # B, 1, n_symbols
+            concat_table = self.get_concat_table()  # n_symbols, dim
+            diff = (input.unsqueeze(2) - concat_table.unsqueeze(0).unsqueeze(0)) ** 2  # B, L, n_symbols, dim
+            mse = diff.mean(dim=3)  # B, L, n_symbols
+            mse = mse.masked_fill(~(phn_mask.bool()), torch.tensor(float('inf')).to(device=self.device))  # apply mask
+
         # print("Score shape: ", mse.shape)
         return -mse

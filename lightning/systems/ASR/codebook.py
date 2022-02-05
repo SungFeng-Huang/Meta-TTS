@@ -23,6 +23,8 @@ class CodebookSystem(System):
         self.codebook_analyzer = CodebookAnalyzer(self.result_dir)
         self.test_list = {
             "codebook visualization": self.visualize_matching,
+            "print_head_norm": self.print_head_norm,
+            "print_dist_norm": self.print_dist_norm,
         }
 
     def build_model(self):
@@ -59,13 +61,21 @@ class CodebookSystem(System):
 
         # Log metrics to CometLogger
         loss_dict = {f"Val/{k}": v for k, v in loss2dict(val_loss).items()}
+        
+        # calculate acc
+        mask = (qry_batch[3] != 0)
+        acc = ((qry_batch[3] == predictions.argmax(dim=2)) * mask).sum() / mask.sum()
+        loss_dict.update({"Val/Acc": acc.item()})
+
         self.log_dict(loss_dict, sync_dist=True)
         return {'losses': val_loss, 'output': predictions, '_batch': qry_batch, 'lang_id': batch[0][3]}
 
     def visualize_matching(self, batch, batch_idx):
-        _, _, ref_phn_feats, lang_id = batch[0]
-        matching = self.model.get_matching(ref_phn_feats=ref_phn_feats, lang_id=lang_id)
-        self.codebook_analyzer.visualize_matching(batch_idx, matching)
+        self.model.eval()
+        with torch.no_grad():
+            _, _, ref_phn_feats, lang_id = batch[0]
+            matching = self.model.get_matching(ref_phn_feats=ref_phn_feats, lang_id=lang_id)
+            self.codebook_analyzer.visualize_matching(batch_idx, matching)
         return None
 
     def log_matching(self, batch, batch_idx, stage="val"):
@@ -89,3 +99,33 @@ class CodebookSystem(System):
             outputs[test_name] = test_fn(batch, batch_idx)
 
         return outputs
+
+    def print_head_norm(self, batch, batch_idx):
+        if batch_idx == 0:  # Execute only once
+            self.eval()
+            with torch.no_grad():
+                head = self.model.tables["table-0"]
+                print("En Head norm:")
+                print(torch.mean(head ** 2, dim=1))
+                head = self.model.tables["table-2"]
+                print("Fr Head norm:")
+                print(torch.mean(head ** 2, dim=1))
+                head = self.model.tables["table-3"]
+                print("De Head norm:")
+                print(torch.mean(head ** 2, dim=1))
+
+    def print_dist_norm(self, batch, batch_idx):
+        self.eval()
+        with torch.no_grad():
+            print("Distance norm:")
+            qry_batch = batch[0][1][0]
+            texts = qry_batch[3]  # B, L
+            _, prediction = self.common_step(batch, batch_idx, train=False)
+
+            # Reference: https://stackoverflow.com/questions/66604482/indexing-using-pytorch-tensors-along-one-specific-dimension-with-3-dimensional-t
+            output = -torch.gather(prediction, -1, texts.unsqueeze(-1)).squeeze(-1)
+            print(output[0])
+            print("Max Dist:")
+            print(torch.max(-prediction, dim=2)[0][0])
+            print("Mean Dist:")
+            print(torch.mean(-prediction, dim=2)[0])

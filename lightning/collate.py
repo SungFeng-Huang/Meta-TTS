@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from functools import partial
 from collections import defaultdict
+from text.define import LANG_ID2SYMBOLS
 
 from utils.tools import pad_1D, pad_2D
 
@@ -220,9 +221,13 @@ class LanguageTaskCollate:
         for k, v in self.lang_id2symbols.items():
             self.re_id_increment[k] = increment
             increment += len(v)
+        self.n_symbols = increment
 
     def get_collate(self, sort=False, re_id=True):
         return partial(self.collate_fn, sort=sort, re_id=re_id)
+
+    def get_collate_v2(self, sort=False, re_id=True):
+        return partial(self.collate_v2_fn, sort=sort, re_id=re_id)
 
     def get_meta_collate(self, shots, queries, re_id=False):
         return partial(self.meta_collate_fn, shots=shots, queries=queries, re_id=re_id)
@@ -244,6 +249,27 @@ class LanguageTaskCollate:
         output = reprocess(data, idx_arr)
 
         return output
+
+    def collate_v2_fn(self, data, sort=False, re_id=True):
+        data_size = len(data)
+
+        if sort:
+            len_arr = np.array([d["text"].shape[0] for d in data])
+            idx_arr = np.argsort(-len_arr)
+        else:
+            idx_arr = np.arange(data_size)
+
+        # concat embedding, re-id each phoneme
+        if re_id:
+            for idx in idx_arr:
+                data[idx]["text"] += self.re_id_increment[data[idx]["language"]]
+        output = reprocess(data, idx_arr)
+
+        lang_ids = [data[idx]["language"] for idx in idx_arr]
+        representations = [data[idx]["representation"] for idx in idx_arr]
+        representations = pad_2D(representations)
+        
+        return (*output, lang_ids, torch.from_numpy(representations).float())
     
     def meta_collate_fn(self, data, shots, queries, re_id=False):
         """ multi-speaker with multi-task inner-loop training:

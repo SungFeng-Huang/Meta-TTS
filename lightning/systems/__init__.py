@@ -10,7 +10,8 @@ SYSTEM = {
     "imaml": IMAMLSystem,
     "baseline": TTS.baseline.BaselineSystem,
     "asr-codebook": ASR.codebook.CodebookSystem,
-    "asr-baseline": ASR.baseline.BaselineSystem,
+    "asr-baseline": ASR.center.CenterSystem,
+    "asr-center": ASR.center.CenterSystem,
     "dual-meta": Dual.dual_maml.DualMetaSystem,
 }
 

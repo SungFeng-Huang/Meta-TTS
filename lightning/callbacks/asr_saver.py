@@ -33,6 +33,13 @@ class Saver(Callback):
         self.val_loss_dicts = []
         self.log_loss_dicts = []
 
+        self.re_id = False
+        increment = 0
+        self.re_id_increment = {}
+        for k, v in LANG_ID2SYMBOLS.items():
+            self.re_id_increment[k] = increment
+            increment += len(v)
+
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         loss = outputs['losses']
         output = outputs['output']
@@ -59,17 +66,19 @@ class Saver(Callback):
             pl_module.log_dict({"Train/Acc": acc.item()})
 
             # log asr results
-            # log asr results
             sentence = _batch[3][0]
             gt_sentence, pred_sentence = [], []
             for (gt_id, pred_id) in zip(sentence, output[0].argmax(dim=1)):
-                gt_sentence.append(LANG_ID2SYMBOLS[lang_id][int(gt_id)])
-                pred_sentence.append(LANG_ID2SYMBOLS[lang_id][int(pred_id)])
                 if gt_id == 0:
                     break
+                if self.re_id:
+                    gt_id = int(gt_id) - self.re_id_increment[lang_id]
+                    pred_id = int(pred_id) - self.re_id_increment[lang_id]
+                gt_sentence.append(LANG_ID2SYMBOLS[lang_id][gt_id])
+                pred_sentence.append(LANG_ID2SYMBOLS[lang_id][pred_id])
             
-            self.log_text(logger, "GT: " + ", ".join(gt_sentence), step)
-            self.log_text(logger, "Pred: " + ", ".join(pred_sentence), step)
+            self.log_text(logger, "Train/GT: " + ", ".join(gt_sentence), step)
+            self.log_text(logger, "Train/Pred: " + ", ".join(pred_sentence), step)
 
     def on_validation_epoch_start(self, trainer, pl_module):
         self.val_loss_dicts = []
@@ -88,27 +97,25 @@ class Saver(Callback):
         self.val_loss_dicts.append(loss_dict)
 
         # Log loss for each sample to csv files
-        sup_ids = batch[0]
         self.log_csv("Validation", step, 0, loss_dict)
 
         # Log asr results to logger + calculate acc
         if batch_idx == 0 and pl_module.local_rank == 0:
-            # calculate acc
-            mask = (_batch[3] != 0)
-            acc = ((_batch[3] == output.argmax(dim=2)) * mask).sum() / mask.sum()
-            pl_module.log_dict({"Val/Acc": acc.item()})
 
             # log asr results
             sentence = _batch[3][0]
             gt_sentence, pred_sentence = [], []
             for (gt_id, pred_id) in zip(sentence, output[0].argmax(dim=1)):
-                gt_sentence.append(LANG_ID2SYMBOLS[lang_id][int(gt_id)])
-                pred_sentence.append(LANG_ID2SYMBOLS[lang_id][int(pred_id)])
                 if gt_id == 0:
                     break
+                if self.re_id:
+                    gt_id = int(gt_id) - self.re_id_increment[lang_id]
+                    pred_id = int(pred_id) - self.re_id_increment[lang_id]
+                gt_sentence.append(LANG_ID2SYMBOLS[lang_id][gt_id])
+                pred_sentence.append(LANG_ID2SYMBOLS[lang_id][pred_id])
             
-            self.log_text(logger, "GT: " + ", ".join(gt_sentence), step)
-            self.log_text(logger, "Pred: " + ", ".join(pred_sentence), step)
+            self.log_text(logger, "Val/GT: " + ", ".join(gt_sentence), step)
+            self.log_text(logger, "Val/Pred: " + ", ".join(pred_sentence), step)
 
     def log_csv(self, stage, step, basename, loss_dict):
         if stage in ("Training", "Validation"):

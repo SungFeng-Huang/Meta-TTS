@@ -1,5 +1,6 @@
 from .base_datamodule import BaseDataModule
 from .baseline_datamodule import BaselineDataModule
+from .baselinev2_datamodule import BaselineV2DataModule
 from .meta_datamodule import MetaDataModule
 
 
@@ -8,7 +9,8 @@ DATA_MODULE = {
     "meta": MetaDataModule,
     "imaml": MetaDataModule,
     "asr-codebook": MetaDataModule,
-    "asr-baseline": BaselineDataModule,
+    "asr-baseline": BaselineV2DataModule,
+    "asr-center": BaselineV2DataModule,
     "dual-meta": MetaDataModule,
     "baseline": BaselineDataModule,
 }
