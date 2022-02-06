@@ -91,7 +91,26 @@ def dict2str(tblog_dict):
 
 
 def asr_loss2dict(loss):
-    return {"Total Loss": loss.item()}
+    return {
+        "Total Loss": loss[0].item(),
+        "Phoneme Loss": loss[1].item(),
+        "Cluster Loss": loss[2].item(),
+    }
+
+
+def dual_loss2dict(loss):
+    tts_loss, asr_loss = loss
+    tblog_dict = {
+        "Total Loss"       : tts_loss[0].item() + asr_loss[0].item(),
+        "Mel Loss"         : tts_loss[1].item(),
+        "Mel-Postnet Loss" : tts_loss[2].item(),
+        "Pitch Loss"       : tts_loss[3].item(),
+        "Energy Loss"      : tts_loss[4].item(),
+        "Duration Loss"    : tts_loss[5].item(),
+        "Phoneme Loss"     : asr_loss[1].item(),
+        "Cluster Loss"     : asr_loss[2].item(),
+    }
+    return tblog_dict
 
 
 class MatchingGraphInfo(TypedDict):

@@ -297,8 +297,8 @@ class CodebookAnalyzer(object):
         if not quantized:
             fig = plt.figure(figsize=(32, 16))
             ax = fig.add_subplot(111)
-            ax.matshow(info["attn"])
-            # fig.colorbar(cax)
+            cax = ax.matshow(info["attn"])
+            fig.colorbar(cax, ax=ax)
 
             ax.set_title(info["title"], fontsize=28)
             ax.set_xticks(np.arange(len(info["x_labels"])))
@@ -329,3 +329,11 @@ class CodebookAnalyzer(object):
             else:
                 fig = self.plot_matching(info, True)
                 fig.savefig(f"{self.root}/codebook/matching/{idx:03d}-{info['title']}-table.jpg")
+            plt.close(fig)
+
+    def visualize_phoneme_transfer(self, idx, infos):
+        os.makedirs(f"{self.root}/codebook/phoneme-transfer", exist_ok=True)
+        for info in infos:
+            fig = self.plot_matching(info, False)
+            fig.savefig(f"{self.root}/codebook/phoneme-transfer/{idx:03d}-{info['title']}.jpg")
+            plt.close(fig)

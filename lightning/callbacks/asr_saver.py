@@ -14,7 +14,7 @@ from lightning.utils import asr_loss2dict as loss2dict
 from text.define import LANG_ID2SYMBOLS
 
 
-CSV_COLUMNS = ["Total Loss"]
+CSV_COLUMNS = ["Total Loss", "Phoneme Loss", "Cluster Loss"]
 COL_SPACE = [len(col) for col in ["200000", "Validation"]+CSV_COLUMNS]  # max step: 200000, longest stage: validation
 
 

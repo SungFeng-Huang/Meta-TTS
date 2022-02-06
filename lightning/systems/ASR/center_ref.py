@@ -10,7 +10,9 @@ from ..system2 import System
 from ..utils import CodebookAnalyzer
 from lightning.model.loss import PhonemeClassificationLoss
 from lightning.callbacks.asr_saver import Saver
+from lightning.utils import MatchingGraphInfo
 from lightning.utils import asr_loss2dict as loss2dict
+from text.define import LANG_ID2SYMBOLS
 
 
 class CenterRefSystem(System):
@@ -19,7 +21,6 @@ class CenterRefSystem(System):
     """
 
     def __init__(self, *args, **kwargs):
-        self.cluster = True
         self.reg = 3
         super().__init__(*args, **kwargs)
 
@@ -27,8 +28,9 @@ class CenterRefSystem(System):
         self.codebook_analyzer = CodebookAnalyzer(self.result_dir)
         self.test_list = {
             "codebook visualization": self.visualize_matching,
-            "print_head_norm": self.print_head_norm,
-            "print_dist_norm": self.print_dist_norm,
+            # "print_head_norm": self.print_head_norm,
+            # "print_dist_norm": self.print_dist_norm,
+            "phoneme_transfer": self.phoneme_transfer,
         }
 
     def build_model(self):
@@ -44,8 +46,7 @@ class CenterRefSystem(System):
 
         self.asr_head = ASRCenterHead(d_word_vec, multilingual=False)
         self.loss_func = PhonemeClassificationLoss()
-        if self.cluster:
-            self.loss_func2 = nn.MSELoss()
+        self.loss_func2 = nn.MSELoss()
 
     def build_optimized_model(self):
         return nn.ModuleList([self.codebook, self.banks, self.asr_head])
@@ -62,10 +63,9 @@ class CenterRefSystem(System):
         emb_texts = F.embedding(qry_batch[3], embedding, padding_idx=0)  # B, L, d_word_vec
         predictions = self.asr_head(emb_texts, lang_ids=lang_id)
 
-        valid_error = self.loss_func(qry_batch, predictions)
-        if self.cluster:
-            valid_error += self.reg * self.loss_func2(embedding, self.asr_head.get_table(lang_id))
-        return valid_error, predictions
+        phn_loss = self.loss_func(qry_batch, predictions)
+        cluster_loss = self.reg * self.loss_func2(embedding, self.asr_head.get_table(lang_id))
+        return (phn_loss + cluster_loss, phn_loss, cluster_loss), predictions
     
     def training_step(self, batch, batch_idx):
         train_loss, predictions = self.common_step(batch, batch_idx, train=True)
@@ -74,7 +74,7 @@ class CenterRefSystem(System):
         # Log metrics to CometLogger
         loss_dict = {f"Train/{k}": v for k, v in loss2dict(train_loss).items()}
         self.log_dict(loss_dict, sync_dist=True)
-        return {'loss': train_loss, 'losses': train_loss, 'output': predictions, '_batch': qry_batch, 'lang_id': batch[0][3]}
+        return {'loss': train_loss[0], 'losses': train_loss, 'output': predictions, '_batch': qry_batch, 'lang_id': batch[0][3]}
 
     def validation_step(self, batch, batch_idx):
         self.log_matching(batch, batch_idx)
@@ -126,14 +126,14 @@ class CenterRefSystem(System):
         if batch_idx == 0:  # Execute only once
             self.eval()
             with torch.no_grad():
-                head = self.asr_head.tables["table-0"]
+                head1 = self.asr_head.tables["table-0"]
                 print("En Head norm:")
-                print(torch.mean(head ** 2, dim=1))
+                print(torch.mean(head1 ** 2, dim=1))
+                head2 = self.asr_head.tables["table-1"]
+                print("Zh Head norm:")
+                print(torch.mean(head2 ** 2, dim=1))
                 head = self.asr_head.tables["table-2"]
                 print("Fr Head norm:")
-                print(torch.mean(head ** 2, dim=1))
-                head = self.asr_head.tables["table-3"]
-                print("De Head norm:")
                 print(torch.mean(head ** 2, dim=1))
 
     def print_dist_norm(self, batch, batch_idx):
@@ -151,3 +151,50 @@ class CenterRefSystem(System):
             print(torch.max(-prediction, dim=2)[0][0])
             print("Mean Dist:")
             print(torch.mean(-prediction, dim=2)[0])
+
+    def phoneme_transfer(self, batch, batch_idx):  # TBD
+        lang_id2name = {
+            0: "en",
+            1: "zh",
+            2: "fr",
+            3: "de",
+            4: "ru",
+            5: "es",
+            6: "jp",
+            7: "cz",
+        }
+        def transfer_embedding(embedding, src_lang_id, target_lang_id, mask):
+            transfer_dist = self.asr_head(embedding.unsqueeze(0), lang_ids=target_lang_id)  # transfer to target language
+            soft_transfer_dist = F.softmax(transfer_dist, dim=2)
+            title = f"{lang_id2name[src_lang_id]}-{lang_id2name[target_lang_id]}"
+            # print(f"Min Dist {title}:")
+            # print(torch.min(-transfer_dist, dim=2)[0][0])
+            info = MatchingGraphInfo({
+                "title": title,
+                "y_labels": [LANG_ID2SYMBOLS[lang_id][int(m)] for m in mask[0]],
+                "x_labels": LANG_ID2SYMBOLS[target_lang_id],
+                "attn": soft_transfer_dist[0][mask].detach().cpu().numpy(),
+                "quantized": False,
+            })
+            return info
+
+        self.eval()
+        with torch.no_grad():
+            _, _, ref, lang_id = batch[0]
+            try:
+                assert ref.device == self.device
+            except:
+                ref = ref.to(device=self.device)
+            ref[ref != ref] = 0
+
+            ref_mask = torch.nonzero(ref.sum(dim=1), as_tuple=True)
+
+            attn = self.codebook(ref.unsqueeze(0))
+            embedding = self.banks(attn, pad=True).squeeze(0)  # N, d_word_vec
+
+            infos = []
+            infos.append(transfer_embedding(embedding, lang_id, 0, ref_mask))
+            infos.append(transfer_embedding(embedding, lang_id, 1, ref_mask))
+            infos.append(transfer_embedding(embedding, lang_id, 2, ref_mask))
+
+            self.codebook_analyzer.visualize_phoneme_transfer(batch_idx, infos)

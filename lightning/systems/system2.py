@@ -57,8 +57,10 @@ class System(pl.LightningModule):
         
         # Save figures/audios/csvs
         saver = self.build_saver()
-
-        callbacks = [checkpoint, outer_bar, lr_monitor, gpu_monitor, saver]
+        if isinstance(saver, list):
+            callbacks = [checkpoint, outer_bar, lr_monitor, gpu_monitor, *saver]
+        else:
+            callbacks = [checkpoint, outer_bar, lr_monitor, gpu_monitor, saver]
         return callbacks
 
     def configure_optimizers(self):

@@ -13,7 +13,7 @@ SYSTEM = {
     "asr-baseline": ASR.center.CenterSystem,
     "asr-center": ASR.center.CenterSystem,
     "asr-center-ref": ASR.center_ref.CenterRefSystem,
-    "dual-meta": Dual.dual_maml.DualMetaSystem,
+    "dual-meta": Dual.dual.DualMetaSystem,
 }
 
 # def get_system(algorithm, preprocess_config, model_config, train_config, algorithm_config, log_dir, result_dir):

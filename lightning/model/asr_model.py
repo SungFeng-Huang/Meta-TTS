@@ -230,7 +230,7 @@ class ASRCenterHead(pl.LightningModule):
         # print("Input shape: ", input.shape)
         if not self.multilingual:  # lang_ids is int
             diff = (input.unsqueeze(2) - self.tables[f"table-{lang_ids}"].unsqueeze(0).unsqueeze(0)) ** 2  # B, L, N, dim
-            mse = diff.mean(dim=3)  # B, L, n_symbols
+            mse = diff.mean(dim=3)  # B, L, N
         else:  # lang_ids is a list
             phn_mask = self.phn_mask_table[lang_ids, :].unsqueeze(1)  # B, 1, n_symbols
             concat_table = self.get_concat_table()  # n_symbols, dim
