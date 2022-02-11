@@ -258,8 +258,6 @@ class MetaSystem(AdaptorSystem):
       
             # synth_samples & save & log
             # No reference from unseen speaker, use reference from support set instead.
-            predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
-            # outputs["step_0"].update({"synth": {"output": predictions}})
             recon_samples(
                 fit_batch, fit_preds, self.vocoder, config,
                 figure_fit_dir, audio_fit_dir
@@ -268,6 +266,8 @@ class MetaSystem(AdaptorSystem):
                 qry_batch, predictions, self.vocoder, config,
                 figure_dir, audio_dir
             )
+
+            predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
             synth_samples(
                 fit_batch, fit_preds, self.vocoder, config,
                 figure_fit_dir, audio_fit_dir, f"step_{self.test_global_step}-FTstep_0"
@@ -280,7 +280,7 @@ class MetaSystem(AdaptorSystem):
         self.model.train()
 
         # Determine fine tune checkpoints.
-        ft_steps = [50, 100] + list(range(250, 5001, 250))
+        ft_steps = list(range(1000, 20001, 1000))
         
         # Adapt
         learner = learner.clone()

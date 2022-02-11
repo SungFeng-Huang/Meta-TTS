@@ -29,3 +29,6 @@ class Saver(Callback):
         outputs["losses"] = outputs['dual_losses'][1]
         outputs['output'] = outputs['dual_output'][1]
         self.asr_saver.on_validation_batch_end(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
+
+    def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+        self.tts_saver.on_test_batch_end(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)

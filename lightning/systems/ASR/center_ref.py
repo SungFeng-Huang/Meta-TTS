@@ -28,9 +28,9 @@ class CenterRefSystem(System):
         self.codebook_analyzer = CodebookAnalyzer(self.result_dir)
         self.test_list = {
             "codebook visualization": self.visualize_matching,
-            # "print_head_norm": self.print_head_norm,
-            # "print_dist_norm": self.print_dist_norm,
-            "phoneme_transfer": self.phoneme_transfer,
+            # "print head norm": self.print_head_norm,
+            # "print dist norm": self.print_dist_norm,
+            "phoneme transfer": self.phoneme_transfer,
         }
 
     def build_model(self):

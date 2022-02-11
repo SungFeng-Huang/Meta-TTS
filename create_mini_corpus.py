@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import json
 import random
 import shutil
@@ -7,18 +8,19 @@ from tqdm import tqdm
 
 SPKPERCORPUS = 5
 DATAPERSPK = 20
+NUM = 400
 TASKS = {
-    # "miniLibriTTS": {
-    #     "train": "preprocessed_data/LibriTTS/train-clean-100.txt",
-    #     "val": "preprocessed_data/LibriTTS/dev-clean.txt",
-    #     "test": "preprocessed_data/LibriTTS/test-clean.txt",
-    # },
+    "miniLibriTTS": {
+        "train": "preprocessed_data/LibriTTS/train-clean-100.txt",
+        "val": "preprocessed_data/LibriTTS/dev-clean.txt",
+        "test": "preprocessed_data/LibriTTS/test-clean.txt",
+    },
     # "miniVCTK": "preprocessed_data/VCTK/all.txt",
-    # "miniAISHELL-3": {
-    #     "train": "preprocessed_data/AISHELL-3/train.txt",
-    #     "val": "preprocessed_data/AISHELL-3/val.txt",
-    #     "test": "preprocessed_data/AISHELL-3/val.txt",
-    # },
+    "miniAISHELL-3": {
+        "train": "preprocessed_data/AISHELL-3/train.txt",
+        "val": "preprocessed_data/AISHELL-3/val.txt",
+        "test": "preprocessed_data/AISHELL-3/val.txt",
+    },
 
     # "miniCV-french": "preprocessed_data/CommonVoice/fr/train.txt",
     # "miniCV-german": "preprocessed_data/CommonVoice/de/train.txt",
@@ -31,30 +33,30 @@ TASKS = {
     
     # "miniJVS": "JVS/train.txt",
 
-    # "miniGlobalPhone-fr": {
-    #     "train": "preprocessed_data/GlobalPhone/fr/train.txt",
-    #     "val": "preprocessed_data/GlobalPhone/fr/train.txt",
-    #     "test": "preprocessed_data/GlobalPhone/fr/train.txt",
-    # },
-    # "miniGlobalPhone-de": {
-    #     "train": "preprocessed_data/GlobalPhone/de/train.txt",
-    #     "val": "preprocessed_data/GlobalPhone/de/train.txt",
-    #     "test": "preprocessed_data/GlobalPhone/de/train.txt",
-    # },
-    # "miniGlobalPhone-es": {
-    #     "train": "preprocessed_data/GlobalPhone/es/train.txt",
-    #     "val": "preprocessed_data/GlobalPhone/es/train.txt",
-    #     "test": "preprocessed_data/GlobalPhone/es/train.txt",
-    # },
-    # "miniGlobalPhone-cz": {
-    #     "train": "preprocessed_data/GlobalPhone/cz/train.txt",
-    #     "val": "preprocessed_data/GlobalPhone/cz/train.txt",
-    #     "test": "preprocessed_data/GlobalPhone/cz/train.txt",
-    # },
+    "miniGlobalPhone-fr": {
+        "train": "preprocessed_data/GlobalPhone/fr/train.txt",
+        "val": "preprocessed_data/GlobalPhone/fr/val.txt",
+        "test": "preprocessed_data/GlobalPhone/fr/val.txt",
+    },
+    "miniGlobalPhone-de": {
+        "train": "preprocessed_data/GlobalPhone/de/train.txt",
+        "val": "preprocessed_data/GlobalPhone/de/val.txt",
+        "test": "preprocessed_data/GlobalPhone/de/val.txt",
+    },
+    "miniGlobalPhone-es": {
+        "train": "preprocessed_data/GlobalPhone/es/train.txt",
+        "val": "preprocessed_data/GlobalPhone/es/val.txt",
+        "test": "preprocessed_data/GlobalPhone/es/val.txt",
+    },
+    "miniGlobalPhone-cz": {
+        "train": "preprocessed_data/GlobalPhone/cz/train.txt",
+        "val": "preprocessed_data/GlobalPhone/cz/val.txt",
+        "test": "preprocessed_data/GlobalPhone/cz/val.txt",
+    },
     "miniJVS": {
         "train": "preprocessed_data/JVS/train.txt",
-        "val": "preprocessed_data/JVS/train.txt",
-        "test": "preprocessed_data/JVS/train.txt",
+        "val": "preprocessed_data/JVS/val.txt",
+        "test": "preprocessed_data/JVS/val.txt",
     },
 }
 
@@ -70,36 +72,48 @@ for corpus_name, sets in TASKS.items():
     os.makedirs(f"{mini_corpus_path}/spk_ref_mel_slices", exist_ok=True)
     os.makedirs(f"{mini_corpus_path}/TextGrid", exist_ok=True)
 
+    time_info = {}
     for set_name, info_path in sets.items():
         full_corpus_path = os.path.dirname(info_path)
+        time_info[set_name] = 0
 
-        # choose speakers
-        with open(f"{full_corpus_path}/speakers.json", "r", encoding='utf-8') as f:
-            speakers = json.load(f)
-        candidates = {x: [] for x in speakers}
+        # # choose speakers
+        # with open(f"{full_corpus_path}/speakers.json", "r", encoding='utf-8') as f:
+        #     speakers = json.load(f)
+        # candidates = {x: [] for x in speakers}
+        # with open(info_path, 'r', encoding='utf-8') as f:
+        #     for line in f:
+        #         if line == '\n':
+        #             continue
+        #         wav_name, spk, phns, raw_text = line.strip().split("|")
+        #         candidates[spk].append(line)
+        # exist_spks = [spk for spk, lines in candidates.items() if len(lines) > 0]
+        # if len(exist_spks) < SPKPERCORPUS:
+        #     chosen_speakers = exist_spks
+        # else:
+        #     chosen_speakers = random.sample(exist_spks, k=SPKPERCORPUS)
+        # for spk in chosen_speakers:
+        #     os.makedirs(f"{mini_corpus_path}/TextGrid/{spk}", exist_ok=True)
+
+        # # choose tasks
+        # mini_corpus_tasks = []
+        # for spk, lines in candidates.items():
+        #     if spk in chosen_speakers:
+        #         print(f"Sample {DATAPERSPK} from {len(lines)}...")
+        #         if len(lines) < DATAPERSPK:
+        #             mini_corpus_tasks.extend(lines)
+        #         else:
+        #             mini_corpus_tasks.extend(random.sample(lines, k=DATAPERSPK))
+
+        candidates = []
         with open(info_path, 'r', encoding='utf-8') as f:
             for line in f:
                 if line == '\n':
                     continue
                 wav_name, spk, phns, raw_text = line.strip().split("|")
-                candidates[spk].append(line)
-        exist_spks = [spk for spk, lines in candidates.items() if len(lines) > 0]
-        if len(exist_spks) < SPKPERCORPUS:
-            chosen_speakers = exist_spks
-        else:
-            chosen_speakers = random.sample(exist_spks, k=SPKPERCORPUS)
-        for spk in chosen_speakers:
-            os.makedirs(f"{mini_corpus_path}/TextGrid/{spk}", exist_ok=True)
-
-        # choose tasks
-        mini_corpus_tasks = []
-        for spk, lines in candidates.items():
-            if spk in chosen_speakers:
-                print(f"Sample {DATAPERSPK} from {len(lines)}...")
-                if len(lines) < DATAPERSPK:
-                    mini_corpus_tasks.extend(lines)
-                else:
-                    mini_corpus_tasks.extend(random.sample(lines, k=DATAPERSPK))
+                candidates.append((spk, line))
+        lines = random.sample(candidates, k=NUM)
+        mini_corpus_tasks = [l[1] for l in lines]
         
         # create mini corpus
         print(f"Create preprocessed_data/{corpus_name}/{set_name}.txt...")
@@ -119,5 +133,13 @@ for corpus_name, sets in TASKS.items():
                 f"mel/{spk}-mel-{wav_name}.npy",
                 f"spk_ref_mel_slices/{spk}-mel-{wav_name}.npy",
             ]
-            for filename in to_copy:
+            for idx, filename in enumerate(to_copy):
                 shutil.copyfile(f"{full_corpus_path}/{filename}", f"{mini_corpus_path}/{filename}")
+                if idx == 5:  # mel spectrogram
+                    mel = np.load(f"{full_corpus_path}/{filename}")
+                    assert mel.size(1) == 80
+                    time_info[set_name] += mel.size(0) * 256 / 22050 / 60
+
+    # Write time information
+    with open(f"preprocessed_data/{corpus_name}/info.json", 'w', encoding='utf-8') as f:
+        json.dump(time_info, f, indent=4)

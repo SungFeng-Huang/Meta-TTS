@@ -96,9 +96,13 @@ def main(args, configs):
         log_dir = os.path.join(
             train_config["path"]["log_path"], "meta", args.exp_key
         )
-        result_dir = os.path.join(
-            train_config['path']['result_path'], args.exp_key
-        )
+        if args.output_path is None:
+            result_dir = os.path.join(
+                train_config['path']['result_path'], args.exp_key
+            )
+        else:
+            os.makedirs(args.output_path, exist_ok=True)
+            result_dir = args.output_path
 
     # Get dataset
     datamodule = get_datamodule(algorithm_config["type"])(
@@ -177,6 +181,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-pre", "--pretrain_path", type=str, help="pretrained model path",
+        default=None,
+    )
+    parser.add_argument(
+        "-o", "--output_path", type=str, help="output result path",
         default=None,
     )
     parser.add_argument(

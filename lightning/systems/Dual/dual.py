@@ -15,12 +15,13 @@ from utils.tools import get_mask_from_lengths
 from ..adaptor import AdaptorSystem
 from lightning.systems.utils import Task
 from lightning.utils import dual_loss2dict as loss2dict
-from lightning.utils import LightningMelGAN
+from lightning.utils import LightningMelGAN, MatchingGraphInfo
 from lightning.model.phoneme_embedding import PhonemeEmbedding
 from lightning.model import FastSpeech2Loss, FastSpeech2
 from lightning.callbacks.dual_saver import Saver
 from lightning.model.asr_model import ASRCenterHead, Codebook, SoftBank
 from lightning.callbacks.utils import synth_samples, recon_samples
+from text.define import LANG_ID2SYMBOLS
 
 
 STATSDICT = {
@@ -48,6 +49,7 @@ class DualMetaSystem(AdaptorSystem):
         self.codebook_analyzer = CodebookAnalyzer(self.result_dir)
         self.test_list = {
             "codebook visualization": self.visualize_matching,
+            "phoneme transfer": self.phoneme_transfer,
             "adaptation": self.test_adaptation, 
         }
 
@@ -309,7 +311,6 @@ class DualMetaSystem(AdaptorSystem):
       
             # synth_samples & save & log
             # No reference from unseen speaker, use reference from support set instead.
-            predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
             recon_samples(
                 fit_batch, fit_preds, self.vocoder, config,
                 figure_fit_dir, audio_fit_dir
@@ -318,6 +319,8 @@ class DualMetaSystem(AdaptorSystem):
                 qry_batch, predictions, self.vocoder, config,
                 figure_dir, audio_dir
             )
+
+            predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
             synth_samples(
                 fit_batch, fit_preds, self.vocoder, config,
                 figure_fit_dir, audio_fit_dir, f"step_{self.test_global_step}-FTstep_0"
@@ -330,7 +333,7 @@ class DualMetaSystem(AdaptorSystem):
         self.model.train()
 
         # Determine fine tune checkpoints.
-        ft_steps = [50, 100] + list(range(250, 5001, 250))
+        ft_steps = list(range(1000, 20001, 1000))
         
         # Adapt
         learner = learner.clone()
@@ -364,3 +367,50 @@ class DualMetaSystem(AdaptorSystem):
         del learner
 
         return outputs
+
+    def phoneme_transfer(self, batch, batch_idx):  # TBD
+        lang_id2name = {
+            0: "en",
+            1: "zh",
+            2: "fr",
+            3: "de",
+            4: "ru",
+            5: "es",
+            6: "jp",
+            7: "cz",
+        }
+        def transfer_embedding(embedding, src_lang_id, target_lang_id, mask):
+            transfer_dist = self.asr_head(embedding.unsqueeze(0), lang_ids=target_lang_id)  # transfer to target language
+            soft_transfer_dist = F.softmax(transfer_dist, dim=2)
+            title = f"{lang_id2name[src_lang_id]}-{lang_id2name[target_lang_id]}"
+            # print(f"Min Dist {title}:")
+            # print(torch.min(-transfer_dist, dim=2)[0][0])
+            info = MatchingGraphInfo({
+                "title": title,
+                "y_labels": [LANG_ID2SYMBOLS[lang_id][int(m)] for m in mask[0]],
+                "x_labels": LANG_ID2SYMBOLS[target_lang_id],
+                "attn": soft_transfer_dist[0][mask].detach().cpu().numpy(),
+                "quantized": False,
+            })
+            return info
+
+        self.eval()
+        with torch.no_grad():
+            _, _, ref, lang_id = batch[0]
+            try:
+                assert ref.device == self.device
+            except:
+                ref = ref.to(device=self.device)
+            ref[ref != ref] = 0
+
+            ref_mask = torch.nonzero(ref.sum(dim=1), as_tuple=True)
+
+            attn = self.codebook(ref.unsqueeze(0))
+            embedding = self.banks(attn, pad=True).squeeze(0)  # N, d_word_vec
+
+            infos = []
+            infos.append(transfer_embedding(embedding, lang_id, 0, ref_mask))
+            infos.append(transfer_embedding(embedding, lang_id, 1, ref_mask))
+            infos.append(transfer_embedding(embedding, lang_id, 2, ref_mask))
+
+            self.codebook_analyzer.visualize_phoneme_transfer(batch_idx, infos)
