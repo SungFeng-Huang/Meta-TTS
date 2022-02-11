@@ -10,17 +10,17 @@ SPKPERCORPUS = 5
 DATAPERSPK = 20
 NUM = 400
 TASKS = {
-    "miniLibriTTS": {
-        "train": "preprocessed_data/LibriTTS/train-clean-100.txt",
-        "val": "preprocessed_data/LibriTTS/dev-clean.txt",
-        "test": "preprocessed_data/LibriTTS/test-clean.txt",
-    },
+    # "miniLibriTTS": {
+    #     "train": "preprocessed_data/LibriTTS/train-clean-100.txt",
+    #     "val": "preprocessed_data/LibriTTS/dev-clean.txt",
+    #     "test": "preprocessed_data/LibriTTS/test-clean.txt",
+    # },
     # "miniVCTK": "preprocessed_data/VCTK/all.txt",
-    "miniAISHELL-3": {
-        "train": "preprocessed_data/AISHELL-3/train.txt",
-        "val": "preprocessed_data/AISHELL-3/val.txt",
-        "test": "preprocessed_data/AISHELL-3/val.txt",
-    },
+    # "miniAISHELL-3": {
+    #     "train": "preprocessed_data/AISHELL-3/train.txt",
+    #     "val": "preprocessed_data/AISHELL-3/val.txt",
+    #     "test": "preprocessed_data/AISHELL-3/val.txt",
+    # },
 
     # "miniCV-french": "preprocessed_data/CommonVoice/fr/train.txt",
     # "miniCV-german": "preprocessed_data/CommonVoice/de/train.txt",
@@ -33,16 +33,16 @@ TASKS = {
     
     # "miniJVS": "JVS/train.txt",
 
-    "miniGlobalPhone-fr": {
-        "train": "preprocessed_data/GlobalPhone/fr/train.txt",
-        "val": "preprocessed_data/GlobalPhone/fr/val.txt",
-        "test": "preprocessed_data/GlobalPhone/fr/val.txt",
-    },
-    "miniGlobalPhone-de": {
-        "train": "preprocessed_data/GlobalPhone/de/train.txt",
-        "val": "preprocessed_data/GlobalPhone/de/val.txt",
-        "test": "preprocessed_data/GlobalPhone/de/val.txt",
-    },
+    # "miniGlobalPhone-fr": {
+    #     "train": "preprocessed_data/GlobalPhone/fr/train.txt",
+    #     "val": "preprocessed_data/GlobalPhone/fr/val.txt",
+    #     "test": "preprocessed_data/GlobalPhone/fr/val.txt",
+    # },
+    # "miniGlobalPhone-de": {
+    #     "train": "preprocessed_data/GlobalPhone/de/train.txt",
+    #     "val": "preprocessed_data/GlobalPhone/de/val.txt",
+    #     "test": "preprocessed_data/GlobalPhone/de/val.txt",
+    # },
     "miniGlobalPhone-es": {
         "train": "preprocessed_data/GlobalPhone/es/train.txt",
         "val": "preprocessed_data/GlobalPhone/es/val.txt",
@@ -133,12 +133,13 @@ for corpus_name, sets in TASKS.items():
                 f"mel/{spk}-mel-{wav_name}.npy",
                 f"spk_ref_mel_slices/{spk}-mel-{wav_name}.npy",
             ]
+            os.makedirs(f"{mini_corpus_path}/TextGrid/{spk}", exist_ok=True)
             for idx, filename in enumerate(to_copy):
                 shutil.copyfile(f"{full_corpus_path}/{filename}", f"{mini_corpus_path}/{filename}")
                 if idx == 5:  # mel spectrogram
                     mel = np.load(f"{full_corpus_path}/{filename}")
-                    assert mel.size(1) == 80
-                    time_info[set_name] += mel.size(0) * 256 / 22050 / 60
+                    assert mel.shape[1] == 80
+                    time_info[set_name] += mel.shape[0] * 256 / 22050 / 60
 
     # Write time information
     with open(f"preprocessed_data/{corpus_name}/info.json", 'w', encoding='utf-8') as f:
