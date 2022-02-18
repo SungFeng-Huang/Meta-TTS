@@ -67,7 +67,7 @@ class CentroidSimilarity:
         self.similarity_list_dict = dict()
         with torch.no_grad():
             for mode in ['recon_random', 'recon']:
-                print(f'Getting similarity of mode: {mode}')
+                print(f'Getting centroid similarity of mode: {mode}')
                 if os.path.exists(f'npy/{self.corpus}/{mode}_centroid_sim.npy'):
                     print(f'\tLoading from: \n\t\tnpy/{self.corpus}/{mode}_centroid_sim.npy')
                     self.similarity_list_dict[mode] = np.load(
@@ -92,14 +92,25 @@ class CentroidSimilarity:
 
             for mode, steps in self.mode_step_list:
                 for step in steps:
-                    # if mode in ['scratch_encoder', 'encoder', 'dvec'] and step != 0:
-                        # continue
-                    print(f'Getting similarity of mode: {mode}, step: {step}')
+                    print(f'Getting centroid similarity of mode: {mode}, step: {step}')
                     if os.path.exists(f'npy/{self.corpus}/{mode}_step{step}_centroid_sim.npy'):
                         print(f'\tLoading from: \n\t\tnpy/{self.corpus}/{mode}_step{step}_centroid_sim.npy')
                         self.similarity_list_dict[f'{mode}_step{step}'] = np.load(
                             f'npy/{self.corpus}/{mode}_step{step}_centroid_sim.npy', allow_pickle=True
                         )
+                    elif (self.dvector_list_dict_tensor['centroid'].shape[0]
+                          != self.dvector_list_dict_tensor[f'{mode}_step{step}'].shape[0]):
+                        assert (self.dvector_list_dict_tensor[f'{mode}_step{step}'].shape[0] 
+                                == 5 * self.dvector_list_dict_tensor['centroid'].shape[0])
+                        self.similarity_list_dict[f'{mode}_step{step}'] = cos(
+                            torch.from_numpy(
+                                np.repeat(self.dvector_list_dict['centroid'], 5*self.n_sample, axis=0)
+                            ),
+                            self.dvector_list_dict_tensor[f'{mode}_step{step}']
+                        ).detach().cpu().numpy()
+                        print(f'\tSaving to: \n\t\tnpy/{self.corpus}/{mode}_step{step}_centroid_sim.npy')
+                        np.save(f'npy/{self.corpus}/{mode}_step{step}_centroid_sim.npy',
+                                self.similarity_list_dict[f'{mode}_step{step}'], allow_pickle=True)
                     else:
                         self.similarity_list_dict[f'{mode}_step{step}'] = cos(
                             self.dvector_list_dict_tensor['centroid'],

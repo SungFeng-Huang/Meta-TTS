@@ -554,12 +554,12 @@ class SpeakerVerification:
             ]
                 # 'Real', 'Reconstructed', 'Meta-TTS (Emb, VA, D)', 'Meta-TTS (Emb, VA)', 'Meta-TTS (Emb, D)', 'Meta-TTS (Emb)'
         elif suffix == '_encoder':
-            self.eer_plot_color_list = ['purple', 'grey', 'orange', 'red', 'brown', 'green', 'blue']
-            self.eer_plot_mode_list = ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'meta_emb_vad', 'base_emb_vad']
-            self.eer_plot_legend_list = [
-                'Real', 'Reconstructed', 'Scrach encoder', 'Pre-trained encoder', 'd-vector',
-                'Meta-TTS (Emb, VA, D)', 'Baseline (Emb, VA, D)'
-            ]
+            # self.eer_plot_color_list = ['purple', 'grey', 'orange', 'red', 'brown', 'green', 'blue']
+            # self.eer_plot_mode_list = ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'meta_emb_vad', 'base_emb_vad']
+            # self.eer_plot_legend_list = [
+                # 'Real', 'Reconstructed', 'Scrach encoder', 'Pre-trained encoder', 'd-vector',
+                # 'Meta-TTS (Emb, VA, D)', 'Baseline (Emb, VA, D)'
+            # ]
             self.eer_plot_color_list = ['purple', 'grey', 'orange', 'blue', 'red', 'green', 'brown']
             self.eer_plot_mode_list = ['real', 'recon', 'scratch_encoder_step0', 'base_emb_vad', 'encoder_step0', 'meta_emb_vad', 'dvec_step0']
             self.eer_plot_legend_list = [

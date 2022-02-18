@@ -63,6 +63,10 @@ data_dir_dict.update({
     'meta_emb_vad-train_clean-avg_train_spk_emb': f'{result_root}/554524d810e44e9e9688e205fb0c04ba/meta_emb_vad-train_clean-avg_train_spk_emb',
     'meta_emb_vad-train_all-avg_train_spk_emb': f'{result_root}/ac596d75e85a4b08bac03e86b7fa45ad/meta_emb_vad-train_all-avg_train_spk_emb',
 })
+data_dir_dict.update({
+    'base_emb_vad-1_shot': f'{result_root}/672c4ace93c04b57a48911549ef0e609/base_emb_vad-1_shot',
+    'meta_emb_vad-1_shot': f'{result_root}/960dba64771045a9b1d4e48dd90b2270/meta_emb_vad-1_shot',
+})
 
 n_sample = 16
 mode_list = [
@@ -95,6 +99,8 @@ mode_list = [
     'meta_emb_vad-avg_train_spk_emb',
     'meta_emb_vad-train_clean-avg_train_spk_emb',
     'meta_emb_vad-train_all-avg_train_spk_emb',
+    'base_emb_vad-1_shot',
+    'meta_emb_vad-1_shot',
 ]
 step_list = [0, 5, 10, 20, 50, 100]
 mode_step_list = [
@@ -127,6 +133,8 @@ mode_step_list = [
     ('meta_emb_vad-avg_train_spk_emb', step_list),
     ('meta_emb_vad-train_clean-avg_train_spk_emb', step_list),
     ('meta_emb_vad-train_all-avg_train_spk_emb', step_list),
+    ('base_emb_vad-1_shot', [0, 5, 10, 20, 50, 100, 200, 400, 600, 800, 1000]),
+    ('meta_emb_vad-1_shot', [0, 5, 10, 20, 50, 100, 200, 400, 600, 800, 1000]),
 ]
 
 

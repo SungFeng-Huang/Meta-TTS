@@ -277,14 +277,26 @@ class WavsToDvector:
         for speaker_id in trange(self.n_speaker, desc='Speaker', leave=False):
             for sample_id in trange(self.n_sample, desc='Sample', leave=False):
                 data_id = speaker_id*self.n_sample + sample_id
-                wav_dir = os.path.join(data_dir, f'test_{data_id:03d}')
-                for wav_file in os.listdir(wav_dir):
-                    if wav_file.endswith(f'FTstep_{step}.synth.wav'):
-                        filepath = os.path.join(wav_dir, wav_file)
-                        wav_tensor = preprocess_wav(filepath)
-                        emb_tensor = encoder.embed_utterance(wav_tensor)
-                        emb_tensor_list.append(emb_tensor)
-                        break
+                if os.path.exists(os.path.join(data_dir, f'test_{data_id:03d}')):
+                    wav_dir = os.path.join(data_dir, f'test_{data_id:03d}')
+                    for wav_file in os.listdir(wav_dir):
+                        if wav_file.endswith(f'FTstep_{step}.synth.wav'):
+                            filepath = os.path.join(wav_dir, wav_file)
+                            wav_tensor = preprocess_wav(filepath)
+                            emb_tensor = encoder.embed_utterance(wav_tensor)
+                            emb_tensor_list.append(emb_tensor)
+                            break
+                else:
+                    assert os.path.exists(os.path.join(data_dir, f'test_{data_id:03d}_0'))
+                    for i in range(5):
+                        wav_dir = os.path.join(data_dir, f'test_{data_id:03d}_{i}')
+                        for wav_file in os.listdir(wav_dir):
+                            if wav_file.endswith(f'FTstep_{step}.synth.wav'):
+                                filepath = os.path.join(wav_dir, wav_file)
+                                wav_tensor = preprocess_wav(filepath)
+                                emb_tensor = encoder.embed_utterance(wav_tensor)
+                                emb_tensor_list.append(emb_tensor)
+                                break
 
         return emb_tensor_list
     
