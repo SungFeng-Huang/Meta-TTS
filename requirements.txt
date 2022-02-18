@@ -1,4 +1,5 @@
 pytorch-lightning
+learn2learn >= 0.1.6
 comet-ml
 resemblyzer
 g2p-en
@@ -6,7 +7,7 @@ inflect
 librosa
 matplotlib
 numba
-numpy==1.19.2
+numpy
 pypinyin
 pyworld
 PyYAML
@@ -19,4 +20,8 @@ torch
 tqdm
 unidecode
 torchaudio
+
+# Evaluation
 seaborn
+-e git+https://github.com/jasminsternkopf/mel_cepstral_distance.git@main#egg=mcd
+-e git+https://github.com/aliutkus/speechmetrics#egg=speechmetrics[gpu]

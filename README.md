@@ -30,16 +30,6 @@ pyenv local 3.8.6
 pyenv virtualenv meta-tts
 pyenv activate meta-tts
 ```
-- Install [learn2learn](https://github.com/learnables/learn2learn.git) from source.
-```bash
-# Install Cython first:
-pip install cython
-
-# Then install learn2learn from source:
-git clone https://github.com/learnables/learn2learn.git
-cd learn2learn
-pip install -e .
-```
 - Install requirements:
 ```bash
 pip install -r requirements.txt

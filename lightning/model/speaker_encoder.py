@@ -32,22 +32,31 @@ class GE2E(VoiceEncoder):
 
 class SpeakerEncoder(pl.LightningModule):
     """ Could be a NN encoder or an embedding. """
-    def __init__(self, emb_type, preprocess_config, model_config):
-        super().__init__()
-        self.emb_type = emb_type
 
-        if emb_type == "table":
+    def __new__(cls, *args, **kwargs):
+        # If not using multi-speaker, do not construct speaker encoder
+        if len(args) == 3:
+            preprocess_config, model_config, algorithm_config = args
+            if not model_config["multi_speaker"]:
+                return None
+        return super().__new__(cls)
+
+    def __init__(self, preprocess_config, model_config, algorithm_config):
+        super().__init__()
+        self.emb_type = algorithm_config["adapt"]["speaker_emb"]
+
+        if self.emb_type == "table":
             speaker_file = os.path.join(preprocess_config["path"]["preprocessed_path"], "speakers.json")
             n_speaker = len(json.load(open(speaker_file, "r")))
             self.model = nn.Embedding(n_speaker, model_config["transformer"]["encoder_hidden"])
-        elif emb_type == "shared":
+        elif self.emb_type == "shared":
             self.model = nn.Embedding(1, model_config["transformer"]["encoder_hidden"])
-        elif emb_type == "encoder":
+        elif self.emb_type == "encoder":
             self.model = VoiceEncoder('cpu')
-        elif emb_type == "dvec":
+        elif self.emb_type == "dvec":
             self.model = VoiceEncoder('cpu')
             self.freeze()
-        elif emb_type == "scratch_encoder":
+        elif self.emb_type == "scratch_encoder":
             self.model = GE2E('cpu')
 
     def forward(self, args):

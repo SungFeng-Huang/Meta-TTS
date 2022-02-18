@@ -9,9 +9,12 @@ import learn2learn as l2l
 
 from tqdm import tqdm
 from resemblyzer import VoiceEncoder
+# from learn2learn.algorithms import MAML
 
+from .utils import MAML
 from utils.tools import get_mask_from_lengths
 from lightning.systems.system import System
+from lightning.systems.utils import Task
 from lightning.utils import loss2dict
 
 
@@ -23,14 +26,15 @@ class BaseAdaptorSystem(System):
         super().__init__(*args, **kwargs)
 
         # All of the settings below are for few-shot validation
-        adaptation_lr = self.algorithm_config["adapt"]["lr"]
-        self.learner = l2l.algorithms.MAML(
+        adaptation_lr = self.algorithm_config["adapt"]["task"]["lr"]
+        # self.adaptation_class = self.algorithm_config["adapt"]["class"]
+        self.learner = MAML(
             torch.nn.ModuleDict({
                 k: getattr(self.model, k) for k in self.algorithm_config["adapt"]["modules"]
             }), lr=adaptation_lr
         )
 
-        self.adaptation_steps      = self.algorithm_config["adapt"]["steps"]
+        self.adaptation_steps      = self.algorithm_config["adapt"]["train"]["steps"]
         self.test_adaptation_steps = self.algorithm_config["adapt"]["test"]["steps"]
         assert self.test_adaptation_steps % self.adaptation_steps == 0
 
@@ -61,6 +65,8 @@ class BaseAdaptorSystem(System):
             spk_emb = speaker_emb(speaker_args)
             if average_spk_emb:
                 spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
+
+        if speaker_emb is not None:
             output += spk_emb.unsqueeze(1).expand(-1, max_src_len, -1)
 
         (
@@ -72,9 +78,9 @@ class BaseAdaptorSystem(System):
         )
 
         if speaker_emb is not None:
-            spk_emb = speaker_emb(speaker_args)
-            if average_spk_emb:
-                spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
+            # spk_emb = speaker_emb(speaker_args)
+            # if average_spk_emb:
+                # spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
             output += spk_emb.unsqueeze(1).expand(-1, max(mel_lens), -1)
 
         output, mel_masks = decoder(output, mel_masks)
@@ -102,7 +108,7 @@ class BaseAdaptorSystem(System):
         for step in range(adaptation_steps):
             preds = self.forward_learner(learner, *sup_batch[2:])
             train_error = self.loss_func(sup_batch, preds)
-            learner.adapt(train_error[0], first_order=first_order, allow_unused=False, allow_nograd=True)
+            learner.adapt_(train_error[0], first_order=first_order, allow_unused=False, allow_nograd=True)
         return learner
 
     def meta_learn(self, batch, batch_idx, train=True):
@@ -128,7 +134,28 @@ class BaseAdaptorSystem(System):
         self._on_meta_batch_start(batch)
 
     def test_step(self, batch, batch_idx):
+        all_outputs = []
+        qry_batch = batch[0][1][0]
+        if self.algorithm_config["adapt"]["test"].get("1-shot", False):
+            task = Task(sup_data=batch[0][0][0],
+                        qry_data=batch[0][1][0],
+                        batch_size=1,
+                        shuffle=False)
+            for sup_batch in iter(task):
+                mini_batch = [([sup_batch], [qry_batch])]
+                outputs = self._test_step(mini_batch, batch_idx)
+                all_outputs.append(outputs)
+        else:
+            outputs = self._test_step(batch, batch_idx)
+            all_outputs.append(outputs)
+        torch.distributed.barrier()
+
+        return all_outputs
+
+    def _test_step(self, batch, batch_idx):
         outputs = {}
+
+        saving_steps = self.algorithm_config["adapt"]["test"].get("saving_steps", [5, 10, 20, 50, 100])
 
         sup_batch = batch[0][0][0]
         qry_batch = batch[0][1][0]
@@ -153,7 +180,7 @@ class BaseAdaptorSystem(System):
             valid_error = self.loss_func(qry_batch, predictions)
             outputs[f"step_{ft_step}"] = {"recon": {"losses": valid_error, "output": predictions}}
 
-            if ft_step in [5, 10, 20, 50, 100]:
+            if ft_step in saving_steps:
                 # synth_samples & save & log
                 predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
                 outputs[f"step_{ft_step}"].update({"synth": {"output": predictions}})

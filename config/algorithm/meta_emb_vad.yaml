@@ -1,4 +1,4 @@
-name: meta_emb_va_d table
+name: meta_emb_vad
 type: meta  # meta/baseline/imaml, get_system
 
 _phn_emb_config:

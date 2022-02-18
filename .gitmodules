@@ -1,0 +1,3 @@
+[submodule "hypertorch"]
+	path = hypertorch
+	url = git@github.com:prolearner/hypertorch.git

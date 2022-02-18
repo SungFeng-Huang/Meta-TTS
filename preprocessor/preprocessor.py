@@ -9,6 +9,8 @@ import pyworld as pw
 from scipy.interpolate import interp1d
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
+import resemblyzer
+from resemblyzer import preprocess_wav, wav_to_mel_spectrogram
 
 import audio as Audio
 
@@ -60,6 +62,7 @@ class Preprocessor:
         os.makedirs((os.path.join(self.out_dir, "pitch")), exist_ok=True)
         os.makedirs((os.path.join(self.out_dir, "energy")), exist_ok=True)
         os.makedirs((os.path.join(self.out_dir, "duration")), exist_ok=True)
+        os.makedirs((os.path.join(self.out_dir, "spk_ref_mel_slices")), exist_ok=True)
 
         print("Processing Data ...")
         n_frames = 0
@@ -70,10 +73,16 @@ class Preprocessor:
         speakers = {}
         i = 0   # index of total speakers (train + val + test)
         outs = {}
-        for dset in [self.test_set]:
-        # for dset in [self.train_set, self.val_set, self.test_set]:
+        dsets = []
+        for dset in [self.train_set, self.val_set, self.test_set]:
             if dset is None:
                 continue
+            elif isinstance(dset, list):
+                dsets += dset
+            elif isinstance(dset, str):
+                dsets.append(dset)
+
+        for dset in dsets:
             dset_dir = os.path.join(self.in_dir, dset)
             out = list()
             for speaker in tqdm(os.listdir(dset_dir), desc=dset):
@@ -106,8 +115,9 @@ class Preprocessor:
         print("Computing statistic quantities ...")
         # Perform normalization if necessary
         if self.pitch_normalization:
-            # For additional testing corpus/set
-            if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
+            # For additional corpus/set
+            # if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
+            if os.path.exists(os.path.join(self.out_dir, "stats.json")):
                 stats = json.load(open(os.path.join(self.out_dir, "stats.json"), 'r'))
                 pitch_mean = stats['pitch'][2]
                 pitch_std = stats['pitch'][3]
@@ -119,7 +129,8 @@ class Preprocessor:
             pitch_mean = 0
             pitch_std = 1
         if self.energy_normalization:
-            if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
+            # if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
+            if os.path.exists(os.path.join(self.out_dir, "stats.json")):
                 stats = json.load(open(os.path.join(self.out_dir, "stats.json"), 'r'))
                 energy_mean = stats['energy'][2]
                 energy_std = stats['energy'][3]
@@ -249,6 +260,22 @@ class Preprocessor:
                 pos += d
             energy = energy[: len(duration)]
 
+        # speaker d-vector reference
+        # Settings are slightly different from above, so should start again
+        wav = preprocess_wav(wav_path)
+
+        # Compute where to split the utterance into partials and pad the waveform
+        # with zeros if the partial utterances cover a larger range.
+        wav_slices, mel_slices = resemblyzer.VoiceEncoder.compute_partial_slices(
+            len(wav), rate=1.3, min_coverage=0.75
+        )
+        max_wave_length = wav_slices[-1].stop
+        if max_wave_length >= len(wav):
+            wav = np.pad(wav, (0, max_wave_length - len(wav)), "constant")
+        # Split the utterance into partials and forward them through the model
+        spk_ref_mel = wav_to_mel_spectrogram(wav)
+        spk_ref_mel_slices = [spk_ref_mel[s] for s in mel_slices]
+
         # Save files
         dur_filename = "{}-duration-{}.npy".format(speaker, basename)
         np.save(os.path.join(self.out_dir, "duration", dur_filename), duration)
@@ -263,6 +290,12 @@ class Preprocessor:
         np.save(
             os.path.join(self.out_dir, "mel", mel_filename),
             mel_spectrogram.T,
+        )
+
+        spk_ref_mel_slices_filename = mel_filename
+        np.save(
+            os.path.join(self.out_dir, "spk_ref_mel_slices", spk_ref_mel_slices_filename),
+            spk_ref_mel_slices,
         )
 
         return (

@@ -1,0 +1,23 @@
+name: meta-lingual-debug
+type: meta # meta/baseline
+meta_type: lang
+
+adapt:
+    speaker_emb: table # shared/table/encoder
+    modules:
+        - encoder
+        - variance_adaptor
+        - decoder
+        - mel_linear
+        - postnet
+
+    ways: 1
+    shots: 25
+    queries: 25
+    steps: 5
+    lr: 0.0003
+    meta_batch_size: 1
+
+    test:
+        queries: 25
+        steps: 100 # max adaptation steps for testing

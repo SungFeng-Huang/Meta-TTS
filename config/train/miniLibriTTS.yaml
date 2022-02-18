@@ -1,0 +1,4 @@
+path:
+  ckpt_path: "./output/ckpt/miniLibriTTS"
+  log_path: "./output/log/miniLibriTTS"
+  result_path: "./output/result/miniLibriTTS"

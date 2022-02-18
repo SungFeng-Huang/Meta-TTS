@@ -11,19 +11,19 @@ from text import text_to_sequence
 from utils.tools import pad_1D, pad_2D
 
 
-class Dataset(Dataset):
+class TTSDataset(Dataset):
     def __init__(
-        self, filename, preprocess_config, train_config, sort=False, drop_last=False, refer_wav=False
+        self, filename, preprocess_config, train_config, sort=False, drop_last=False, spk_refer_wav=False
     ):
         self.dataset_name = preprocess_config["dataset"]
         self.preprocessed_path = preprocess_config["path"]["preprocessed_path"]
         self.cleaners = preprocess_config["preprocessing"]["text"]["text_cleaners"]
         self.batch_size = train_config["optimizer"]["batch_size"]
 
-        self.refer_wav = refer_wav
-        if refer_wav:
-            dset = filename.split('.')[0]
-            self.raw_path = os.path.join(preprocess_config["path"]["raw_path"], dset)
+        self.spk_refer_wav = spk_refer_wav
+        # if spk_refer_wav:
+            # dset = filename.split('.')[0]
+            # self.raw_path = os.path.join(preprocess_config["path"]["raw_path"], dset)
 
         self.basename, self.speaker, self.text, self.raw_text = self.process_meta(
             filename
@@ -32,6 +32,8 @@ class Dataset(Dataset):
             self.speaker_map = json.load(f)
         self.sort = sort
         self.drop_last = drop_last
+
+        print(f"\nLength of dataset: {len(self.text)}")
 
     def __len__(self):
         return len(self.text)
@@ -78,15 +80,15 @@ class Dataset(Dataset):
             "duration": duration,
         }
 
-        if self.refer_wav:
-            ref_mel_slices_path = os.path.join(
+        if self.spk_refer_wav:
+            spk_ref_mel_slices_path = os.path.join(
                 self.preprocessed_path,
-                "ref_mel_slices",
+                "spk_ref_mel_slices",
                 "{}-mel-{}.npy".format(speaker, basename),
             )
-            ref_mel_slices = np.load(ref_mel_slices_path)
+            spk_ref_mel_slices = np.load(spk_ref_mel_slices_path)
 
-            sample.update({"ref_mel_slices": ref_mel_slices})
+            sample.update({"spk_ref_mel_slices": spk_ref_mel_slices})
 
         return sample
 
@@ -107,6 +109,7 @@ class Dataset(Dataset):
             return name, speaker, text, raw_text
 
     def reprocess(self, data, idxs):
+        """ Depreciated """
         ids = [data[idx]["id"] for idx in idxs]
         speakers = [data[idx]["speaker"] for idx in idxs]
         texts = [data[idx]["text"] for idx in idxs]
@@ -142,6 +145,7 @@ class Dataset(Dataset):
         )
 
     def collate_fn(self, data):
+        """ Depreciated """
         data_size = len(data)
 
         if self.sort:
@@ -150,7 +154,7 @@ class Dataset(Dataset):
         else:
             idx_arr = np.arange(data_size)
 
-        tail = idx_arr[len(idx_arr) - (len(idx_arr) % self.batch_size) :]
+        tail = idx_arr[len(idx_arr) - (len(idx_arr) % self.batch_size):]
         idx_arr = idx_arr[: len(idx_arr) - (len(idx_arr) % self.batch_size)]
         idx_arr = idx_arr.reshape((-1, self.batch_size)).tolist()
         if not self.drop_last and len(tail) > 0:
@@ -161,6 +165,37 @@ class Dataset(Dataset):
             output.append(self.reprocess(data, idx))
 
         return output
+
+
+class MonolingualTTSDataset(TTSDataset):
+    def __init__(
+        self, filename, preprocess_config, train_config, sort=False, drop_last=False, spk_refer_wav=False
+    ):
+        super().__init__(filename, preprocess_config, train_config, sort, drop_last, spk_refer_wav)
+        self.lang_id = preprocess_config["lang_id"]
+
+    def __getitem__(self, idx):
+        sample = super().__getitem__(idx)
+
+        basename = self.basename[idx]
+        speaker = self.speaker[idx]
+
+        representation_path = os.path.join(
+            self.preprocessed_path,
+            "representation",
+            "{}-representation-{}.npy".format(speaker, basename),
+        )
+        if not os.path.isfile(representation_path):
+            representation = np.zeros((1, 1024))
+        else:
+            representation = np.load(representation_path)
+
+        sample.update({
+            "language": self.lang_id,
+            "representation": representation,
+        })
+
+        return sample
 
 
 class TextDataset(Dataset):
@@ -230,10 +265,10 @@ if __name__ == "__main__":
         open("./config/LJSpeech/train.yaml", "r"), Loader=yaml.FullLoader
     )
 
-    train_dataset = Dataset(
+    train_dataset = TTSDataset(
         "train.txt", preprocess_config, train_config, sort=True, drop_last=True
     )
-    val_dataset = Dataset(
+    val_dataset = TTSDataset(
         "val.txt", preprocess_config, train_config, sort=False, drop_last=False
     )
     train_loader = DataLoader(

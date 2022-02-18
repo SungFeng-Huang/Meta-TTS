@@ -24,6 +24,7 @@ class WavsToDvector:
         self.n_speaker = config.n_speaker # number of speakers ex: 39
         self.mode_list = config.mode_list
         self.step_list = config.step_list
+        self.mode_step_list = config.mode_step_list
         # self.use_new_pair = args.new_pair
         self.use_new_pair = False
 
@@ -63,10 +64,11 @@ class WavsToDvector:
             if not os.path.exists(f'npy/{self.corpus}/{mode}_dvector.npy'):
                 print(f'\tSaving to: \n\t\tnpy/{self.corpus}/{mode}_dvector.npy')
                 np.save(f'npy/{self.corpus}/{mode}_dvector.npy', dvector_list_dict[mode], allow_pickle=True)
-        for mode in self.mode_list:
-            for step in self.step_list:
-                if mode in ['scratch_encoder', 'encoder', 'dvec'] and step != 0:
-                    continue
+
+        for mode, steps in self.mode_step_list:
+            for step in steps:
+                # if mode in ['scratch_encoder', 'encoder', 'dvec'] and step != 0:
+                    # continue
                 if os.path.exists(f'npy/{self.corpus}/{mode}_step{step}_dvector.npy'):
                     print(f'Getting dvector of mode: {mode}, step: {step}')
                     print(f'\tLoading from: \n\t\tnpy/{self.corpus}/{mode}_step{step}_dvector.npy')
@@ -275,14 +277,26 @@ class WavsToDvector:
         for speaker_id in trange(self.n_speaker, desc='Speaker', leave=False):
             for sample_id in trange(self.n_sample, desc='Sample', leave=False):
                 data_id = speaker_id*self.n_sample + sample_id
-                wav_dir = os.path.join(data_dir, f'test_{data_id:03d}')
-                for wav_file in os.listdir(wav_dir):
-                    if wav_file.endswith(f'FTstep_{step}.synth.wav'):
-                        filepath = os.path.join(wav_dir, wav_file)
-                        wav_tensor = preprocess_wav(filepath)
-                        emb_tensor = encoder.embed_utterance(wav_tensor)
-                        emb_tensor_list.append(emb_tensor)
-                        break
+                if os.path.exists(os.path.join(data_dir, f'test_{data_id:03d}')):
+                    wav_dir = os.path.join(data_dir, f'test_{data_id:03d}')
+                    for wav_file in os.listdir(wav_dir):
+                        if wav_file.endswith(f'FTstep_{step}.synth.wav'):
+                            filepath = os.path.join(wav_dir, wav_file)
+                            wav_tensor = preprocess_wav(filepath)
+                            emb_tensor = encoder.embed_utterance(wav_tensor)
+                            emb_tensor_list.append(emb_tensor)
+                            break
+                else:
+                    assert os.path.exists(os.path.join(data_dir, f'test_{data_id:03d}_0'))
+                    for i in range(5):
+                        wav_dir = os.path.join(data_dir, f'test_{data_id:03d}_{i}')
+                        for wav_file in os.listdir(wav_dir):
+                            if wav_file.endswith(f'FTstep_{step}.synth.wav'):
+                                filepath = os.path.join(wav_dir, wav_file)
+                                wav_tensor = preprocess_wav(filepath)
+                                emb_tensor = encoder.embed_utterance(wav_tensor)
+                                emb_tensor_list.append(emb_tensor)
+                                break
 
         return emb_tensor_list
     
@@ -293,4 +307,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
     main = WavsToDvector(args)
     #main.get_dvector()
-    # main.load_dvector()
