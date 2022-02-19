@@ -51,25 +51,17 @@ class BaselineDataModule(BaseDataModule):
 
 
     def _train_setup(self):
-        # self.train_dataset = ConcatDataset(self.train_datasets)
         if not isinstance(self.train_dataset, EpisodicInfiniteWrapper):
-            self.batch_size = self.train_ways * (self.train_shots + self.train_queries) * self.meta_batch_size
+            # self.batch_size = self.train_ways * (self.train_shots + self.train_queries) * self.meta_batch_size
+            self.batch_size = self.train_config["optimizer"]["batch_size"]
             self.train_dataset = EpisodicInfiniteWrapper(self.train_dataset, self.val_step*self.batch_size)
 
 
     def _validation_setup(self):
-        # self.val_dataset = ConcatDataset(self.val_datasets)
-        # self.val_task_dataset = few_shot_task_dataset(
-        #     self.val_dataset, self.test_ways, self.test_shots, self.test_queries,
-        #     n_tasks_per_label=8, type=self.meta_type
-        # )
-        # with seed_all(43):
-        #     self.val_SQids2Tid = prefetch_tasks(self.val_task_dataset, 'val', self.log_dir)
         pass
 
 
     def _test_setup(self):
-        # self.test_dataset = ConcatDataset(self.test_datasets)
         self.test_task_dataset = few_shot_task_dataset(
             self.test_dataset, self.test_ways, self.test_shots, self.test_queries,
             n_tasks_per_label=1, type=self.meta_type, re_id=True

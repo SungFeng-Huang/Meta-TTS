@@ -1,0 +1,4 @@
+path:
+  ckpt_path: "./output/ckpt/tune"
+  log_path: "./output/log/tune"
+  result_path: "./output/result/tune"

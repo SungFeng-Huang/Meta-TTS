@@ -52,6 +52,7 @@ def synth_one_sample_with_target(targets, predictions, vocoder, preprocess_confi
 
     return fig, wav_reconstruction, wav_prediction, basename
 
+
 def recon_samples(targets, predictions, vocoder, preprocess_config, figure_dir, audio_dir):
     """Reconstruct all samples of the batch."""
     for i in range(len(predictions[0])):
@@ -95,6 +96,7 @@ def recon_samples(targets, predictions, vocoder, preprocess_config, figure_dir, 
     sampling_rate = preprocess_config["preprocessing"]["audio"]["sampling_rate"]
     for wav, basename in zip(wav_targets, targets[0]):
         wavfile.write(os.path.join(audio_dir, f"{basename}.recon.wav"), sampling_rate, wav)
+
 
 def synth_samples(targets, predictions, vocoder, preprocess_config, figure_dir, audio_dir, name):
     """Synthesize the first sample of the batch."""

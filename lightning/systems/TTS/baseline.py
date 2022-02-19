@@ -14,7 +14,7 @@ from lightning.systems.utils import Task
 from lightning.utils import loss2dict, LightningMelGAN
 from lightning.model.phoneme_embedding import PhonemeEmbedding
 from lightning.model import FastSpeech2Loss, FastSpeech2
-from lightning.callbacks import Saver
+from lightning.callbacks.baseline_saver import Saver
 from lightning.callbacks.utils import synth_samples, recon_samples
 
 
@@ -58,7 +58,7 @@ class BaselineSystem(AdaptorSystem):
 
     def build_saver(self):
         saver = Saver(self.preprocess_config, self.log_dir, self.result_dir)
-        saver.set_baseline_saver()
+        # saver.set_baseline_saver()
         return saver
 
     def build_learner(self, *args, **kwargs):

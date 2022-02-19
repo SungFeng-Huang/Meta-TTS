@@ -105,10 +105,20 @@ class MetaSystem(AdaptorSystem):
         postnet          = _get_module('postnet')
         speaker_emb      = _get_module('speaker_emb')
 
+        if p_targets is not None:
+            p_targets = p_targets.contiguous()
+            e_targets = e_targets.contiguous()
+
         src_masks = get_mask_from_lengths(src_lens, max_src_len)
 
+        # print("text ids", texts)
         emb_texts = embedding(texts)
+        print("emb table sum", embedding._parameters['weight'].sum())
+        if (emb_texts != emb_texts).any():
+            print("NaN table")
         output = encoder(emb_texts, src_masks)
+        if (output != output).any():
+            print("encoder nan")
 
         mel_masks = (
             get_mask_from_lengths(mel_lens, max_mel_len) if mel_lens is not None else None
@@ -127,6 +137,8 @@ class MetaSystem(AdaptorSystem):
             output, src_masks, mel_masks, max_mel_len,
             p_targets, e_targets, d_targets, p_control, e_control, d_control,
         )
+        if (output != output).any():
+            print("variance_adaptor nan")
 
         if speaker_emb is not None:
             spk_emb = speaker_emb(speaker_args)
@@ -137,9 +149,15 @@ class MetaSystem(AdaptorSystem):
             output += spk_emb.unsqueeze(1).expand(-1, max_mel_len, -1)
 
         output, mel_masks = decoder(output, mel_masks)
+        if (output != output).any():
+            print("decoder nan")
         output = mel_linear(output)
+        if (output != output).any():
+            print("mel linear nan")
 
         tmp = postnet(output)
+        if (tmp != tmp).any():
+            print("postnet nan")
         postnet_output = tmp + output
 
         return (
@@ -163,6 +181,9 @@ class MetaSystem(AdaptorSystem):
                 train_error[0], first_order=first_order,
                 allow_unused=False, allow_nograd=True
             )
+            print("train error", train_error)
+            if train_error[0].isnan().any():
+                assert 1 == 2
         return learner
 
     def meta_learn(self, batch, batch_idx, train=True):
@@ -280,7 +301,9 @@ class MetaSystem(AdaptorSystem):
         self.model.train()
 
         # Determine fine tune checkpoints.
-        ft_steps = list(range(1000, 20001, 1000))
+        ft_steps = list(range(5, 201, 5))
+        if batch_idx == 0:
+            return outputs
         
         # Adapt
         learner = learner.clone()

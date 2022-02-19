@@ -128,3 +128,4 @@ evaluation/images/**/*.png
 *.npy
 *.csv
 *.swp
+/exp/

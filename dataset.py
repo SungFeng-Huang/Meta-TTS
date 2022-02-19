@@ -67,6 +67,10 @@ class TTSDataset(Dataset):
             "{}-duration-{}.npy".format(speaker, basename),
         )
         duration = np.load(duration_path)
+        assert not np.any(np.isnan(mel))
+        assert not np.any(np.isnan(pitch))
+        assert not np.any(np.isnan(energy))
+        assert not np.any(np.isnan(duration))
 
         sample = {
             "id": basename,

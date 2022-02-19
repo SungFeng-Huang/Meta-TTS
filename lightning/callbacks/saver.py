@@ -203,7 +203,7 @@ class Saver(Callback):
             #         figure_fit_dir, audio_fit_dir
             #     )
 
-            if "recon" in outputs[f"step_{ft_step}"]:
+            if f"step_{ft_step}" in outputs and "recon" in outputs[f"step_{ft_step}"]:
                 valid_error = outputs[f"step_{ft_step}"]["recon"]["losses"]
                 loss_dicts.append({"Step": ft_step, **loss2dict(valid_error)})
 
