@@ -10,7 +10,7 @@ path:
 subsets:
     train: "train"
     val: "val"
-    test: "test"
+    test: "test-clean"
 
 preprocessing:
     val_size: 512

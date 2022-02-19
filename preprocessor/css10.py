@@ -28,6 +28,8 @@ def prepare_align(config):
             if line == '\n':
                 continue
             wav_name, _, text, _ = line.strip().split('|')
+            if in_dir.split('/')[-1] == "german":
+                text = text.replace("ß", "ss")
             wav_path = f"{in_dir}/{wav_name}"
             if os.path.isfile(wav_path):
                 tasks.append((wav_path, text))

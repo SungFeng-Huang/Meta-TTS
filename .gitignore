@@ -125,6 +125,7 @@ evaluation/Pytorch_MBNet/
 evaluation/images/**/._*
 evaluation/images/**/*.png
 /results/
+/exp/
 *.npy
 *.csv
 *.swp

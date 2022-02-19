@@ -22,7 +22,7 @@ STATSDICT = {
     0: "./preprocessed_data/miniLibriTTS",
     1: "./preprocessed_data/miniAISHELL-3",
     2: "./preprocessed_data/miniGlobalPhone-fr",
-    3: "./preprocessed_data/miniGlobalPhone-de",
+    3: "./preprocessed_data/CSS10/german",
     4: "",
     5: "./preprocessed_data/miniGlobalPhone-es",
     6: "./preprocessed_data/miniJVS",
@@ -266,7 +266,7 @@ class BaselineSystem(AdaptorSystem):
         self.model.train()
 
         # Determine fine tune checkpoints.
-        ft_steps = [50, 100] + list(range(250, 10001, 250))
+        ft_steps = list(range(1000, 50001, 1000))
         
         # Adapt
         learner = learner.clone()

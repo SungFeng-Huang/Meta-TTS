@@ -354,14 +354,17 @@ class DualMetaSystem(AdaptorSystem):
                 if ft_step in ft_steps:
                     fit_preds = self.forward_learner(learner, *fit_batch[2:], average_spk_emb=True)
                     predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
-                    synth_samples(
-                        fit_batch, fit_preds, self.vocoder, config,
-                        figure_fit_dir, audio_fit_dir, f"step_{self.test_global_step}-FTstep_{ft_step}"
-                    )
-                    synth_samples(
-                        qry_batch, predictions, self.vocoder, config,
-                        figure_dir, audio_dir, f"step_{self.test_global_step}-FTstep_{ft_step}"
-                    )
+                    try:
+                        synth_samples(
+                            fit_batch, fit_preds, self.vocoder, config,
+                            figure_fit_dir, audio_fit_dir, f"step_{self.test_global_step}-FTstep_{ft_step}"
+                        )
+                        synth_samples(
+                            qry_batch, predictions, self.vocoder, config,
+                            figure_dir, audio_dir, f"step_{self.test_global_step}-FTstep_{ft_step}"
+                        )
+                    except Exception as e:
+                        print(e)
             learner.train()
             self.model.train()
         del learner

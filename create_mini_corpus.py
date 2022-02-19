@@ -10,17 +10,17 @@ SPKPERCORPUS = 5
 DATAPERSPK = 20
 NUM = 400
 TASKS = {
-    # "miniLibriTTS": {
-    #     "train": "preprocessed_data/LibriTTS/train-clean-100.txt",
-    #     "val": "preprocessed_data/LibriTTS/dev-clean.txt",
-    #     "test": "preprocessed_data/LibriTTS/test-clean.txt",
-    # },
+    "miniLibriTTS": {
+        "train": "preprocessed_data/LibriTTS/train-clean-100-clean.txt",
+        "val": "preprocessed_data/LibriTTS/dev-clean-clean.txt",
+        "test": "preprocessed_data/LibriTTS/test-clean-clean.txt",
+    },
     # "miniVCTK": "preprocessed_data/VCTK/all.txt",
-    # "miniAISHELL-3": {
-    #     "train": "preprocessed_data/AISHELL-3/train.txt",
-    #     "val": "preprocessed_data/AISHELL-3/val.txt",
-    #     "test": "preprocessed_data/AISHELL-3/val.txt",
-    # },
+    "miniAISHELL-3": {
+        "train": "preprocessed_data/AISHELL-3/train-clean.txt",
+        "val": "preprocessed_data/AISHELL-3/val-clean.txt",
+        "test": "preprocessed_data/AISHELL-3/val-clean.txt",
+    },
 
     # "miniCV-french": "preprocessed_data/CommonVoice/fr/train.txt",
     # "miniCV-german": "preprocessed_data/CommonVoice/de/train.txt",
@@ -33,30 +33,30 @@ TASKS = {
     
     # "miniJVS": "JVS/train.txt",
 
-    # "miniGlobalPhone-fr": {
-    #     "train": "preprocessed_data/GlobalPhone/fr/train.txt",
-    #     "val": "preprocessed_data/GlobalPhone/fr/val.txt",
-    #     "test": "preprocessed_data/GlobalPhone/fr/val.txt",
-    # },
-    # "miniGlobalPhone-de": {
-    #     "train": "preprocessed_data/GlobalPhone/de/train.txt",
-    #     "val": "preprocessed_data/GlobalPhone/de/val.txt",
-    #     "test": "preprocessed_data/GlobalPhone/de/val.txt",
-    # },
+    "miniGlobalPhone-fr": {
+        "train": "preprocessed_data/GlobalPhone/fr/train-clean.txt",
+        "val": "preprocessed_data/GlobalPhone/fr/val-clean.txt",
+        "test": "preprocessed_data/GlobalPhone/fr/val-clean.txt",
+    },
+    "miniGlobalPhone-de": {
+        "train": "preprocessed_data/GlobalPhone/de/train-clean.txt",
+        "val": "preprocessed_data/GlobalPhone/de/val-clean.txt",
+        "test": "preprocessed_data/GlobalPhone/de/val-clean.txt",
+    },
     "miniGlobalPhone-es": {
-        "train": "preprocessed_data/GlobalPhone/es/train.txt",
-        "val": "preprocessed_data/GlobalPhone/es/val.txt",
-        "test": "preprocessed_data/GlobalPhone/es/val.txt",
+        "train": "preprocessed_data/GlobalPhone/es/train-clean.txt",
+        "val": "preprocessed_data/GlobalPhone/es/val-clean.txt",
+        "test": "preprocessed_data/GlobalPhone/es/val-clean.txt",
     },
     "miniGlobalPhone-cz": {
-        "train": "preprocessed_data/GlobalPhone/cz/train.txt",
-        "val": "preprocessed_data/GlobalPhone/cz/val.txt",
-        "test": "preprocessed_data/GlobalPhone/cz/val.txt",
+        "train": "preprocessed_data/GlobalPhone/cz/train-clean.txt",
+        "val": "preprocessed_data/GlobalPhone/cz/val-clean.txt",
+        "test": "preprocessed_data/GlobalPhone/cz/val-clean.txt",
     },
     "miniJVS": {
-        "train": "preprocessed_data/JVS/train.txt",
-        "val": "preprocessed_data/JVS/val.txt",
-        "test": "preprocessed_data/JVS/val.txt",
+        "train": "preprocessed_data/JVS/train-clean.txt",
+        "val": "preprocessed_data/JVS/val-clean.txt",
+        "test": "preprocessed_data/JVS/val-clean.txt",
     },
 }
 
@@ -112,7 +112,10 @@ for corpus_name, sets in TASKS.items():
                     continue
                 wav_name, spk, phns, raw_text = line.strip().split("|")
                 candidates.append((spk, line))
-        lines = random.sample(candidates, k=NUM)
+        if len(candidates) < NUM:
+            lines = candidates
+        else:
+            lines = random.sample(candidates, k=NUM)
         mini_corpus_tasks = [l[1] for l in lines]
         
         # create mini corpus

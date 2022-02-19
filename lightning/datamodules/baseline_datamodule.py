@@ -51,9 +51,9 @@ class BaselineDataModule(BaseDataModule):
 
 
     def _train_setup(self):
-        # self.train_dataset = ConcatDataset(self.train_datasets)
         if not isinstance(self.train_dataset, EpisodicInfiniteWrapper):
-            self.batch_size = self.train_ways * (self.train_shots + self.train_queries) * self.meta_batch_size
+            # self.batch_size = self.train_ways * (self.train_shots + self.train_queries) * self.meta_batch_size
+            self.batch_size = self.train_config["optimizer"]["batch_size"]
             self.train_dataset = EpisodicInfiniteWrapper(self.train_dataset, self.val_step*self.batch_size)
 
 
