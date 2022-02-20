@@ -43,10 +43,15 @@ TASKS = {
     #     "val": "preprocessed_data/GlobalPhone/cz/val.txt",
     #     "test": "preprocessed_data/GlobalPhone/cz/val.txt",
     # },
-    "preprocessed_data/CSS10/german": {
-        "train": "preprocessed_data/CSS10/german/train.txt",
-        "val": "preprocessed_data/CSS10/german/val.txt",
-        "test": "preprocessed_data/CSS10/german/val.txt",
+    # "preprocessed_data/CSS10/german": {
+    #     "train": "preprocessed_data/CSS10/german/train.txt",
+    #     "val": "preprocessed_data/CSS10/german/val.txt",
+    #     "test": "preprocessed_data/CSS10/german/val.txt",
+    # },
+    "preprocessed_data/kss": {
+        "train": "preprocessed_data/kss/train.txt",
+        "val": "preprocessed_data/kss/val.txt",
+        "test": "preprocessed_data/kss/val.txt",
     },
 }
 

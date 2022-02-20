@@ -1,0 +1,36 @@
+dataset: "CSS10-german"
+lang_id: 3
+
+path:
+  corpus_path: "../CSS10/german"
+  lexicon_path: "lexicon/librispeech-lexicon.txt"
+  raw_path: "./raw_data/CSS10/german"
+  preprocessed_path: "./preprocessed_data/CSS10/german"
+
+subsets:
+  train: "train-4"
+  val: "val-12"
+  test: "val-12"
+
+preprocessing:
+  val_size: 512
+  text:
+    text_cleaners: ["basic_cleaners"]
+    language: "en"
+  audio:
+    sampling_rate: 22050
+    max_wav_value: 32767.0
+  stft:
+    filter_length: 1024
+    hop_length: 256
+    win_length: 1024
+  mel:
+    n_mel_channels: 80
+    mel_fmin: 0
+    mel_fmax: Null # set to null for MelGAN vocoder
+  pitch:
+    feature: "phoneme_level" # support 'phoneme_level' or 'frame_level'
+    normalization: True
+  energy:
+    feature: "phoneme_level" # support 'phoneme_level' or 'frame_level'
+    normalization: True
