@@ -25,3 +25,16 @@ LANG_ID2SYMBOLS = {
     7: common_symbols + get_phoneme_set("../MFA/lexicon/Czech/phoneset.txt"),
     8: common_symbols + get_phoneme_set("../MFA/lexicon/Korean/phoneset.txt"),
 }
+
+
+LANG_ID2NAME = {
+    0: "en",
+    1: "zh",
+    2: "fr",
+    3: "de",
+    4: "ru",
+    5: "es",
+    6: "jp",
+    7: "cz",
+    8: "ko"
+}

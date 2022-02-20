@@ -72,7 +72,7 @@ def main(args, configs):
         # should manually clip grad
         del trainer_training_config['gradient_clip_val']
 
-    if args.stage == 'train':
+    if args.stage == 'train' or 'tune':
         # Init logger
         comet_logger = pl.loggers.CometLogger(
             save_dir=train_config["path"]["log_path"],
@@ -153,6 +153,24 @@ def main(args, configs):
         for _ in tqdm(datamodule.test_dataset, desc="test_dataset"):
             pass
 
+    elif args.stage == 'tune':
+        # Get model
+        system = get_system(algorithm_config["type"])
+        assert pretrain_ckpt_file is not None
+        assert len(preprocess_configs) == 1  # transfer one language at a time
+        model = system.load_from_checkpoint(
+            pretrain_ckpt_file,
+            preprocess_config=preprocess_configs[0], model_config=model_config, train_config=train_config, algorithm_config=algorithm_config,
+            log_dir=log_dir, result_dir=result_dir
+        )
+        model.tune_init()
+
+        # Train
+        trainer = pl.Trainer(
+            logger=loggers, **TRAINER_CONFIG, **trainer_training_config
+        )
+        pl.seed_everything(43, True)
+        trainer.fit(model, datamodule=datamodule)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

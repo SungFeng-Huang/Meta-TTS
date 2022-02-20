@@ -7,6 +7,7 @@ from torch.utils.data import BatchSampler, RandomSampler, SequentialSampler
 from torch import Tensor
 from torch.nn import Module
 from typing import List, Callable, TypedDict
+from tqdm import tqdm
 
 import learn2learn as l2l
 from learn2learn.utils import clone_module, update_module, detach_module, clone_parameters
@@ -14,6 +15,7 @@ from learn2learn.utils import clone_module, update_module, detach_module, clone_
 import hypergrad as hg
 from hypergrad import CG_torch, get_outer_gradients, update_tensor_grads
 
+from text import define, text_to_sequence
 from lightning.collate import split_reprocess
 
 
@@ -337,3 +339,51 @@ class CodebookAnalyzer(object):
             fig = self.plot_matching(info, False)
             fig.savefig(f"{self.root}/codebook/phoneme-transfer/{idx:03d}-{info['title']}.jpg")
             plt.close(fig)
+
+
+def generate_hubert_features(filename, lang_id):
+    print("Averaging hubert features...")
+    preprocessed_path = os.path.dirname(filename)
+    with open(filename, "r", encoding="utf-8") as f:
+        names = []
+        speakers = []
+        texts = []
+        raw_texts = []
+        for line in f.readlines():
+            n, s, t, r = line.strip("\n").split("|")
+            names.append(n)
+            speakers.append(s)
+            texts.append(t)
+            raw_texts.append(r)
+
+    d_representation = 1024
+    n_symbols = len(define.LANG_ID2SYMBOLS[lang_id])
+    table = {i: np.zeros(d_representation) for i in range(n_symbols)}
+    cnt = {i: 0 for i in range(n_symbols)}
+    for idx in tqdm(range(len(names))):
+        phone = np.array(text_to_sequence(texts[idx], ["basic_cleaners"], lang_id))
+        representation_path = os.path.join(
+            preprocessed_path,
+            "representation",
+            "{}-representation-{}.npy".format(speakers[idx], names[idx]),
+        )
+        representation = np.load(representation_path)
+
+        for ph, r in zip(phone, representation):
+            array_has_nan = np.isnan(np.sum(r))
+            if array_has_nan:
+                print(names[idx], ph)
+                continue
+            table[int(ph)] += r
+            cnt[int(ph)] += 1
+
+    phoneme_features = np.zeros((n_symbols, d_representation), dtype=np.float32)
+    rr = []
+    for i in range(n_symbols):
+        if cnt[i] == 0:
+            phoneme_features[i] = np.zeros(d_representation)
+        else:
+            rr.append(i)
+            phoneme_features[i] = table[i] / cnt[i]
+
+    return phoneme_features
