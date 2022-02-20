@@ -8,7 +8,7 @@ from pytorch_lightning.utilities import rank_zero_only
 
 from .base_saver import BaseSaver
 from lightning.utils import loss2dict
-from lightning.callbacks.utils import synth_one_sample_with_target
+from lightning.callbacks.utils import synth_one_sample_with_target, synth_samples
 
 
 CSV_COLUMNS = ["Total Loss", "Mel Loss", "Mel-Postnet Loss", "Pitch Loss", "Energy Loss", "Duration Loss"]
@@ -64,6 +64,7 @@ class Saver(BaseSaver):
         loss = outputs['losses']
         output = outputs['output']
         _batch = outputs['_batch']
+        synth_output = outputs['synth']
         
         step = pl_module.global_step + 1
         assert len(list(pl_module.logger)) == 1
@@ -76,9 +77,14 @@ class Saver(BaseSaver):
         # Log loss for each sample to csv files
         self.save_csv("Validation", step, 0, loss_dict)
 
+        figure_dir = os.path.join(self.result_dir, "figure")
+        audio_dir = os.path.join(self.result_dir, "audio")
+        os.makedirs(figure_dir, exist_ok=True)
+        os.makedirs(audio_dir, exist_ok=True)
+
         # Log figure/audio to logger + save audio
         # One smaple for the first two batches, so synthesize two samples in total.
-        if batch_idx < 2 and pl_module.local_rank == 0:
+        if batch_idx == 0 and pl_module.local_rank == 0:
             metadata = {'ids': batch[0]}
             fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
                 _batch, output, vocoder, self.preprocess_config
@@ -87,6 +93,8 @@ class Saver(BaseSaver):
             self.log_audio(logger, "Validation", step, basename, "reconstructed", wav_reconstruction, self.sr, metadata)
             self.log_audio(logger, "Validation", step, basename, "synthesized", wav_prediction, self.sr, metadata)
             plt.close(fig)
+
+            synth_samples(_batch, synth_output, vocoder, self.preprocess_config, figure_dir, audio_dir, f"FTstep_{step}")
 
     def on_validation_epoch_end(self, trainer, pl_module):
         loss_dict = merge_dicts(self.val_loss_dicts)

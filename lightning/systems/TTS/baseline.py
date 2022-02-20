@@ -168,10 +168,17 @@ class BaselineSystem(AdaptorSystem):
         return valid_error, predictions
     
     def common_step(self, batch, batch_idx, train=True):
+        if getattr(self, "fix_spk_args", None) is None:
+            self.fix_spk_args = batch[2]
         emb_texts = F.embedding(batch[3], self.embedding_model.get_new_embedding("table"), padding_idx=0)
         output = self.model(batch[2], emb_texts, *(batch[4:]))
         loss = self.loss_func(batch, output)
         return loss, output
+    
+    def synth_step(self, batch, batch_idx):  # only used when tune
+        emb_texts = F.embedding(batch[3], self.embedding_model.get_new_embedding("table"), padding_idx=0)
+        output = self.model(self.fix_spk_args, emb_texts, *(batch[4:6]), average_spk_emb=True)
+        return output
     
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
         assert len(batch) == 12, "data with 12 elements"
@@ -189,12 +196,12 @@ class BaselineSystem(AdaptorSystem):
 
     def validation_step(self, batch, batch_idx):
         val_loss, predictions = self.common_step(batch, batch_idx, train=False)
-        qry_batch = batch
+        synth_predictions = self.synth_step(batch, batch_idx)
 
         # Log metrics to CometLogger
         loss_dict = {f"Val/{k}":v for k,v in loss2dict(val_loss).items()}
         self.log_dict(loss_dict, sync_dist=True)
-        return {'losses': val_loss, 'output': predictions, '_batch': qry_batch}
+        return {'losses': val_loss, 'output': predictions, '_batch': batch, 'synth': synth_predictions}
 
     def test_step(self, batch, batch_idx):
         return super().test_step(batch, batch_idx)["adaptation"]

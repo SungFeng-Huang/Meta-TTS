@@ -48,6 +48,7 @@ class FastSpeech2(pl.LightningModule):
         p_control=1.0,
         e_control=1.0,
         d_control=1.0,
+        average_spk_emb=False,
     ):
         src_masks = get_mask_from_lengths(src_lens, max_src_len)
         mel_masks = (
@@ -59,9 +60,13 @@ class FastSpeech2(pl.LightningModule):
         output = self.encoder(texts, src_masks)
 
         if self.speaker_emb is not None:
-            output = output + self.speaker_emb(speaker_args).unsqueeze(1).expand(
-                -1, max_src_len, -1
-            )
+            spk_emb = self.speaker_emb(speaker_args)
+            if average_spk_emb:
+                spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
+            output += spk_emb.unsqueeze(1).expand(-1, max_src_len, -1)
+            # output = output + self.speaker_emb(speaker_args).unsqueeze(1).expand(
+            #     -1, max_src_len, -1
+            # )
 
         (
             output,
@@ -85,9 +90,13 @@ class FastSpeech2(pl.LightningModule):
         )
 
         if self.speaker_emb is not None:
-            output = output + self.speaker_emb(speaker_args).unsqueeze(1).expand(
-                -1, max(mel_lens), -1
-            )
+            spk_emb = self.speaker_emb(speaker_args)
+            if average_spk_emb:
+                spk_emb = spk_emb.mean(dim=0, keepdim=True).expand(output.shape[0], -1)
+            output += spk_emb.unsqueeze(1).expand(-1, max(mel_lens), -1)
+            # output = output + self.speaker_emb(speaker_args).unsqueeze(1).expand(
+            #     -1, max(mel_lens), -1
+            # )
 
         output, mel_masks = self.decoder(output, mel_masks)
         output = self.mel_linear(output)
