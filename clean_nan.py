@@ -6,7 +6,7 @@ import shutil
 from tqdm import tqdm
 
 
-MAX_FRAME = 1300
+MAX_FRAME = 10000
 TASKS = {
     # "preprocessed_data/GlobalPhone/es": {
     #     "train": "preprocessed_data/GlobalPhone/es/train.txt",
@@ -43,10 +43,15 @@ TASKS = {
     #     "val": "preprocessed_data/GlobalPhone/cz/val.txt",
     #     "test": "preprocessed_data/GlobalPhone/cz/val.txt",
     # },
+    "preprocessed_data/CSS10/german": {
+        "train": "preprocessed_data/CSS10/german/train.txt",
+        "val": "preprocessed_data/CSS10/german/val.txt",
+        "test": "preprocessed_data/CSS10/german/val.txt",
+    },
 }
 
 
-for (corpus_path, sets) in TASKS:
+for (corpus_path, sets) in TASKS.items():
     time_info = {}
     for set_name, info_path in sets.items():
         lines = []
@@ -77,14 +82,14 @@ for (corpus_path, sets) in TASKS:
                     print(f"NaN detected on {corpus_path}/{filename}.")
                     ok = False
                     break
-                if idx == 4 and arr.size(0) > MAX_FRAME:
+                if idx == 4 and arr.shape[0] > MAX_FRAME:
                     ok = False
                     break
             if ok:
                 checked.append(line)
-                mel = np.load(f"{corpus_path}/{to_check[5]}")
-                assert mel.size(1) == 80
-                time_info[set_name] += mel.size(0) * 256 / 22050 / 60  # minutes
+                mel = np.load(f"{corpus_path}/{to_check[4]}")
+                assert mel.shape[1] == 80
+                time_info[set_name] += mel.shape[0] * 256 / 22050 / 60  # minutes
         
         with open(f"{info_path[:-4]}-clean.txt", 'w', encoding='utf-8') as f:
             for line in checked:

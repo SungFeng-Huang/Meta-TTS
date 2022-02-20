@@ -91,7 +91,7 @@ class BaselineDataModule(BaseDataModule):
             batch_size=batch_size//torch.cuda.device_count(),
             shuffle=False,
             drop_last=False,
-            num_workers=4,
+            num_workers=0,
             collate_fn=self.collate.get_collate(False),
         )
         return self.val_loader
