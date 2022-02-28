@@ -8,9 +8,9 @@ path:
   preprocessed_path: "./preprocessed_data/CSS10/german"
 
 subsets:
-  train: "train-clean"
-  val: "val-clean"
-  test: "val-clean"
+  train: "train"
+  val: "val"
+  test: "val"
 
 preprocessing:
   val_size: 512

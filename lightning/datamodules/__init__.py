@@ -14,6 +14,7 @@ DATA_MODULE = {
     "asr-center-ref": MetaDataModule,
     "dual-meta": MetaDataModule,
     "dual-tune": BaselineDataModule,
+    "meta-tune": BaselineDataModule,
     "baseline": BaselineDataModule,
 }
 

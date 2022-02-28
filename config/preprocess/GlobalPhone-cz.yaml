@@ -4,7 +4,7 @@ lang_id: 7
 path:
   corpus_path: "../CommonVoice/clean_comvoi/fr"
   lexicon_path: "lexicon/librispeech-lexicon.txt"
-  raw_path: "./raw_data/CommonVoice/fr"
+  raw_path: "./raw_data/GlobalPhone/cz"
   preprocessed_path: "./preprocessed_data/GlobalPhone/cz"
 
 subsets:

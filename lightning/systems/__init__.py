@@ -15,6 +15,7 @@ SYSTEM = {
     "asr-center-ref": ASR.center_ref.CenterRefSystem,
     "dual-meta": Dual.dual.DualMetaSystem,
     "dual-tune": Dual.dual_tune.DualMetaTuneSystem,
+    "meta-tune": TTS.maml_tune.MetaTuneSystem,
 }
 
 def get_system(algorithm):

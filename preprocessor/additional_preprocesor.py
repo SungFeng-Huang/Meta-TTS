@@ -58,7 +58,10 @@ class Preprocessor:
                         self.out_dir, "TextGrid", speaker, "{}.TextGrid".format(basename)
                     )
                     if os.path.exists(tg_path):
-                        self.process_utterance(dset_dir, speaker, basename)
+                        try:
+                            self.process_utterance(dset_dir, speaker, basename)
+                        except Exception as e:
+                            print(e)
                     else:
                         continue
                 i += 1
@@ -99,14 +102,17 @@ class Preprocessor:
 
         # Reload mel-spectrogram
         mel_filename = "{}-mel-{}.npy".format(speaker, basename)
+        if not os.path.isfile(os.path.join(self.out_dir, "mel", mel_filename)):
+            print("file not exist!")
+            raise ValueError
         mel_spectrogram = np.load(os.path.join(self.out_dir, "mel", mel_filename))
-        mel_spectrogram = mel_spectrogram.T
+        mel_repr = np.zeros(mel_spectrogram.shape)
 
         # Compute mean mel-spectrogram
         pos = 0
         for i, d in enumerate(duration):
             if d > 0:
-                mel_repr[i] = np.mean(mel_spectrogram[pos : pos + d])
+                mel_repr[i] = np.mean(mel_spectrogram[pos : pos + d], axis=0)
             else:
                 mel_repr[i] = np.zeros(80)
             pos += d
@@ -126,8 +132,8 @@ class Preprocessor:
         # Save files
         mel_repr_filename = "{}-mel-representation-{}.npy".format(speaker, basename)
         np.save(os.path.join(self.out_dir, "mel-representation", mel_repr_filename), mel_repr)
-        representation_filename = "{}-xlsr-representation-{}.npy".format(speaker, basename)
-        np.save(os.path.join(self.out_dir, "xlsr-representation", representation_filename), representation)
+        representation_filename = "{}-xlsr53-representation-{}.npy".format(speaker, basename)
+        np.save(os.path.join(self.out_dir, "xlsr53-representation", representation_filename), representation)
 
         return None
 
