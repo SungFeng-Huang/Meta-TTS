@@ -8,46 +8,46 @@ from tqdm import tqdm
 
 MAX_FRAME = 10000
 TASKS = {
-    # "preprocessed_data/GlobalPhone/es": {
-    #     "train": "preprocessed_data/GlobalPhone/es/train.txt",
-    #     "val": "preprocessed_data/GlobalPhone/es/val.txt",
-    #     "test": "preprocessed_data/GlobalPhone/es/val.txt",
-    # },
-    # "preprocessed_data/JVS": {
-    #     "train": "preprocessed_data/JVS/train.txt",
-    #     "val": "preprocessed_data/JVS/val.txt",
-    #     "test": "preprocessed_data/JVS/val.txt",
-    # },
-    # "preprocessed_data/LibriTTS": {
-    #     "train": "preprocessed_data/LibriTTS/train-clean-100.txt",
-    #     "val": "preprocessed_data/LibriTTS/dev-clean.txt",
-    #     "test": "preprocessed_data/LibriTTS/test-clean.txt",
-    # },
-    # "preprocessed_data/AISHELL-3": {
-    #     "train": "preprocessed_data/AISHELL-3/train.txt",
-    #     "val": "preprocessed_data/AISHELL-3/val.txt",
-    #     "test": "preprocessed_data/AISHELL-3/val.txt",
-    # },
-    # "preprocessed_data/GlobalPhone/fr": {
-    #     "train": "preprocessed_data/GlobalPhone/fr/train.txt",
-    #     "val": "preprocessed_data/GlobalPhone/fr/val.txt",
-    #     "test": "preprocessed_data/GlobalPhone/fr/val.txt",
-    # },
-    # "preprocessed_data/GlobalPhone/de": {
-    #     "train": "preprocessed_data/GlobalPhone/de/train.txt",
-    #     "val": "preprocessed_data/GlobalPhone/de/val.txt",
-    #     "test": "preprocessed_data/GlobalPhone/de/val.txt",
-    # },
-    # "preprocessed_data/GlobalPhone/cz": {
-    #     "train": "preprocessed_data/GlobalPhone/cz/train.txt",
-    #     "val": "preprocessed_data/GlobalPhone/cz/val.txt",
-    #     "test": "preprocessed_data/GlobalPhone/cz/val.txt",
-    # },
-    # "preprocessed_data/CSS10/german": {
-    #     "train": "preprocessed_data/CSS10/german/train.txt",
-    #     "val": "preprocessed_data/CSS10/german/val.txt",
-    #     "test": "preprocessed_data/CSS10/german/val.txt",
-    # },
+    "preprocessed_data/GlobalPhone/es": {
+        "train": "preprocessed_data/GlobalPhone/es/train.txt",
+        "val": "preprocessed_data/GlobalPhone/es/val.txt",
+        "test": "preprocessed_data/GlobalPhone/es/val.txt",
+    },
+    "preprocessed_data/JVS": {
+        "train": "preprocessed_data/JVS/train.txt",
+        "val": "preprocessed_data/JVS/val.txt",
+        "test": "preprocessed_data/JVS/val.txt",
+    },
+    "preprocessed_data/LibriTTS": {
+        "train": "preprocessed_data/LibriTTS/train-clean-100.txt",
+        "val": "preprocessed_data/LibriTTS/dev-clean.txt",
+        "test": "preprocessed_data/LibriTTS/test-clean.txt",
+    },
+    "preprocessed_data/AISHELL-3": {
+        "train": "preprocessed_data/AISHELL-3/train.txt",
+        "val": "preprocessed_data/AISHELL-3/val.txt",
+        "test": "preprocessed_data/AISHELL-3/val.txt",
+    },
+    "preprocessed_data/GlobalPhone/fr": {
+        "train": "preprocessed_data/GlobalPhone/fr/train.txt",
+        "val": "preprocessed_data/GlobalPhone/fr/val.txt",
+        "test": "preprocessed_data/GlobalPhone/fr/val.txt",
+    },
+    "preprocessed_data/GlobalPhone/de": {
+        "train": "preprocessed_data/GlobalPhone/de/train.txt",
+        "val": "preprocessed_data/GlobalPhone/de/val.txt",
+        "test": "preprocessed_data/GlobalPhone/de/val.txt",
+    },
+    "preprocessed_data/GlobalPhone/cz": {
+        "train": "preprocessed_data/GlobalPhone/cz/train.txt",
+        "val": "preprocessed_data/GlobalPhone/cz/val.txt",
+        "test": "preprocessed_data/GlobalPhone/cz/val.txt",
+    },
+    "preprocessed_data/CSS10/german": {
+        "train": "preprocessed_data/CSS10/german/train.txt",
+        "val": "preprocessed_data/CSS10/german/val.txt",
+        "test": "preprocessed_data/CSS10/german/val.txt",
+    },
     "preprocessed_data/kss": {
         "train": "preprocessed_data/kss/train.txt",
         "val": "preprocessed_data/kss/val.txt",
@@ -74,6 +74,8 @@ for (corpus_path, sets) in TASKS.items():
             wav_name, spk, phns, raw_text = line.strip().split("|")
             to_check = [
                 f"representation/{spk}-representation-{wav_name}.npy",
+                f"mel-representation/{spk}-mel-representation-{wav_name}.npy",
+                f"xlsr-representation/{spk}-xlsr-representation-{wav_name}.npy",
                 f"pitch/{spk}-pitch-{wav_name}.npy",
                 f"duration/{spk}-duration-{wav_name}.npy",
                 f"energy/{spk}-energy-{wav_name}.npy",

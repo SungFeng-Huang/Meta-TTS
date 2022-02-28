@@ -209,10 +209,11 @@ class DualMetaSystem(AdaptorSystem):
         # ASR part
         emb_texts = F.embedding(qry_batch[3], embedding, padding_idx=0)  # B, L, d_word_vec
         asr_predictions = self.asr_head(emb_texts, lang_ids=lang_id)
+        center_emb_texts = F.embedding(qry_batch[3], self.asr_head.get_table(lang_id), padding_idx=0) 
 
         phn_loss = self.asr_loss_func1(qry_batch, asr_predictions)
-        cluster_loss = self.reg * self.asr_loss_func2(embedding, self.asr_head.get_table(lang_id))
-        asr_error = (phn_loss + cluster_loss, phn_loss, cluster_loss)
+        center_loss = self.reg * self.asr_loss_func2(emb_texts, center_emb_texts)
+        asr_error = (phn_loss + center_loss, phn_loss, center_loss)
 
         return (tts_error, asr_error), (tts_predictions, asr_predictions)
 
