@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from scipy.io import wavfile
 
 from utils.tools import expand, plot_mel
+from Define import ALLSTATS
 
 
 def synth_one_sample_with_target(targets, predictions, vocoder, preprocess_config):
@@ -27,11 +28,12 @@ def synth_one_sample_with_target(targets, predictions, vocoder, preprocess_confi
     else:
         energy = targets[10][0, :mel_len].detach().cpu().numpy()
 
-    with open(
-        os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
-    ) as f:
-        stats = json.load(f)
-        stats = stats["pitch"] + stats["energy"][:2]
+    # with open(
+    #     os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
+    # ) as f:
+    #     stats = json.load(f)
+    #     stats = stats["pitch"] + stats["energy"][:2]
+    stats = ALLSTATS["global"][:6]
 
     fig = plot_mel(
         [
@@ -72,11 +74,12 @@ def recon_samples(targets, predictions, vocoder, preprocess_config, figure_dir, 
         else:
             energy = targets[10][i, :mel_len].detach().cpu().numpy()
 
-        with open(
-            os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
-        ) as f:
-            stats = json.load(f)
-            stats = stats["pitch"] + stats["energy"][:2]
+        # with open(
+        #     os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
+        # ) as f:
+        #     stats = json.load(f)
+        #     stats = stats["pitch"] + stats["energy"][:2]
+        stats = ALLSTATS["global"][:6]
 
         fig = plot_mel(
             [
@@ -117,11 +120,12 @@ def synth_samples(targets, predictions, vocoder, preprocess_config, figure_dir, 
         else:
             energy = targets[10][i, :mel_len].detach().cpu().numpy()
 
-        with open(
-            os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
-        ) as f:
-            stats = json.load(f)
-            stats = stats["pitch"] + stats["energy"][:2]
+        # with open(
+        #     os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
+        # ) as f:
+        #     stats = json.load(f)
+        #     stats = stats["pitch"] + stats["energy"][:2]
+        stats = ALLSTATS["global"][:6]
 
         fig = plot_mel(
             [

@@ -1,6 +1,7 @@
 import json
 import math
 import os
+from tkinter import ALL
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -9,6 +10,7 @@ from resemblyzer.audio import preprocess_wav, wav_to_mel_spectrogram
 
 from text import text_to_sequence
 from utils.tools import pad_1D, pad_2D
+from Define import ALLSTATS
 
 
 class TTSDataset(Dataset):
@@ -49,18 +51,22 @@ class TTSDataset(Dataset):
             "{}-mel-{}.npy".format(speaker, basename),
         )
         mel = np.load(mel_path)
+        pitch_mi, pitch_mx, pitch_mu, pitch_std, energy_mi, energy_mx, energy_mu, energy_std = ALLSTATS[self.lang_id]
+        global_pitch_mu, global_pitch_std, global_energy_mu, global_energy_std = ALLSTATS["global"]
         pitch_path = os.path.join(
             self.preprocessed_path,
             "pitch",
             "{}-pitch-{}.npy".format(speaker, basename),
         )
         pitch = np.load(pitch_path)
+        pitch = (pitch * pitch_std + pitch_mu - global_pitch_mu) / global_pitch_std  # renormalize
         energy_path = os.path.join(
             self.preprocessed_path,
             "energy",
             "{}-energy-{}.npy".format(speaker, basename),
         )
         energy = np.load(energy_path)
+        energy = (energy * energy_std + energy_mu - global_energy_mu) / global_energy_std  # renormalize
         duration_path = os.path.join(
             self.preprocessed_path,
             "duration",
