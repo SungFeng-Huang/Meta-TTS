@@ -10,7 +10,7 @@ import copy
 
 from lightning.model.loss import PhonemeClassificationLoss
 
-from ..utils import CodebookAnalyzer, generate_hubert_features
+from ..utils import CodebookAnalyzer, generate_phoneme_features
 from utils.tools import get_mask_from_lengths
 from ..system2 import System
 from lightning.systems.utils import Task
@@ -22,18 +22,6 @@ from lightning.callbacks.utils import synth_samples, recon_samples
 from text.define import LANG_ID2SYMBOLS, LANG_ID2NAME
 
 
-STATSDICT = {
-    0: "./preprocessed_data/miniLibriTTS",
-    1: "./preprocessed_data/miniAISHELL-3",
-    2: "./preprocessed_data/miniGlobalPhone-fr",
-    3: "./preprocessed_data/miniGlobalPhone-de",
-    4: "",
-    5: "./preprocessed_data/miniGlobalPhone-es",
-    6: "./preprocessed_data/miniJVS",
-    7: "./preprocessed_data/miniGlobalPhone-cz",
-}
-
-
 class DualMetaTuneSystem(System):
     """ 
     Tune version of dual system.
@@ -41,6 +29,9 @@ class DualMetaTuneSystem(System):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.test_list = {
+            "azure": self.generate_azure_wavs,
+        }
         self.codebook_analyzer = CodebookAnalyzer(self.result_dir)
 
     def build_model(self):
@@ -84,7 +75,7 @@ class DualMetaTuneSystem(System):
 
     def tune_init(self):
         txt_path = f"{self.preprocess_config['path']['preprocessed_path']}/{self.preprocess_config['subsets']['train']}.txt"
-        ref_phn_feats = generate_hubert_features(txt_path, lang_id=self.lang_id)
+        ref_phn_feats = generate_phoneme_features(txt_path, lang_id=self.lang_id)
         ref_phn_feats = torch.from_numpy(ref_phn_feats).float()
         with torch.no_grad():
             attn = self.codebook(ref_phn_feats.unsqueeze(0))
@@ -93,11 +84,13 @@ class DualMetaTuneSystem(System):
 
             # visualization
             self.visualize_matching(ref_phn_feats)
-            self.phoneme_transfer(ref_phn_feats, target_ids=[0, 1, 2])
+            self.phoneme_transfer(ref_phn_feats, target_ids=[0, 1, 2, 5, 7, 8])
 
     def common_step(self, batch, batch_idx, train=True):
         if getattr(self, "fix_spk_args", None) is None:
             self.fix_spk_args = batch[2]
+            # Save or load from previous experiments!
+            assert 1 == 2
         emb_texts = self.emb_layer(batch[3])
         output = self.model(batch[2], emb_texts, *(batch[4:]))
         loss = self.loss_func(batch, output)
@@ -107,6 +100,20 @@ class DualMetaTuneSystem(System):
         emb_texts = self.emb_layer(batch[3])
         output = self.model(self.fix_spk_args, emb_texts, *(batch[4:6]), average_spk_emb=True)
         return output
+
+    def text_synth_step(self, batch, batch_idx):  # only used when predict (use TextDataset2)
+        if getattr(self, "fix_spk_args", None) is None:
+            self.fix_spk_args = batch[2]
+            # Save or load from previous experiments!
+            assert 1 == 2
+        emb_texts = self.emb_layer(batch[2])
+        output = self.model(self.fix_spk_args, emb_texts, *(batch[3:5]), average_spk_emb=True)
+        return output
+        # ids,
+        # raw_texts,
+        # torch.from_numpy(texts).long(),
+        # torch.from_numpy(text_lens),
+        # max(text_lens),
     
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
         assert len(batch) == 12, "data with 12 elements"
@@ -164,3 +171,14 @@ class DualMetaTuneSystem(System):
         if len(target_ids) > 0:
             infos = [transfer_embedding(embedding, lang_id, t, ref_mask) for t in target_ids]
             self.codebook_analyzer.visualize_phoneme_transfer(0, infos)
+
+    def test_step(self, batch, batch_idx):
+        outputs = {}
+        for test_name, test_fn in getattr(self, "test_list", {}).items(): 
+            outputs[test_name] = test_fn(batch, batch_idx)
+
+        return outputs
+
+    def generate_azure_wavs(self, batch, batch_idx):
+        synth_predictions = self.text_synth_step(batch, batch_idx)
+        return {'_batch': batch, 'synth': synth_predictions}

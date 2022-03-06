@@ -341,8 +341,8 @@ class CodebookAnalyzer(object):
             plt.close(fig)
 
 
-def generate_hubert_features(filename, lang_id):
-    print("Averaging hubert features...")
+def generate_phoneme_features(filename, lang_id, key="hubert"):
+    print("Averaging phoneme features...")
     preprocessed_path = os.path.dirname(filename)
     with open(filename, "r", encoding="utf-8") as f:
         names = []
@@ -356,17 +356,39 @@ def generate_hubert_features(filename, lang_id):
             texts.append(t)
             raw_texts.append(r)
 
-    d_representation = 1024
+    if key == "xlsr2b":
+        d_representation = 1920
+    elif key == "hubert":
+        d_representation = 1024
+    elif key == "mel":
+        d_representation = 80
+    else:
+        raise NotImplementedError
     n_symbols = len(define.LANG_ID2SYMBOLS[lang_id])
     table = {i: np.zeros(d_representation) for i in range(n_symbols)}
     cnt = {i: 0 for i in range(n_symbols)}
     for idx in tqdm(range(len(names))):
         phone = np.array(text_to_sequence(texts[idx], ["basic_cleaners"], lang_id))
-        representation_path = os.path.join(
-            preprocessed_path,
-            "representation",
-            "{}-representation-{}.npy".format(speakers[idx], names[idx]),
-        )
+        if key == "xlsr2b":
+            representation_path = os.path.join(
+                preprocessed_path,
+                "xlsr2b-representation",
+                "{}-xlsr2b-representation-{}.npy".format(speakers[idx], names[idx]),
+            )
+        elif key == "hubert":
+            representation_path = os.path.join(
+                preprocessed_path,
+                "representation",
+                "{}-representation-{}.npy".format(speakers[idx], names[idx]),
+            )
+        elif key == "mel":
+            representation_path = os.path.join(
+                preprocessed_path,
+                "mel-representation",
+                "{}-mel-representation-{}.npy".format(speakers[idx], names[idx]),
+            )
+        else:
+            raise NotImplementedError
         representation = np.load(representation_path)
 
         for ph, r in zip(phone, representation):

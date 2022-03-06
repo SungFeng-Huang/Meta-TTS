@@ -116,3 +116,17 @@ class Saver(BaseSaver):
         
         # Reset
         self.log_loss_dicts = []
+
+    def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+        _batch = outputs["azure"]['_batch']
+        synth_output = outputs["azure"]['synth']
+        
+        step = pl_module.global_step + 1
+        vocoder = pl_module.vocoder
+
+        figure_dir = os.path.join(self.result_dir, "azure/figure")
+        audio_dir = os.path.join(self.result_dir, "azure/audio")
+        os.makedirs(figure_dir, exist_ok=True)
+        os.makedirs(audio_dir, exist_ok=True)
+
+        synth_samples(_batch, synth_output, vocoder, self.preprocess_config, figure_dir, audio_dir, f"FTstep_{step}")

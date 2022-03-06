@@ -10,7 +10,7 @@ import copy
 
 from lightning.model.loss import PhonemeClassificationLoss
 
-from ..utils import CodebookAnalyzer, generate_hubert_features
+from ..utils import CodebookAnalyzer, generate_phoneme_features
 from utils.tools import get_mask_from_lengths
 from ..system2 import System
 from lightning.systems.utils import Task
@@ -43,6 +43,9 @@ class MetaTuneSystem(System):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.init_codebook_type()
+        self.test_list = {
+            "azure": self.generate_azure_wavs,
+        }
         self.codebook_analyzer = CodebookAnalyzer(self.result_dir)
 
     def build_model(self):
@@ -81,7 +84,7 @@ class MetaTuneSystem(System):
 
     def tune_init(self):
         txt_path = f"{self.preprocess_config['path']['preprocessed_path']}/{self.preprocess_config['subsets']['train']}.txt"
-        ref_phn_feats = generate_hubert_features(txt_path, lang_id=self.lang_id)
+        ref_phn_feats = generate_phoneme_features(txt_path, lang_id=self.lang_id)
         ref_phn_feats = torch.from_numpy(ref_phn_feats).float()
         with torch.no_grad():
             embedding = self.embedding_model.get_new_embedding(self.codebook_type, ref_phn_feats=ref_phn_feats, lang_id=self.lang_id)
@@ -102,6 +105,20 @@ class MetaTuneSystem(System):
         emb_texts = self.emb_layer(batch[3])
         output = self.model(self.fix_spk_args, emb_texts, *(batch[4:6]), average_spk_emb=True)
         return output
+
+    def text_synth_step(self, batch, batch_idx):  # only used when predict (use TextDataset2)
+        if getattr(self, "fix_spk_args", None) is None:
+            self.fix_spk_args = batch[2]
+            # Save or load from previous experiments!
+            assert 1 == 2
+        emb_texts = self.emb_layer(batch[2])
+        output = self.model(self.fix_spk_args, emb_texts, *(batch[3:5]), average_spk_emb=True)
+        return output
+        # ids,
+        # raw_texts,
+        # torch.from_numpy(texts).long(),
+        # torch.from_numpy(text_lens),
+        # max(text_lens),
     
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
         assert len(batch) == 12, "data with 12 elements"
@@ -129,3 +146,14 @@ class MetaTuneSystem(System):
     def visualize_matching(self, ref_phn_feats):
         matching = self.embedding_model.get_matching(self.codebook_type, ref_phn_feats=ref_phn_feats, lang_id=self.lang_id)
         self.codebook_analyzer.visualize_matching(0, matching)
+
+    def test_step(self, batch, batch_idx):
+        outputs = {}
+        for test_name, test_fn in getattr(self, "test_list", {}).items(): 
+            outputs[test_name] = test_fn(batch, batch_idx)
+
+        return outputs
+
+    def generate_azure_wavs(self, batch, batch_idx):
+        synth_predictions = self.text_synth_step(batch, batch_idx)
+        return {'_batch': batch, 'synth': synth_predictions}

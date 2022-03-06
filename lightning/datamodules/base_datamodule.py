@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
 from dataset import MonolingualTTSDataset as Dataset
+from dataset import TextDataset2
 from lightning.collate import get_single_collate, LanguageTaskCollate
 
 
@@ -16,7 +17,6 @@ class BaseDataModule(pl.LightningDataModule):
 
         self.log_dir = log_dir
         self.result_dir = result_dir
-
 
     def setup(self, stage=None):
         spk_refer_wav = (self.algorithm_config["adapt"]["speaker_emb"]
@@ -40,38 +40,9 @@ class BaseDataModule(pl.LightningDataModule):
 
         if stage in (None, 'test', 'predict'):
             self.test_datasets = [
-                Dataset(
+                TextDataset2(
                     f"{preprocess_config['subsets']['test']}.txt",
                     preprocess_config, self.train_config, sort=False, drop_last=False, spk_refer_wav=spk_refer_wav
                 ) for preprocess_config in self.preprocess_configs if 'test' in preprocess_config['subsets']
             ]
             self.test_dataset = ConcatDataset(self.test_datasets)
-
-
-    # def train_dataloader(self):
-    #     """Training dataloader, not modified for multiple dataloaders."""
-    #     batch_size = self.train_config["optimizer"]["batch_size"]
-    #     # self.train_dataset = ConcatDataset(self.train_datasets)
-    #     self.train_loader = DataLoader(
-    #         self.train_dataset,
-    #         batch_size=batch_size//torch.cuda.device_count(),
-    #         shuffle=True,
-    #         drop_last=True,
-    #         num_workers=4,
-    #         collate_fn=get_single_collate(False),
-    #     )
-    #     return self.train_loader
-
-    # def val_dataloader(self):
-    #     """Validation dataloader, not modified for multiple dataloaders."""
-    #     batch_size = self.train_config["optimizer"]["batch_size"]
-    #     # self.val_dataset = ConcatDataset(self.val_datasets)
-    #     self.val_loader = DataLoader(
-    #         self.val_dataset,
-    #         batch_size=batch_size//torch.cuda.device_count(),
-    #         shuffle=False,
-    #         drop_last=False,
-    #         num_workers=4,
-    #         collate_fn=get_single_collate(False),
-    #     )
-    #     return self.val_loader

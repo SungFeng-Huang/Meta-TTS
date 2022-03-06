@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, ConcatDataset
 
 from text.define import LANG_ID2SYMBOLS
+from dataset import TextDataset2
 from lightning.collate import LanguageTaskCollate, get_single_collate
 from lightning.utils import seed_all, EpisodicInfiniteWrapper
 
@@ -103,6 +104,6 @@ class BaselineDataModule(BaseDataModule):
             self.test_task_dataset,
             batch_size=1,
             shuffle=False,
-            collate_fn=lambda batch: batch,
+            collate_fn=TextDataset2.collate_fn,
         )
         return self.test_loader

@@ -9,7 +9,7 @@ import copy
 
 from ..utils import MAML
 from utils.tools import get_mask_from_lengths
-from ..adaptor import AdaptorSystem
+from ..system2 import System
 from lightning.systems.utils import Task
 from lightning.utils import loss2dict, LightningMelGAN
 from lightning.model.phoneme_embedding import PhonemeEmbedding
@@ -29,7 +29,7 @@ STATSDICT = {
     7: "./preprocessed_data/miniGlobalPhone-cz",
 }
 
-class BaselineSystem(AdaptorSystem):
+class BaselineSystem(System):
     """
     Concrete class for baseline multilingual FastSpeech2.
     """
@@ -39,7 +39,7 @@ class BaselineSystem(AdaptorSystem):
 
         # tests
         self.test_list = {
-            "adaptation": self.test_adaptation, 
+            "azure": self.generate_azure_wavs, 
         }
 
     def build_model(self):
@@ -179,6 +179,20 @@ class BaselineSystem(AdaptorSystem):
         emb_texts = F.embedding(batch[3], self.embedding_model.get_new_embedding("table"), padding_idx=0)
         output = self.model(self.fix_spk_args, emb_texts, *(batch[4:6]), average_spk_emb=True)
         return output
+
+    def text_synth_step(self, batch, batch_idx):  # only used when predict (use TextDataset2)
+        if getattr(self, "fix_spk_args", None) is None:
+            self.fix_spk_args = batch[2]
+            # Save or load from previous experiments!
+            assert 1 == 2
+        emb_texts = self.emb_layer(batch[2])
+        output = self.model(self.fix_spk_args, emb_texts, *(batch[3:5]), average_spk_emb=True)
+        return output
+        # ids,
+        # raw_texts,
+        # torch.from_numpy(texts).long(),
+        # torch.from_numpy(text_lens),
+        # max(text_lens),
     
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
         assert len(batch) == 12, "data with 12 elements"
@@ -203,8 +217,19 @@ class BaselineSystem(AdaptorSystem):
         self.log_dict(loss_dict, sync_dist=True)
         return {'losses': val_loss, 'output': predictions, '_batch': batch, 'synth': synth_predictions}
 
+    # def test_step(self, batch, batch_idx):
+    #     return super().test_step(batch, batch_idx)["adaptation"]
+
     def test_step(self, batch, batch_idx):
-        return super().test_step(batch, batch_idx)["adaptation"]
+        outputs = {}
+        for test_name, test_fn in getattr(self, "test_list", {}).items(): 
+            outputs[test_name] = test_fn(batch, batch_idx)
+
+        return outputs
+
+    def generate_azure_wavs(self, batch, batch_idx):
+        synth_predictions = self.text_synth_step(batch, batch_idx)
+        return {'_batch': batch, 'synth': synth_predictions}
 
     def test_adaptation(self, batch, batch_idx):
         learner = self.build_learner(batch)
