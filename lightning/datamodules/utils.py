@@ -22,7 +22,7 @@ def few_shot_task_dataset(_dataset, ways, shots, queries, n_tasks_per_label=-1, 
         id2lb = get_multilingual_id2lb(_dataset.datasets)
         _collate = LanguageTaskCollate({
             "lang_id2symbols": LANG_ID2SYMBOLS,
-            "representation_dim": 1920,
+            "representation_dim": 1024,
         })
 
     meta_dataset = MetaDataset(_dataset, indices_to_labels=id2lb)

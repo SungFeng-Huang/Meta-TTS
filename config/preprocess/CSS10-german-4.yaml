@@ -9,8 +9,8 @@ path:
 
 subsets:
   train: "train-4"
-  val: "val-12"
-  test: "val-12"
+  val: "val-16"
+  test: "val-16"
 
 preprocessing:
   val_size: 512

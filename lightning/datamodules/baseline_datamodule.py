@@ -63,37 +63,36 @@ class BaselineDataModule(BaseDataModule):
 
 
     def _test_setup(self):
-        self.test_task_dataset = few_shot_task_dataset(
-            self.test_dataset, self.test_ways, self.test_shots, self.test_queries,
-            n_tasks_per_label=1, type=self.meta_type, re_id=True
-        )
-        with seed_all(43):
-            self.test_SQids2Tid = prefetch_tasks(self.test_task_dataset, 'test', self.result_dir)
+        # self.test_task_dataset = few_shot_task_dataset(
+        #     self.test_dataset, self.test_ways, self.test_shots, self.test_queries,
+        #     n_tasks_per_label=1, type=self.meta_type, re_id=True
+        # )
+        # with seed_all(43):
+        #     self.test_SQids2Tid = prefetch_tasks(self.test_task_dataset, 'test', self.result_dir)
+        pass
 
 
     def train_dataloader(self):
         """Training dataloader, not modified for multiple dataloaders."""
-        batch_size = self.train_config["optimizer"]["batch_size"]
         self.train_loader = DataLoader(
             self.train_dataset,
-            batch_size=batch_size//torch.cuda.device_count(),
+            batch_size=self.batch_size//torch.cuda.device_count(),
             shuffle=True,
             drop_last=True,
             num_workers=4,
-            collate_fn=self.collate.get_collate(False, re_id=True),  # CAUTION: tune does not need re_id
+            collate_fn=self.collate.get_collate(False, re_id=False),  # CAUTION: tune does not need re_id
         )
         return self.train_loader
 
     def val_dataloader(self):
         """Validation dataloader, not modified for multiple dataloaders."""
-        batch_size = self.train_config["optimizer"]["batch_size"]
         self.val_loader = DataLoader(
             self.val_dataset,
-            batch_size=batch_size//torch.cuda.device_count(),
+            batch_size=self.batch_size//torch.cuda.device_count(),
             shuffle=False,
             drop_last=False,
             num_workers=0,
-            collate_fn=self.collate.get_collate(False, re_id=True),
+            collate_fn=self.collate.get_collate(False, re_id=False),
         )
         return self.val_loader
 
@@ -101,9 +100,9 @@ class BaselineDataModule(BaseDataModule):
     def test_dataloader(self):
         """Test dataloader"""
         self.test_loader = DataLoader(
-            self.test_task_dataset,
-            batch_size=1,
+            self.test_dataset,
+            batch_size=self.batch_size//torch.cuda.device_count(),
             shuffle=False,
-            collate_fn=TextDataset2.collate_fn,
+            collate_fn=self.test_datasets[0].collate_fn,
         )
         return self.test_loader

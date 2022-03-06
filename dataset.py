@@ -1,7 +1,6 @@
 import json
-import math
+import torch
 import os
-from tkinter import ALL
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -191,11 +190,11 @@ class MonolingualTTSDataset(TTSDataset):
 
         representation_path = os.path.join(
             self.preprocessed_path,
-            "xlsr2b-representation",
-            "{}-xlsr2b-representation-{}.npy".format(speaker, basename),
+            "representation",
+            "{}-representation-{}.npy".format(speaker, basename),
         )
         if not os.path.isfile(representation_path):
-            representation = np.zeros((1, 1920))
+            representation = np.zeros((1, 1024))
             print("WTF")
         else:
             representation = np.load(representation_path)
@@ -264,9 +263,11 @@ class TextDataset2(Dataset):
     def __init__(self, filepath, preprocess_config):
         self.cleaners = preprocess_config["preprocessing"]["text"]["text_cleaners"]
 
+        print("filepath: ", filepath)
         self.basename, self.text, self.raw_text = self.process_meta(
             filepath
         )
+        self.lang_id = preprocess_config.get("lang_id", 0)
 
     def __len__(self):
         return len(self.text)
@@ -274,7 +275,7 @@ class TextDataset2(Dataset):
     def __getitem__(self, idx):
         basename = self.basename[idx]
         raw_text = self.raw_text[idx]
-        phone = np.array(text_to_sequence(self.text[idx], self.cleaners))
+        phone = np.array(text_to_sequence(self.text[idx], self.cleaners, self.lang_id))
 
         return (basename, phone, raw_text)
 
@@ -289,7 +290,7 @@ class TextDataset2(Dataset):
                 text.append(t)
                 raw_text.append(r)
             return name, text, raw_text
-
+    
     def collate_fn(self, data):
         ids = [d[0] for d in data]
         texts = [d[1] for d in data]
@@ -298,7 +299,7 @@ class TextDataset2(Dataset):
 
         texts = pad_1D(texts)
 
-        return ids, raw_texts, texts, text_lens, max(text_lens)
+        return (ids, raw_texts, torch.from_numpy(texts).long(), torch.from_numpy(text_lens), max(text_lens))
 
 
 if __name__ == "__main__":

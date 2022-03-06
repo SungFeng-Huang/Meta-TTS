@@ -40,9 +40,7 @@ class BaseDataModule(pl.LightningDataModule):
 
         if stage in (None, 'test', 'predict'):
             self.test_datasets = [
-                TextDataset2(
-                    f"{preprocess_config['subsets']['test']}.txt",
-                    preprocess_config, self.train_config, sort=False, drop_last=False, spk_refer_wav=spk_refer_wav
-                ) for preprocess_config in self.preprocess_configs if 'test' in preprocess_config['subsets']
+                TextDataset2(f"{preprocess_config['path']['preprocessed_path']}/{preprocess_config['subsets']['test']}.txt", preprocess_config) 
+                for preprocess_config in self.preprocess_configs if 'test' in preprocess_config['subsets']
             ]
             self.test_dataset = ConcatDataset(self.test_datasets)

@@ -7,7 +7,7 @@ _phn_emb_config:
     refresh: False
   codebook: &codebook
     type: codebook
-    size: 100
+    size: 128
     representation_dim: 1024
     attention:
       type: soft-m

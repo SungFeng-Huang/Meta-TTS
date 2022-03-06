@@ -4,6 +4,8 @@ import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
+import pickle
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import copy
@@ -89,8 +91,12 @@ class DualMetaTuneSystem(System):
     def common_step(self, batch, batch_idx, train=True):
         if getattr(self, "fix_spk_args", None) is None:
             self.fix_spk_args = batch[2]
-            # Save or load from previous experiments!
-            assert 1 == 2
+            rr = batch[2][0].detach().cpu().numpy()
+            slices = batch[2][1]
+            with open("jp-spk-ref.npy", 'wb') as f:
+                np.save(f, rr)
+            with open("jp-spk-slice.pkl", 'wb') as f:
+                pickle.dump(slices, f)
         emb_texts = self.emb_layer(batch[3])
         output = self.model(batch[2], emb_texts, *(batch[4:]))
         loss = self.loss_func(batch, output)
@@ -102,18 +108,9 @@ class DualMetaTuneSystem(System):
         return output
 
     def text_synth_step(self, batch, batch_idx):  # only used when predict (use TextDataset2)
-        if getattr(self, "fix_spk_args", None) is None:
-            self.fix_spk_args = batch[2]
-            # Save or load from previous experiments!
-            assert 1 == 2
         emb_texts = self.emb_layer(batch[2])
         output = self.model(self.fix_spk_args, emb_texts, *(batch[3:5]), average_spk_emb=True)
         return output
-        # ids,
-        # raw_texts,
-        # torch.from_numpy(texts).long(),
-        # torch.from_numpy(text_lens),
-        # max(text_lens),
     
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
         assert len(batch) == 12, "data with 12 elements"
