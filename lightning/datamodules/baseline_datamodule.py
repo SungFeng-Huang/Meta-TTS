@@ -79,7 +79,7 @@ class BaselineDataModule(BaseDataModule):
             shuffle=True,
             drop_last=True,
             num_workers=4,
-            collate_fn=self.collate.get_collate(False, re_id=False),
+            collate_fn=self.collate.get_collate(False, re_id=True),  # CAUTION: tune does not need re_id
         )
         return self.train_loader
 
@@ -92,7 +92,7 @@ class BaselineDataModule(BaseDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=0,
-            collate_fn=self.collate.get_collate(False, re_id=False),
+            collate_fn=self.collate.get_collate(False, re_id=True),
         )
         return self.val_loader
 

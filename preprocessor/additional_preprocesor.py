@@ -5,14 +5,16 @@ import librosa
 import numpy as np
 import torch
 from tqdm import tqdm
-import s3prl.hub as hub
+# import s3prl.hub as hub
 
 import audio as Audio
+from ttt import load_wav2vec2_featurizer
 
 
 class Preprocessor:
     def __init__(self, config):
-        self.ssl_extractor = getattr(hub, 'wav2vec2_xlsr')().cuda()
+        # self.ssl_extractor = getattr(hub, 'wav2vec2_xlsr')().cuda()
+        self.ssl_extractor = load_wav2vec2_featurizer('wav2vec2-xls-r-2b', layer=None)
         self.config = config
         self.in_dir = config["path"]["raw_path"]
         self.out_dir = config["path"]["preprocessed_path"]
@@ -27,7 +29,7 @@ class Preprocessor:
 
     def build_from_path(self):
         os.makedirs((os.path.join(self.out_dir, "mel")), exist_ok=True)
-        os.makedirs((os.path.join(self.out_dir, "xlsr53-representation")), exist_ok=True)
+        os.makedirs((os.path.join(self.out_dir, "xlsr2b-representation")), exist_ok=True)
         os.makedirs((os.path.join(self.out_dir, "mel-representation")), exist_ok=True)
 
         print("Extra processing Data ...")
@@ -90,33 +92,39 @@ class Preprocessor:
         ].astype(np.float32)
 
         # SSL representation
-        wav1, _ = librosa.load(wav_path, sr=16000)
-        wav1 = wav1[
-            int(16000 * start): int(16000 * end)
-        ].astype(np.float32)
-        wav1 = torch.from_numpy(wav1).float()
-        with torch.no_grad():
-            representation = self.ssl_extractor(
-                [wav1.cuda()])["last_hidden_state"][0]
-        representation = representation.detach().cpu().numpy()
+        representation = self.ssl_extractor(wav_path)[24]
+
+        # wav1, _ = librosa.load(wav_path, sr=16000)
+        # wav1 = wav1[
+        #     int(16000 * start): int(16000 * end)
+        # ].astype(np.float32)
+        # wav1 = torch.from_numpy(wav1).float()
+        # with torch.no_grad():
+        #     hidden_states = featurizer(wav_path)
+        #     representation = self.ssl_extractor(
+        #         [wav1.cuda()])["last_hidden_state"][0]
+        # representation = representation.detach().cpu().numpy()
+        # hidden_states = featurizer(wav_path)
+        # # avg = np.mean(np.stack(hidden_states, axis=0), axis=0)
+        # feats_list.append(hidden_states[24])
 
         # Reload mel-spectrogram
         mel_filename = "{}-mel-{}.npy".format(speaker, basename)
         if not os.path.isfile(os.path.join(self.out_dir, "mel", mel_filename)):
             print("file not exist!")
             raise ValueError
-        mel_spectrogram = np.load(os.path.join(self.out_dir, "mel", mel_filename))
-        mel_repr = np.zeros(mel_spectrogram.shape)
+        # mel_spectrogram = np.load(os.path.join(self.out_dir, "mel", mel_filename))
+        # mel_repr = np.zeros(mel_spectrogram.shape)
 
         # Compute mean mel-spectrogram
-        pos = 0
-        for i, d in enumerate(duration):
-            if d > 0:
-                mel_repr[i] = np.mean(mel_spectrogram[pos : pos + d], axis=0)
-            else:
-                mel_repr[i] = np.zeros(80)
-            pos += d
-        mel_repr = mel_repr[: len(duration)]
+        # pos = 0
+        # for i, d in enumerate(duration):
+        #     if d > 0:
+        #         mel_repr[i] = np.mean(mel_spectrogram[pos : pos + d], axis=0)
+        #     else:
+        #         mel_repr[i] = np.zeros(80)
+        #     pos += d
+        # mel_repr = mel_repr[: len(duration)]
 
         # SSL representation Phoneme-level average
         pos = 0
@@ -125,15 +133,23 @@ class Preprocessor:
                 representation[i] = np.mean(
                     representation[pos: pos + d], axis=0)
             else:
-                representation[i] = np.zeros(1024)
+                representation[i] = np.zeros(1920)
             pos += d
         representation = representation[: len(ssl_duration)]
 
         # Save files
-        mel_repr_filename = "{}-mel-representation-{}.npy".format(speaker, basename)
-        np.save(os.path.join(self.out_dir, "mel-representation", mel_repr_filename), mel_repr)
-        representation_filename = "{}-xlsr53-representation-{}.npy".format(speaker, basename)
-        np.save(os.path.join(self.out_dir, "xlsr53-representation", representation_filename), representation)
+        # mel_repr_filename = "{}-mel-representation-{}.npy".format(speaker, basename)
+        # np.save(os.path.join(self.out_dir, "mel-representation", mel_repr_filename), mel_repr)
+        
+        # debug
+        # checking = "{}-xlsr53-representation-{}.npy".format(speaker, basename)
+        # checking = os.path.join(self.out_dir, "xlsr53-representation", checking)
+        # a = np.load(checking)
+        # print(a.shape, representation.shape)
+        # assert a.shape == representation.shape
+
+        representation_filename = "{}-xlsr2b-representation-{}.npy".format(speaker, basename)
+        np.save(os.path.join(self.out_dir, "xlsr2b-representation", representation_filename), representation)
 
         return None
 

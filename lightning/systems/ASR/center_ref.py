@@ -21,7 +21,7 @@ class CenterRefSystem(System):
     """
 
     def __init__(self, *args, **kwargs):
-        self.reg = 3
+        self.reg = 1
         super().__init__(*args, **kwargs)
 
         # tests
@@ -58,14 +58,20 @@ class CenterRefSystem(System):
         _, _, ref, lang_id = batch[0]
         qry_batch = batch[0][1][0]
 
+        mask = torch.nonzero(ref.sum(dim=1), as_tuple=True)
         attn = self.codebook(ref.unsqueeze(0))
         embedding = self.banks(attn, pad=True).squeeze(0)  # N, d_word_vec
         emb_texts = F.embedding(qry_batch[3], embedding, padding_idx=0)  # B, L, d_word_vec
         predictions = self.asr_head(emb_texts, lang_ids=lang_id)
 
         phn_loss = self.loss_func(qry_batch, predictions)
-        cluster_loss = self.reg * self.loss_func2(embedding, self.asr_head.get_table(lang_id))
-        return (phn_loss + cluster_loss, phn_loss, cluster_loss), predictions
+        # center_loss = self.reg * self.loss_func2(embedding, self.asr_head.get_table(lang_id))
+        # center_loss = self.reg * self.loss_func2(embedding, self.asr_head.get_table(lang_id))
+        center_loss = self.reg * torch.mean((embedding - self.asr_head.get_table(lang_id))[mask] ** 2)
+        center_loss += self.reg * torch.mean(self.asr_head.get_table(lang_id) ** 2)
+        center_loss /= 2
+        
+        return (phn_loss + center_loss, phn_loss, center_loss), predictions
     
     def training_step(self, batch, batch_idx):
         train_loss, predictions = self.common_step(batch, batch_idx, train=True)

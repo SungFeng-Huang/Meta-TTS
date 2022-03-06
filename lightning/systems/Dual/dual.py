@@ -209,10 +209,11 @@ class DualMetaSystem(AdaptorSystem):
         # ASR part
         emb_texts = F.embedding(qry_batch[3], embedding, padding_idx=0)  # B, L, d_word_vec
         asr_predictions = self.asr_head(emb_texts, lang_ids=lang_id)
-        center_emb_texts = F.embedding(qry_batch[3], self.asr_head.get_table(lang_id), padding_idx=0) 
+        # center_emb_texts = F.embedding(qry_batch[3], self.asr_head.get_table(lang_id), padding_idx=0) 
 
         phn_loss = self.asr_loss_func1(qry_batch, asr_predictions)
-        center_loss = self.reg * self.asr_loss_func2(emb_texts, center_emb_texts)
+        center_loss = self.reg * self.asr_loss_func2(embedding, self.asr_head.get_table(lang_id))
+        # center_loss = self.reg * self.asr_loss_func2(emb_texts, center_emb_texts)
         asr_error = (phn_loss + center_loss, phn_loss, center_loss)
 
         return (tts_error, asr_error), (tts_predictions, asr_predictions)
@@ -413,5 +414,8 @@ class DualMetaSystem(AdaptorSystem):
             infos.append(transfer_embedding(embedding, lang_id, 0, ref_mask))
             infos.append(transfer_embedding(embedding, lang_id, 1, ref_mask))
             infos.append(transfer_embedding(embedding, lang_id, 2, ref_mask))
+            infos.append(transfer_embedding(embedding, lang_id, 5, ref_mask))
+            infos.append(transfer_embedding(embedding, lang_id, 7, ref_mask))
+            infos.append(transfer_embedding(embedding, lang_id, 8, ref_mask))
 
             self.codebook_analyzer.visualize_phoneme_transfer(batch_idx, infos)

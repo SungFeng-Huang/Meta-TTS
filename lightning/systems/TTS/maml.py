@@ -113,7 +113,6 @@ class MetaSystem(AdaptorSystem):
 
         # print("text ids", texts)
         emb_texts = embedding(texts)
-        print("emb table sum", embedding._parameters['weight'].sum())
         if (emb_texts != emb_texts).any():
             print("NaN table")
         output = encoder(emb_texts, src_masks)

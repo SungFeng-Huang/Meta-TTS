@@ -10,6 +10,7 @@ import numpy as np
 import torch.nn.functional as F
 
 from utils.tools import get_mask_from_lengths, pad
+from Define import ALLSTATS
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -38,12 +39,13 @@ class VarianceAdaptor(nn.Module):
         n_bins = model_config["variance_embedding"]["n_bins"]
         assert pitch_quantization in ["linear", "log"]
         assert energy_quantization in ["linear", "log"]
-        with open(
-            os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
-        ) as f:
-            stats = json.load(f)
-            pitch_min, pitch_max = stats["pitch"][:2]
-            energy_min, energy_max = stats["energy"][:2]
+        # with open(
+        #     os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
+        # ) as f:
+        #     stats = json.load(f)
+        #     pitch_min, pitch_max = stats["pitch"][:2]
+        #     energy_min, energy_max = stats["energy"][:2]
+        pitch_min, pitch_max, _, _, energy_min, energy_max, _, _= ALLSTATS["global"]
 
         if pitch_quantization == "log":
             self.pitch_bins = nn.Parameter(

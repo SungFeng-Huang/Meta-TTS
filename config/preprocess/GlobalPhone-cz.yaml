@@ -8,9 +8,9 @@ path:
   preprocessed_path: "./preprocessed_data/GlobalPhone/cz"
 
 subsets:
-  train: "train"
-  val: "val"
-  test: "val"
+  train: "train-clean"
+  val: "val-clean"
+  test: "val-clean"
 
 preprocessing:
   val_size: 512

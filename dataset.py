@@ -51,8 +51,8 @@ class TTSDataset(Dataset):
             "{}-mel-{}.npy".format(speaker, basename),
         )
         mel = np.load(mel_path)
-        pitch_mi, pitch_mx, pitch_mu, pitch_std, energy_mi, energy_mx, energy_mu, energy_std = ALLSTATS[self.lang_id]
-        global_pitch_mu, global_pitch_std, global_energy_mu, global_energy_std = ALLSTATS["global"]
+        _, _, pitch_mu, pitch_std, _, _, energy_mu, energy_std = ALLSTATS[self.lang_id]
+        _, _, global_pitch_mu, global_pitch_std, _, _, global_energy_mu, global_energy_std = ALLSTATS["global"]
         pitch_path = os.path.join(
             self.preprocessed_path,
             "pitch",
@@ -191,11 +191,12 @@ class MonolingualTTSDataset(TTSDataset):
 
         representation_path = os.path.join(
             self.preprocessed_path,
-            "representation",
-            "{}-representation-{}.npy".format(speaker, basename),
+            "xlsr2b-representation",
+            "{}-xlsr2b-representation-{}.npy".format(speaker, basename),
         )
         if not os.path.isfile(representation_path):
-            representation = np.zeros((1, 1024))
+            representation = np.zeros((1, 1920))
+            print("WTF")
         else:
             representation = np.load(representation_path)
 

@@ -48,7 +48,7 @@ class MetaDataModule(BaseDataModule):
         # self.val_dataset = ConcatDataset(self.val_datasets)
         self.val_task_dataset = few_shot_task_dataset(
             self.val_dataset, self.test_ways, self.test_shots, self.test_queries,
-            n_tasks_per_label=8, type=self.meta_type
+            n_tasks_per_label=4, type=self.meta_type
         )
         with seed_all(43):
             self.val_SQids2Tid = prefetch_tasks(self.val_task_dataset, 'val', self.log_dir)

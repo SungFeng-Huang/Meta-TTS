@@ -248,12 +248,7 @@ class HardAttCodebook(pl.LightningModule):
 
         # One-hot similarity
         # feats <-> att_banks -> token_id -> emb_banks, need to change path here.
-        centroids = load_hubert_centroids([
-            "preprocessed_data/LibriTTS/train-clean-100_phoneme-features.npy",
-            "preprocessed_data/AISHELL-3/train_phoneme-features.npy",
-            "preprocessed_data/GlobalPhone/fr/train_phoneme-features.npy",
-            # "preprocessed_data/GlobalPhone/de/train_phoneme-features.npy",
-        ], self.codebook_size)
+        centroids = load_cnetroids("xlsr2b", self.codebook_size)
         self.att_banks = nn.Parameter(centroids)
 
         self.attention = ScaledDotProductAttention(temperature=0.1)
@@ -601,6 +596,27 @@ class SoftMultiAttCodebook(pl.LightningModule):
 
 
 def load_hubert_centroids(paths, size):
+    from sklearn.cluster import KMeans
+    repr = [np.load(path) for path in paths]
+    repr = np.concatenate(repr, axis=0)
+    kmeans = KMeans(n_clusters=size, random_state=0).fit(repr)
+    centers = kmeans.cluster_centers_
+    return torch.from_numpy(centers)
+
+
+def load_cnetroids(key, size):
+    return _load_centroids(
+        [
+            f"preprocessed_data/LibriTTS/train-clean-100-clean_{key}-pf.npy",
+            f"preprocessed_data/AISHELL-3/train-clean_{key}-pf.npy",
+            f"preprocessed_data/GlobalPhone/fr/train-clean_{key}-pf.npy",
+            f"preprocessed_data/GlobalPhone/es/train-clean_{key}-pf.npy",
+            f"preprocessed_data/GlobalPhone/cz/train-clean_{key}-pf.npy",
+            f"preprocessed_data/kss/train-clean_{key}-pf.npy",
+        ], size)
+
+
+def _load_centroids(paths, size):
     from sklearn.cluster import KMeans
     repr = [np.load(path) for path in paths]
     repr = np.concatenate(repr, axis=0)

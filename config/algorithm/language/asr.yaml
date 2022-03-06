@@ -8,8 +8,8 @@ _phn_emb_config:
     refresh: False
   codebook: &codebook
     type: codebook
-    size: 100
-    representation_dim: 1024
+    size: 128
+    representation_dim: 80
     attention:
       type: hard
       share: False
@@ -38,7 +38,7 @@ adapt:
 
   train:
     << : *task
-    steps: 5
+    steps: 0
     meta_batch_size: 1
 
   test:
