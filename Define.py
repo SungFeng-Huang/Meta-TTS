@@ -22,6 +22,8 @@ def merge_stats(stats_dict, keys):
     return [pmi, pmx, pmu, pstd, emi, emx, emu, estd]
 
 
+USE_COMET = True
+
 STATSDICT = {
     0: "./preprocessed_data/LibriTTS",
     1: "./preprocessed_data/AISHELL-3",

@@ -14,6 +14,7 @@ from pytorch_lightning.profiler import AdvancedProfiler
 from config.comet import COMET_CONFIG
 from lightning.datamodules import get_datamodule
 from lightning.systems import get_system
+import Define
 
 quiet = False
 if quiet:
@@ -74,23 +75,30 @@ def main(args, configs):
 
     if args.stage == 'train' or 'tune':
         # Init logger
-        comet_logger = pl.loggers.CometLogger(
-            save_dir=train_config["path"]["log_path"],
-            experiment_key=args.exp_key,
-            experiment_name=algorithm_config["name"],
-            **COMET_CONFIG
-        )
-        comet_logger.log_hyperparams({
-            "preprocess_config": preprocess_configs,
-            "model_config": model_config,
-            "train_config": train_config,
-            "algorithm_config": algorithm_config,
-        })
-        loggers = [comet_logger]
-        log_dir = os.path.join(comet_logger._save_dir, comet_logger.version)
-        result_dir = os.path.join(
-            train_config['path']['result_path'], comet_logger.version
-        )
+        if Define.USE_COMET:
+            comet_logger = pl.loggers.CometLogger(
+                save_dir=train_config["path"]["log_path"],
+                experiment_key=args.exp_key,
+                experiment_name=algorithm_config["name"],
+                **COMET_CONFIG
+            )
+            comet_logger.log_hyperparams({
+                "preprocess_config": preprocess_configs,
+                "model_config": model_config,
+                "train_config": train_config,
+                "algorithm_config": algorithm_config,
+            })
+            loggers = [comet_logger]
+            log_dir = os.path.join(comet_logger._save_dir, comet_logger.version)
+            result_dir = os.path.join(
+                train_config['path']['result_path'], comet_logger.version
+            )
+        else:
+            os.makedirs(args.output_path, exist_ok=True)
+            result_dir = args.output_path
+            log_dir = args.output_path.replace("results", "logs")
+            os.makedirs(log_dir, exist_ok=True)
+
     else:
         assert args.exp_key is not None
         log_dir = os.path.join(
