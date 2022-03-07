@@ -1,4 +1,4 @@
-name: scratch_encoder
+name: scratch_encoder-1_shot
 type: baseline  # meta/baseline/imaml, get_system
 
 _phn_emb_config:
@@ -30,4 +30,4 @@ adapt:
     steps: 0 # max adaptation steps for testing
     saving_steps: [5, 10, 20, 50, 100, 200, 400, 600, 800, 1000]
     avg_train_spk_emb: False
-    1-shot: False
+    1-shot: True

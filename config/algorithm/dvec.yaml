@@ -1,17 +1,33 @@
 name: dvec
-type: baseline  # meta/baseline
+type: baseline  # meta/baseline/imaml, get_system
+
+_phn_emb_config:
+  embedding: &embedding
+    type: embedding
+    refresh: False
 
 adapt:
-  speaker_emb: dvec # shared/table/encoder/dvec
+  type: spk # spk/lang
+  #class: iMAML # MAML/iMAML, not used
+  speaker_emb: dvec # shared/table/encoder/dvec/scratch_encoder
+  phoneme_emb: *embedding  # *embedding/*codebook
   modules: []
 
-  ways: 1
-  shots: 5
-  queries: 5
-  steps: 5
-  lr: 0.001
-  meta_batch_size: 8
+  task: &task
+    ways: 1
+    shots: 5
+    queries: 5
+    lr: 0.001
+
+  train:
+    << : *task
+    steps: 5
+    meta_batch_size: 8
 
   test:
+    << : *task
     queries: 1
     steps: 0 # max adaptation steps for testing
+    saving_steps: [5, 10, 20, 50, 100, 200, 400, 600, 800, 1000]
+    avg_train_spk_emb: False
+    1-shot: False
