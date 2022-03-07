@@ -1,4 +1,4 @@
-name: dvec_1-shot
+name: dvec-1_shot
 type: baseline  # meta/baseline/imaml, get_system
 
 _phn_emb_config:
