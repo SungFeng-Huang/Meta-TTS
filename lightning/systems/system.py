@@ -197,20 +197,20 @@ class System(pl.LightningModule):
 
 
     def on_test_start(self):
-        if self.local_rank == 0:
-            print("Testing speaker emb")
-            print("Before:")
-            print(self.model.speaker_emb.model.weight[-39:])
+        if self.algorithm_config["adapt"]["speaker_emb"] == "table":
+            if self.local_rank == 0:
+                print("Testing speaker emb")
+                print("Before:")
+                print(self.model.speaker_emb.model.weight[-39:])
 
-        if (self.preprocess_config["dataset"] == "LibriTTS"
-                and self.algorithm_config["adapt"]["speaker_emb"] == "table"
-                and self.algorithm_config["adapt"]["test"].get("avg_train_spk_emb", False)):
+            if (self.preprocess_config["dataset"] == "LibriTTS"
+                    and self.algorithm_config["adapt"]["test"].get("avg_train_spk_emb", False)):
 
-            with torch.no_grad():
-                self.model.speaker_emb.model.weight[-39:] = \
-                    self.model.speaker_emb.model.weight[:247].mean(dim=0)
+                with torch.no_grad():
+                    self.model.speaker_emb.model.weight[-39:] = \
+                        self.model.speaker_emb.model.weight[:247].mean(dim=0)
 
-        if self.local_rank == 0:
-            print("After:")
-            print(self.model.speaker_emb.model.weight[-39:])
-            print()
+            if self.local_rank == 0:
+                print("After:")
+                print(self.model.speaker_emb.model.weight[-39:])
+                print()

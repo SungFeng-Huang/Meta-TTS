@@ -83,10 +83,14 @@ def split_reprocess(batch, idxs):
     sub_raw_texts = [raw_texts[idx] for idx in idxs]
     if isinstance(speaker_args, tuple):
         spk_ref_mels, spk_ref_slices = speaker_args
-        sub_spk_ref_slices = [spk_ref_slices[idx] for idx in idxs]
-        sub_spk_ref_mels = torch.cat([
-            spk_ref_mels[spk_ref_slice] for spk_ref_slice in sub_spk_ref_slices
-        ], dim=0)
+        start = 0
+        sub_spk_ref_slices = []
+        sub_spk_ref_mels = [spk_ref_mels[spk_ref_slices[idx]] for idx in idxs]
+        for spk_ref_mel in sub_spk_ref_mels:
+            end = start + spk_ref_mel.shape[0]
+            sub_spk_ref_slices.append(slice(start, end))
+            start = end
+        sub_spk_ref_mels = torch.cat(sub_spk_ref_mels, dim=0)
         sub_speaker_args = (sub_spk_ref_mels, sub_spk_ref_slices)
     else:
         sub_speaker_args = speaker_args[idxs]
