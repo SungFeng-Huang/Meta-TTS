@@ -287,7 +287,7 @@ class WavsToDvector:
                             emb_tensor_list.append(emb_tensor)
                             break
                 else:
-                    assert os.path.exists(os.path.join(data_dir, f'test_{data_id:03d}_0'))
+                    assert os.path.exists(os.path.join(data_dir, f'test_{data_id:03d}_0')), os.path.join(data_dir, f'test_{data_id:03d}_0')
                     for i in range(5):
                         wav_dir = os.path.join(data_dir, f'test_{data_id:03d}_{i}')
                         for wav_file in os.listdir(wav_dir):

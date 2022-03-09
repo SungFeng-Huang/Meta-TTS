@@ -62,8 +62,9 @@ class SpeakerVerification:
         # 1. preprocessing the data
         self.mu_dict = dict()
         for mode in self.eer_plot_mode_list:
-            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
-                self.mu_dict[mode] = np.array([self.eer_dict[mode]*100] * (len(self.step_list)+2))
+            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
+                # self.mu_dict[mode] = np.array([self.eer_dict[mode]*100] * (len(self.step_list)+2))
+                self.mu_dict[mode] = self.eer_dict[mode]*100
             else:
                 mu_list = []
                 for step in self.step_list:
@@ -71,56 +72,65 @@ class SpeakerVerification:
                 self.mu_dict[mode] = np.array(mu_list)
 
         # 2. plot
+        # 2.1 get xmin, xmax
         fig, ax = plt.subplots(figsize=(4.8, 4.2))
         # fig, ax = plt.subplots()
         # fig, ax = plt.subplots(figsize=(4.30, 2.58))
         line_list = [None for i in range(len(self.eer_plot_mode_list))]
         t = np.array(self.step_list)
-        for i, mode in enumerate(self.eer_plot_mode_list):
-            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
-                # just for correct i
-                pass
-            else:
-                line_list[i] = ax.plot(
-                    t, self.mu_dict[mode],
-                    label=self.eer_plot_legend_list[i], color=self.eer_plot_color_list[i], alpha=0.5,
-                    marker='o'
-                )
-        xmin, xmax = ax.get_xlim()
-        plt.close(fig)
-        
-        fig, ax = plt.subplots(figsize=(4.8, 4.2))
-        line_list = [None for i in range(len(self.eer_plot_mode_list))]
-        t = np.array(self.step_list)
+        # ax.plot(t, t*0)
         # xmin, xmax = ax.get_xlim()
+        # plt.close(fig)
+        
+        # # 2.2 plot
+        # fig, ax = plt.subplots(figsize=(4.8, 4.2))
         t_refer = np.concatenate((np.array([self.step_list[0]-100]), t, np.array([self.step_list[-1]+100])),axis=0)
         for i, mode in enumerate(self.eer_plot_mode_list):
-            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
-                line_list[i], = ax.plot(
-                    t_refer, self.mu_dict[mode],
-                    label=self.eer_plot_legend_list[i], linestyle='--', alpha=0.5, color=self.eer_plot_color_list[i]
+            if mode in ['real', 'recon']:
+                # line_list[i], = ax.plot(
+                    # t_refer, self.mu_dict[mode],
+                    # label=self.eer_plot_legend_list[i], linestyle='--', alpha=0.5, color=self.eer_plot_color_list[i]
+                # )
+                line_list[i] = ax.axhline(
+                    y=self.mu_dict[mode],
+                    label=self.eer_plot_legend_list[i], color=self.eer_plot_color_list[i],
+                    linestyle='--', alpha=0.5,
+                )
+            elif mode in ['scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
+                # line_list[i], = ax.plot(
+                    # t_refer, self.mu_dict[mode],
+                    # label=self.eer_plot_legend_list[i], alpha=0.5, color=self.eer_plot_color_list[i],
+                    # lw=1,
+                # )
+                line_list[i] = ax.axhline(
+                    y=self.mu_dict[mode],
+                    label=self.eer_plot_legend_list[i], color=self.eer_plot_color_list[i],
+                    alpha=0.5,
                 )
             else:
                 # just for correct i
                 # pass
                 line_list[i] = ax.plot(
                     t, self.mu_dict[mode],
-                    label=self.eer_plot_legend_list[i], color=self.eer_plot_color_list[i], alpha=0.5,
-                    marker='o'
+                    label=self.eer_plot_legend_list[i], color=self.eer_plot_color_list[i],
+                    marker='.',
+                    alpha=0.5,
                 )
 
         # 3. set legend
         title_map = {
-            '': 'Approach',
             '_base_emb': 'Baseline (emb table)',
             '_base_emb1': 'Baseline (share emb)',
             '_meta_emb': 'Meta-TTS (emb table)',
             '_meta_emb1': 'Meta-TTS (share emb)',
         }
         handles, labels = ax.get_legend_handles_labels()
-        if suffix == '':
+        map_id = [labels.index(l) for l in self.eer_plot_legend_list]
+        handles = [handles[i] for i in map_id]
+        labels = [labels[i] for i in map_id]
+        if suffix not in title_map:
             _hl = handles[0::2]+handles[1::2], labels[0::2]+labels[1::2]
-            lgd = plt.legend(*_hl, loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=2, title=title_map[suffix])
+            lgd = plt.legend(*_hl, loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=2, title='Approach')
         else:
             _hl = handles, labels
             lgd = plt.legend(*_hl, loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=3, title=title_map[suffix])
@@ -129,11 +139,11 @@ class SpeakerVerification:
         # 4. set axis label
         ax.set_xlabel('Adaptation Steps', fontsize=12)
         ax.set_ylabel('Equal Error Rate (%)', fontsize=12)
-        plt.xticks(ticks=self.step_list, fontsize=12)
+        plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
 
         # 5. set axis limit
-        plt.xlim((xmin,xmax))
+        # plt.xlim((xmin,xmax))
         plt.ylim((0, 52))
         print(ax.get_ylim())
         print(plt.gcf().get_size_inches())
@@ -158,7 +168,7 @@ class SpeakerVerification:
         ftsteps = []
         for i, mode in enumerate(self.eer_plot_mode_list):
             print(f'precessing {mode}')
-            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
+            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
                 # if mode == 'recon':
                     # approach = self.eer_plot_legend_list[i]
                     # ftstep = 'Real Utterance'
@@ -214,7 +224,6 @@ class SpeakerVerification:
         ax.set_ylim([0.1, 100])
 
         title_map = {
-            '': 'Approach',
             '_base_emb': 'Baseline (emb table)',
             '_base_emb1': 'Baseline (share emb)',
             '_meta_emb': 'Meta-TTS (emb table)',
@@ -222,7 +231,7 @@ class SpeakerVerification:
         }
         handles, labels = axes.get_legend_handles_labels()
         num_of_colors = len(self.eer_plot_color_list)+1
-        if suffix == '':
+        if suffix not in title_map:
             color_hl = handles[1:num_of_colors:2]+handles[2:num_of_colors:2], labels[1:num_of_colors:2]+labels[2:num_of_colors:2]
             sizes_hl = handles[num_of_colors+1:], labels[num_of_colors+1:]
             color_leg = axes.legend(
@@ -281,7 +290,7 @@ class SpeakerVerification:
         real_score = self.pair_similarity_dict['real'][0]
         for i, mode in enumerate(self.eer_plot_mode_list):
             print(f'precessing {mode}')
-            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
+            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
                 # if mode == 'recon':
                     # approach = self.eer_plot_legend_list[i]
                     # ftstep = 'Real Utterance'
@@ -317,7 +326,7 @@ class SpeakerVerification:
         # 1. preprocessing the data
         self.mu_dict = dict()
         for mode in self.eer_plot_mode_list:
-            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
+            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
                 self.mu_dict[mode] = np.array([self.auc_dict[mode]*100] * (len(self.step_list)+2))
             else:
                 mu_list = []
@@ -331,16 +340,17 @@ class SpeakerVerification:
         # fig, ax = plt.subplots(figsize=(4.30, 2.58))
         line_list = [None for i in range(len(self.eer_plot_mode_list))]
         t = np.array(self.step_list)
-        for i, mode in enumerate(self.eer_plot_mode_list):
-            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
-                # just for correct i
-                pass
-            else:
-                line_list[i] = ax.plot(
-                    t, self.mu_dict[mode],
-                    label=self.eer_plot_legend_list[i], color=self.eer_plot_color_list[i], alpha=0.5,
-                    marker='o'
-                )
+        ax.plot(t, t*0)
+        # for i, mode in enumerate(self.eer_plot_mode_list):
+            # if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
+                # # just for correct i
+                # pass
+            # else:
+                # line_list[i] = ax.plot(
+                    # t, self.mu_dict[mode],
+                    # label=self.eer_plot_legend_list[i], color=self.eer_plot_color_list[i], alpha=0.5,
+                    # marker='o'
+                # )
         xmin, xmax = ax.get_xlim()
         plt.close(fig)
         
@@ -349,7 +359,7 @@ class SpeakerVerification:
         t = np.array(self.step_list)
         t_refer = np.concatenate((np.array([self.step_list[0]-100]), t, np.array([self.step_list[-1]+100])),axis=0)
         for i, mode in enumerate(self.eer_plot_mode_list):
-            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
+            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
                 line_list[i], = ax.plot(
                     t_refer, self.mu_dict[mode],
                     label=self.eer_plot_legend_list[i], linestyle='--', alpha=0.5, color=self.eer_plot_color_list[i]
@@ -365,16 +375,15 @@ class SpeakerVerification:
 
         # 3. set legend
         title_map = {
-            '': 'Approach',
             '_base_emb': 'Baseline (emb table)',
             '_base_emb1': 'Baseline (share emb)',
             '_meta_emb': 'Meta-TTS (emb table)',
             '_meta_emb1': 'Meta-TTS (share emb)',
         }
         handles, labels = ax.get_legend_handles_labels()
-        if suffix == '':
+        if suffix not in title_map:
             _hl = handles[0::2]+handles[1::2], labels[0::2]+labels[1::2]
-            lgd = plt.legend(*_hl, loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=2, title=title_map[suffix])
+            lgd = plt.legend(*_hl, loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=2, title='Approach')
         else:
             _hl = handles, labels
             lgd = plt.legend(*_hl, loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=3, title=title_map[suffix])
@@ -411,7 +420,7 @@ class SpeakerVerification:
         real_score = self.pair_similarity_dict['real'][0]
         for i, mode in enumerate(self.eer_plot_mode_list):
             print(f'precessing {mode}')
-            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
+            if mode in ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
                 # if mode == 'recon':
                     # approach = self.eer_plot_legend_list[i]
                     # ftstep = 'Real Utterance'
@@ -464,7 +473,6 @@ class SpeakerVerification:
         ax.grid(linestyle='--')
 
         title_map = {
-            '': 'Approach',
             '_base_emb': 'Baseline (emb table)',
             '_base_emb1': 'Baseline (share emb)',
             '_meta_emb': 'Meta-TTS (emb table)',
@@ -472,7 +480,7 @@ class SpeakerVerification:
         }
         handles, labels = axes.get_legend_handles_labels()
         num_of_colors = len(self.eer_plot_color_list)+1
-        if suffix == '':
+        if suffix not in title_map:
             color_hl = handles[1:num_of_colors:2]+handles[2:num_of_colors:2], labels[1:num_of_colors:2]+labels[2:num_of_colors:2]
             sizes_hl = handles[num_of_colors+1:], labels[num_of_colors+1:]
             color_leg = axes.legend(
@@ -554,18 +562,21 @@ class SpeakerVerification:
             ]
                 # 'Real', 'Reconstructed', 'Meta-TTS (Emb, VA, D)', 'Meta-TTS (Emb, VA)', 'Meta-TTS (Emb, D)', 'Meta-TTS (Emb)'
         elif suffix == '_encoder':
-            # self.eer_plot_color_list = ['purple', 'grey', 'orange', 'red', 'brown', 'green', 'blue']
-            # self.eer_plot_mode_list = ['real', 'recon', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'meta_emb_vad', 'base_emb_vad']
-            # self.eer_plot_legend_list = [
-                # 'Real', 'Reconstructed', 'Scrach encoder', 'Pre-trained encoder', 'd-vector',
-                # 'Meta-TTS (Emb, VA, D)', 'Baseline (Emb, VA, D)'
-            # ]
             self.eer_plot_color_list = ['purple', 'grey', 'orange', 'blue', 'red', 'green', 'brown']
             self.eer_plot_mode_list = ['real', 'recon', 'scratch_encoder_step0', 'base_emb_vad', 'encoder_step0', 'meta_emb_vad', 'dvec_step0']
             self.eer_plot_legend_list = [
                 'Real', 'Reconstructed', 'Scrach encoder', 'Baseline (Emb, VA, D)', 'Pre-trained encoder',
                 'Meta-TTS (Emb, VA, D)', 'd-vector'
             ]
+
+        elif suffix == '_encoder_1shot':
+            self.eer_plot_color_list = ['purple', 'grey', 'orange', 'blue', 'red', 'green', 'brown']
+            self.eer_plot_mode_list = ['real', 'recon', 'scratch_encoder-1_shot_step0', 'base_emb_vad-1_shot', 'encoder-1_shot_step0', 'meta_emb_vad-1_shot', 'dvec-1_shot_step0']
+            self.eer_plot_legend_list = [
+                'Real', 'Reconstructed', 'Scrach encoder', 'Baseline (Emb, VA, D)', 'Pre-trained encoder',
+                'Meta-TTS (Emb, VA, D)', 'd-vector'
+            ]
+            self.step_list = [0, 5, 10, 20, 50, 100, 200, 400, 600, 800, 1000]
 
 
 

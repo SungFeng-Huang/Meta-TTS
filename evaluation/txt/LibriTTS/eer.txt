@@ -170,12 +170,6 @@ meta_emb1_step50:
 threshold:0.5821	EER:0.4819
 meta_emb1_step100:
 threshold:0.5825	EER:0.4766
-scratch_encoder_step0:
-threshold:0.5769	EER:0.3910
-encoder_step0:
-threshold:0.5867	EER:0.3598
-dvec_step0:
-threshold:0.5819	EER:0.3540
 base_emb_vad_step0:
 threshold:0.5873	EER:0.5021
 base_emb_vad_step5:
@@ -364,3 +358,15 @@ meta_emb_vad-1_shot_step800:
 threshold:0.6308	EER:0.1514
 meta_emb_vad-1_shot_step1000:
 threshold:0.6313	EER:0.1551
+scratch_encoder_step0:
+threshold:0.5769	EER:0.3910
+encoder_step0:
+threshold:0.5867	EER:0.3598
+dvec_step0:
+threshold:0.5819	EER:0.3540
+scratch_encoder-1_shot_step0:
+threshold:0.6101	EER:0.2984
+encoder-1_shot_step0:
+threshold:0.6288	EER:0.2085
+dvec-1_shot_step0:
+threshold:0.6361	EER:0.1642

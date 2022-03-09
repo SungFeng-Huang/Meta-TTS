@@ -3,6 +3,7 @@ from wavs_to_dvector import WavsToDvector
 from centroid_similarity import CentroidSimilarity
 from pair_similarity import PairSimilarity
 from speaker_verification import SpeakerVerification
+from similarity_plot import SimilarityPlot
 
 
 if __name__ == '__main__':
@@ -25,9 +26,15 @@ if __name__ == '__main__':
     main = SpeakerVerification(args)
     main.load_pair_similarity()
     main.get_eer()
-    # for suffix in [ '_encoder']:
+    for suffix in [ '_encoder_1shot']:
     # for suffix in ['_base_emb', '_base_emb1', '_meta_emb', '_meta_emb1']:
-        # main.set_suffix(suffix)
-        # main.plot_eer(suffix)
+        main.set_suffix(suffix)
+        main.plot_eer(suffix)
         # main.plot_auc(suffix)
 
+    main = SimilarityPlot()
+    main.load_centroid_similarity()
+    # for suffix in ['', '_base_emb', '_base_emb1', '_meta_emb', '_meta_emb1']:
+    for suffix in ['_encoder_1shot']:
+        main.set_suffix(suffix)
+        main.sim_plot(suffix)

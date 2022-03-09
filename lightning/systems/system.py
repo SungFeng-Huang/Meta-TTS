@@ -13,10 +13,11 @@ from matplotlib import pyplot as plt
 from argparse import Namespace
 
 from pytorch_lightning.callbacks.progress import ProgressBar
-from pytorch_lightning.callbacks import LearningRateMonitor, GPUStatsMonitor, ModelCheckpoint
+from pytorch_lightning.callbacks import LearningRateMonitor, GPUStatsMonitor, ModelCheckpoint, RichProgressBar
 
 from lightning.model import FastSpeech2Loss, FastSpeech2
-from lightning.callbacks import GlobalProgressBar, Saver
+# from lightning.callbacks import GlobalProgressBar, Saver
+from lightning.callbacks import Saver
 from lightning.optimizer import get_optimizer
 from lightning.scheduler import get_scheduler
 from lightning.utils import LightningMelGAN, loss2dict
@@ -79,8 +80,9 @@ class System(pl.LightningModule):
         )
 
         # Progress bars (step/epoch)
-        outer_bar = GlobalProgressBar(process_position=1)
+        # outer_bar = GlobalProgressBar(process_position=1)
         # inner_bar = ProgressBar(process_position=1) # would * 2
+        # inner_bar = RichProgressBar()
 
         # Monitor learning rate / gpu stats
         lr_monitor = LearningRateMonitor()
@@ -92,7 +94,9 @@ class System(pl.LightningModule):
         saver = Saver(self.preprocess_config, self.log_dir, self.result_dir)
         self.saver = saver
 
-        callbacks = [checkpoint, outer_bar, lr_monitor, gpu_monitor, saver]
+        # callbacks = [checkpoint, outer_bar, lr_monitor, gpu_monitor, saver]
+        callbacks = [checkpoint, lr_monitor, gpu_monitor, saver]
+        # callbacks = []
         return callbacks
 
     def configure_optimizers(self):

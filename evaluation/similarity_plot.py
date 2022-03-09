@@ -17,7 +17,7 @@ from pylab import plot, show, savefig, xlim, figure, \
 import config
 
 class SimilarityPlot:
-    def __init__(self, args):
+    def __init__(self):
         self.corpus = config.corpus
         self.plot_type = config.plot_type
         assert(self.plot_type in ['errorbar', 'box_ver', 'box_hor'])
@@ -25,7 +25,7 @@ class SimilarityPlot:
         self.sim_plot_mode_list = config.sim_plot_mode_list
         self.sim_plot_color_list = config.sim_plot_color_list
         self.sim_plot_legend_list = config.sim_plot_legend_list
-        self.output_path = f"images/{self.corpus}/{args.output_path}"
+        # self.output_path = f"images/{self.corpus}/{args.output_path}"
         
     def load_centroid_similarity(self):
         self.similarity_list_dict = np.load(f'npy/{self.corpus}/centroid_similarity_dict.npy', allow_pickle=True)[()]
@@ -53,7 +53,7 @@ class SimilarityPlot:
         dfs = []
         regions = {}
         for mode in self.sim_plot_mode_list:
-            if mode in ['recon', 'recon_random', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
+            if mode in ['recon', 'recon_random', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
                 regions[mode] = self.similarity_list_dict[mode]
             else:
                 for step in self.step_list:
@@ -80,7 +80,7 @@ class SimilarityPlot:
             if mode in ['recon', 'recon_random']:
                 # self.mu_dict[mode] = np.array([np.mean(self.similarity_list_dict[mode])]*(len(self.step_list)+2))
                 continue
-            elif mode in ['scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
+            elif mode in ['scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
                 # self.mu_dict[mode] = np.array([np.mean(self.similarity_list_dict[mode])]*(len(self.step_list)))
                 continue
             else:
@@ -94,7 +94,7 @@ class SimilarityPlot:
         for mode in self.sim_plot_mode_list:
             if mode in ['recon', 'recon_random']:
                 self.sigma_dict[mode] = np.array([np.std(self.similarity_list_dict[mode])]*(len(self.step_list)+2))
-            elif mode in ['scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
+            elif mode in ['scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
                 self.sigma_dict[mode] = np.array([np.std(self.similarity_list_dict[mode])]*(len(self.step_list)))
             else:
                 sigma_list = []
@@ -167,10 +167,9 @@ class SimilarityPlot:
         print(self.sim_plot_mode_list)
         self.mu_dict = dict()
         for mode in self.sim_plot_mode_list:
-            if mode in ['recon', 'recon_random']:
-                self.mu_dict[mode] = np.array([np.mean(self.similarity_list_dict[mode])]*(len(self.step_list)+2))
-            elif mode in ['scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
-                self.mu_dict[mode] = np.array([np.mean(self.similarity_list_dict[mode])]*(len(self.step_list)))
+            if mode in ['recon', 'recon_random', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
+                # self.mu_dict[mode] = np.array([np.mean(self.similarity_list_dict[mode])]*(len(self.step_list)+2))
+                self.mu_dict[mode] = np.mean(self.similarity_list_dict[mode])
             else:
                 mu_list = []
                 for step in self.step_list:
@@ -180,10 +179,9 @@ class SimilarityPlot:
 
         self.sigma_dict = dict()
         for mode in self.sim_plot_mode_list:
-            if mode in ['recon', 'recon_random']:
-                self.sigma_dict[mode] = np.array([np.std(self.similarity_list_dict[mode])]*(len(self.step_list)+2))
-            elif mode in ['scratch_encoder_step0', 'encoder_step0', 'dvec_step0']:
-                self.sigma_dict[mode] = np.array([np.std(self.similarity_list_dict[mode])]*(len(self.step_list)))
+            if mode in ['recon', 'recon_random', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
+                # self.sigma_dict[mode] = np.array([np.std(self.similarity_list_dict[mode])]*(len(self.step_list)+2))
+                self.sigma_dict[mode] = np.std(self.similarity_list_dict[mode])
             else:
                 sigma_list = []
                 for step in self.step_list:
@@ -199,45 +197,55 @@ class SimilarityPlot:
         # fig, ax = plt.subplots(figsize=(4.30, 2.58))
         fig, ax = plt.subplots(figsize=(4.8, 4.2))
         line_list = [None for i in range(len(self.sim_plot_mode_list))]
-        for i, mode in enumerate(self.sim_plot_mode_list):
+        t = np.array(self.step_list)
+        # ax.plot(t, t*0)
+        # xmin, xmax = ax.get_xlim()
+        # plt.close(fig)
+
+        # fig, ax = plt.subplots(figsize=(4.8, 4.2))
+        for i,(mode,color) in enumerate(zip(self.sim_plot_mode_list, self.sim_plot_color_list)):
             if mode in ['recon', 'recon_random']:
-                pass
+                line_list[i] = ax.axhline(
+                    y=self.mu_dict[mode],
+                    label=self.sim_plot_legend_list[i], color=self.sim_plot_color_list[i],
+                    linestyle='--', alpha=0.5,
+                )
+                ax.axhspan(
+                    self.mu_dict[mode]-self.sigma_dict[mode], self.mu_dict[mode]+self.sigma_dict[mode],
+                    facecolor=self.sim_plot_color_list[i], alpha=0.15
+                )
+            elif mode in ['scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'scratch_encoder-1_shot_step0', 'encoder-1_shot_step0', 'dvec-1_shot_step0']:
+                line_list[i] = ax.axhline(
+                    y=self.mu_dict[mode],
+                    label=self.sim_plot_legend_list[i], color=self.sim_plot_color_list[i],
+                    alpha=0.5,
+                )
             else:
                 line_list[i] = ax.errorbar(
                     t, self.mu_dict[mode],
-                    yerr=self.sigma_dict[mode], marker='o', lw=1, capsize=2,
-                    label=self.sim_plot_legend_list[i], color=self.sim_plot_color_list[i], alpha=0.5
+                    # yerr=self.sigma_dict[mode], capsize=2,
+                    label=self.sim_plot_legend_list[i], color=self.sim_plot_color_list[i],
+                    marker='.',
+                    # linewidth=1,
+                    alpha=0.5
                 )
-        
-        xmin, xmax = ax.get_xlim()
-
-        t_refer = np.concatenate((np.array([self.step_list[0]-100]), t, np.array([self.step_list[-1]+100])),axis=0)
-        for i,(mode,color) in enumerate(zip(self.sim_plot_mode_list, self.sim_plot_color_list)):
-            if mode not in ['recon', 'recon_random']:
-                pass
-            else:
-                line_list[i], = ax.plot(
-                    t_refer, self.mu_dict[mode],
-                    label=self.sim_plot_legend_list[i], linestyle='--', alpha=0.5, color=self.sim_plot_color_list[i]
-                )
-                ax.fill_between(
-                    t_refer, self.mu_dict[mode]+self.sigma_dict[mode], self.mu_dict[mode]-self.sigma_dict[mode],
-                    facecolor=self.sim_plot_color_list[i], alpha=0.15
-                )
+        # if self.step_list[-1] > 100:
+            # ax.set_xscale('log')
         
         # 3. set legend
         title_map = {
-            '': 'Approach',
             '_base_emb': 'Baseline (emb table)',
             '_base_emb1': 'Baseline (share emb)',
             '_meta_emb': 'Meta-TTS (emb table)',
             '_meta_emb1': 'Meta-TTS (share emb)',
         }
         handles, labels = ax.get_legend_handles_labels()
-        print(labels)
-        if suffix == '':
+        map_id = [labels.index(l) for l in self.sim_plot_legend_list]
+        handles = [handles[i] for i in map_id]
+        labels = [labels[i] for i in map_id]
+        if suffix not in title_map:
             _hl = handles[0::2]+handles[1::2], labels[0::2]+labels[1::2]
-            lgd = plt.legend(*_hl, loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=2, title=title_map[suffix])
+            lgd = plt.legend(*_hl, loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=2, title='Approach')
         else:
             _hl = handles, labels
             lgd = plt.legend(*_hl, loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=3, title=title_map[suffix])
@@ -250,7 +258,7 @@ class SimilarityPlot:
         plt.yticks(fontsize=12)
 
         # 5. set axis limit
-        plt.xlim((xmin,xmax))
+        # plt.xlim((xmin,xmax))
 
         savefile = f"images/{self.corpus}/errorbar_plot{suffix}.png"
         plt.savefig(savefile, format='png', bbox_extra_artists=(lgd,), bbox_inches='tight')
@@ -299,12 +307,12 @@ class SimilarityPlot:
             ]
                 # 'Meta-TTS (Emb, VA, D)', 'Meta-TTS (Emb, VA)', 'Meta-TTS (Emb, D)', 'Meta-TTS (Emb)'
         elif suffix == '_encoder':
-            self.sim_plot_color_list = ['purple', 'grey', 'orange', 'red', 'brown', 'green', 'blue']
-            self.sim_plot_mode_list = ['recon', 'recon_random', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'meta_emb_vad', 'base_emb_vad']
-            self.sim_plot_legend_list = [
-                'Same spk', 'Different spk', 'Scrach encoder', 'Pre-trained encoder', 'd-vector',
-                'Meta-TTS (Emb, VA, D)', 'Baseline (Emb, VA, D)'
-            ]
+            # self.sim_plot_color_list = ['purple', 'grey', 'orange', 'red', 'brown', 'green', 'blue']
+            # self.sim_plot_mode_list = ['recon', 'recon_random', 'scratch_encoder_step0', 'encoder_step0', 'dvec_step0', 'meta_emb_vad', 'base_emb_vad']
+            # self.sim_plot_legend_list = [
+                # 'Same spk', 'Different spk', 'Scrach encoder', 'Pre-trained encoder', 'd-vector',
+                # 'Meta-TTS (Emb, VA, D)', 'Baseline (Emb, VA, D)'
+            # ]
             self.sim_plot_color_list = ['purple', 'grey', 'orange', 'blue', 'red', 'green', 'brown']
             self.sim_plot_mode_list = ['recon', 'recon_random', 'scratch_encoder_step0', 'base_emb_vad', 'encoder_step0', 'meta_emb_vad', 'dvec_step0']
             self.sim_plot_legend_list = [
@@ -312,12 +320,18 @@ class SimilarityPlot:
                 'Meta-TTS (Emb, VA, D)', 'd-vector'
             ]
 
+        elif suffix == '_encoder_1shot':
+            self.sim_plot_color_list = ['purple', 'grey', 'orange', 'blue', 'red', 'green', 'brown']
+            self.sim_plot_mode_list = ['recon', 'recon_random', 'scratch_encoder-1_shot_step0', 'base_emb_vad-1_shot', 'encoder-1_shot_step0', 'meta_emb_vad-1_shot', 'dvec-1_shot_step0']
+            self.sim_plot_legend_list = [
+                'Same spk', 'Different spk', 'Scrach encoder', 'Baseline (Emb, VA, D)', 'Pre-trained encoder',
+                'Meta-TTS (Emb, VA, D)', 'd-vector'
+            ]
+            self.step_list = [0, 5, 10, 20, 50, 100, 200, 400, 600, 800, 1000]
+
 
 if __name__ == '__main__':
-    parser = ArgumentParser()
-    parser.add_argument('--output_path', type=str, default='errorbar_plot.png')
-    args = parser.parse_args()
-    main = SimilarityPlot(args)
+    main = SimilarityPlot()
     main.load_centroid_similarity()
     for suffix in ['', '_base_emb', '_base_emb1', '_meta_emb', '_meta_emb1']:
     # for suffix in ['_encoder']:

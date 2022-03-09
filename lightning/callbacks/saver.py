@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 from scipy.io import wavfile
 from pytorch_lightning.callbacks import Callback
-from pytorch_lightning.loggers.base import merge_dicts
+from pytorch_lightning.loggers.base import merge_dicts, LoggerCollection
 from pytorch_lightning.utilities import rank_zero_only
 
 from utils.tools import expand, plot_mel
@@ -43,8 +43,11 @@ class Saver(Callback):
         output = outputs['output']
         _batch = outputs['_batch']  # batch or qry_batch
         step = pl_module.global_step+1
-        assert len(list(pl_module.logger)) == 1
-        logger = pl_module.logger[0]
+        if isinstance(pl_module.logger, LoggerCollection):
+            assert len(list(pl_module.logger)) == 1
+            logger = pl_module.logger[0]
+        else:
+            logger = pl_module.logger
         vocoder = pl_module.vocoder
 
         # Synthesis one sample and log to CometLogger
@@ -79,8 +82,11 @@ class Saver(Callback):
         _batch = outputs['_batch']  # batch or qry_batch
         
         step = pl_module.global_step+1
-        assert len(list(pl_module.logger)) == 1
-        logger = pl_module.logger[0]
+        if isinstance(pl_module.logger, LoggerCollection):
+            assert len(list(pl_module.logger)) == 1
+            logger = pl_module.logger[0]
+        else:
+            logger = pl_module.logger
         vocoder = pl_module.vocoder
 
         loss_dict = loss2dict(loss)
