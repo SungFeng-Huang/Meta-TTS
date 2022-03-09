@@ -1,7 +1,6 @@
 # Meta-TTS: Meta-Learning for Few-shot SpeakerAdaptive Text-to-Speech
 
-This repository is the official implementation of "Meta-TTS: Meta-Learning for Few-shot SpeakerAdaptive Text-to-Speech".
-<!--This repository is the official implementation of [Meta-TTS: Meta-Learning for Few-shot SpeakerAdaptive Text-to-Speech](https://arxiv.org/abs/2030.12345). -->
+This repository is the official implementation of ["Meta-TTS: Meta-Learning for Few-shot SpeakerAdaptive Text-to-Speech"](https://arxiv.org/abs/2111.04040v1).
 
 <!--📋  Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials-->
 
