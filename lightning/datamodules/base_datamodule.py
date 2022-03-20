@@ -1,7 +1,9 @@
-from torch.utils.data.dataset import ConcatDataset
-import pytorch_lightning as pl
+import os
+import json
 
 from torch.utils.data import DataLoader
+from torch.utils.data.dataset import ConcatDataset
+import pytorch_lightning as pl
 
 from dataset import MonolingualTTSDataset as Dataset
 from lightning.collate import get_single_collate
@@ -25,21 +27,21 @@ class BaseDataModule(pl.LightningDataModule):
         if stage in (None, 'fit', 'validate'):
             self.train_datasets = [
                 Dataset(
-                    f"{preprocess_config['subsets']['train']}.txt",
-                    preprocess_config, self.train_config, sort=True, drop_last=True, spk_refer_wav=spk_refer_wav
+                    "train",
+                    preprocess_config, self.train_config, spk_refer_wav=spk_refer_wav
                 ) for preprocess_config in self.preprocess_configs
             ]
             self.val_datasets = [
                 Dataset(
-                    f"{preprocess_config['subsets']['val']}.txt",
-                    preprocess_config, self.train_config, sort=False, drop_last=False, spk_refer_wav=spk_refer_wav
+                    "val",
+                    preprocess_config, self.train_config, spk_refer_wav=spk_refer_wav
                 ) for preprocess_config in self.preprocess_configs
             ]
 
         if stage in (None, 'test', 'predict'):
             self.test_datasets = [
                 Dataset(
-                    f"{preprocess_config['subsets']['test']}.txt",
+                    "test",
                     preprocess_config, self.train_config, sort=False, drop_last=False, spk_refer_wav=spk_refer_wav
                 ) for preprocess_config in self.preprocess_configs
             ]

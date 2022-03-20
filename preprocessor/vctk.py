@@ -8,16 +8,18 @@ from tqdm import tqdm
 from text import _clean_text
 
 
-def prepare_align(config):
+def prepare_align(config, speakers=None):
     in_dir = config["path"]["corpus_path"]
     out_dir = config["path"]["raw_path"]
     sampling_rate = config["preprocessing"]["audio"]["sampling_rate"]
     max_wav_value = config["preprocessing"]["audio"]["max_wav_value"]
     cleaners = config["preprocessing"]["text"]["text_cleaners"]
-    for speaker in tqdm(os.listdir(os.path.join(in_dir, "wav48_silence_trimmed"))):
+    if speakers is None:
+        speakers = os.listdir(os.path.join(in_dir, "wav48_silence_trimmed"))
+    for speaker in tqdm(speakers, leave=False):
         if os.path.isfile(os.path.join(in_dir, "wav48_silence_trimmed", speaker)):
             continue
-        for file_name in os.listdir(os.path.join(in_dir, "wav48_silence_trimmed", speaker)):
+        for file_name in tqdm(os.listdir(os.path.join(in_dir, "wav48_silence_trimmed", speaker)), leave=False):
             if file_name[-10:] != "_mic2.flac":
                 continue
             base_name = file_name[:-10]

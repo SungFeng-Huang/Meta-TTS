@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import numpy as np
 import matplotlib
 from scipy.io import wavfile
+from scipy.interpolate import interp1d
 from matplotlib import pyplot as plt
 
 
@@ -218,9 +219,13 @@ def plot_mel(data, stats, titles):
     fig, axes = plt.subplots(len(data), 1, squeeze=False)
     if titles is None:
         titles = [None for i in range(len(data))]
-    pitch_min, pitch_max, pitch_mean, pitch_std, energy_min, energy_max = stats
-    pitch_min = pitch_min * pitch_std + pitch_mean
-    pitch_max = pitch_max * pitch_std + pitch_mean
+    # pitch_min, pitch_max, pitch_mean, pitch_std, energy_min, energy_max = stats
+    # pitch_min = pitch_min * pitch_std + pitch_mean
+    # pitch_max = pitch_max * pitch_std + pitch_mean
+    pitch_min = stats["pitch"]["min"]
+    pitch_max = stats["pitch"]["max"]
+    energy_min = stats["energy"]["min"]
+    energy_max = stats["energy"]["max"]
 
     def add_axis(fig, old_ax):
         ax = fig.add_axes(old_ax.get_position(), anchor="W")
@@ -230,7 +235,7 @@ def plot_mel(data, stats, titles):
     fig.subplots_adjust(hspace=0.3)
     for i in range(len(data)):
         mel, pitch, energy = data[i]
-        pitch = pitch * pitch_std + pitch_mean
+        # pitch = pitch * pitch_std + pitch_mean
         axes[i][0].imshow(mel, origin="lower")
         axes[i][0].set_aspect(2.5, adjustable="box")
         axes[i][0].set_ylim(0, mel.shape[0])
@@ -320,3 +325,73 @@ def pad(input_ele, mel_max_length=None):
         out_list.append(one_batch_padded)
     out_padded = torch.stack(out_list)
     return out_padded
+
+
+def prosody_averaging(prosody, duration, interp=False, word_boundary=None):
+    # change zeros into interpolate values
+    if interp:
+        # perform linear interpolation
+        nonzero_ids = np.where(prosody != 0)[0]
+        interp_fn = interp1d(
+            nonzero_ids,
+            prosody[nonzero_ids],
+            fill_value=(prosody[nonzero_ids[0]], prosody[nonzero_ids[-1]]),
+            bounds_error=False,
+        )
+        prosody = interp_fn(np.arange(0, len(prosody)))
+
+    # Phoneme-level average
+    pos = 0
+    phoneme_prosody = np.empty_like(prosody[: len(duration)])
+    for i, d in enumerate(duration):
+        if d > 0:
+            phoneme_prosody[i] = np.mean(prosody[pos : pos + d])
+        else:
+            phoneme_prosody[i] = 0
+        pos += d
+
+    # Word-level average
+    if word_boundary is not None:
+        word_prosody = np.empty_like(prosody[: len(duration)])
+        for i, (s, e) in enumerate(word_boundary):
+            if s < e:
+                word_prosody[i] = np.mean(prosody[s:e])
+            else:
+                word_prosody[i] = 0
+        return phoneme_prosody, word_prosody
+
+    return phoneme_prosody
+
+
+def merge_stats(origin_stats, *other_stats):
+    new_stats = origin_stats
+    for stats in other_stats:
+        old_stats = new_stats
+        new_stats = {}
+        for k in ["pitch", "energy"]:
+            M = old_stats[k]["n_samples"]
+            N = stats[k]["n_samples"]
+            mu_m = old_stats[k]["mean"]
+            mu_n = stats[k]["mean"]
+            var_m = old_stats[k]["std"] ** 2
+            var_n = stats[k]["std"] ** 2
+            new_stats[k] = {
+                "n_samples": M + N,
+                "min": min(old_stats[k]["min"], stats[k]["min"]),
+                "max": max(old_stats[k]["max"], stats[k]["max"]),
+                "mean": (M*mu_m + N*mu_n) / (M + N),
+                "std": np.sqrt(
+                    (M*var_m + N*var_n + M*N/(M+N)*((mu_m-mu_n)**2)) / (M + N)
+                ),
+            }
+    return new_stats
+
+
+def merge_speaker_map(*speaker_maps):
+    new_speaker_map = {}
+    i = 0
+    for spk_map in speaker_maps:
+        for spk in spk_map:
+            new_speaker_map[spk] = i
+            i += 1
+    return new_speaker_map

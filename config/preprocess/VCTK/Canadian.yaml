@@ -1,0 +1,21 @@
+dataset: "VCTK"
+lang_id: 0
+
+root:
+  corpus_path: "/home/r06942045/myData/VCTK-Corpus"
+  lexicon_path: "lexicon/librispeech-lexicon.txt"
+  raw_path: "./raw_data/VCTK"
+  preprocessed_path: "./preprocessed_data/VCTK"
+
+path:
+  child_path: "Canadian"
+  preprocessed_path: "./preprocessed_data/VCTK/Canadian"
+
+subsets:
+  Canadian:
+    - _Canadian/Alberta
+    - _Canadian/Hamilton
+    - _Canadian/Montreal
+    - _Canadian/Ontario
+    - _Canadian/Toronto
+

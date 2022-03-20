@@ -13,6 +13,7 @@ import resemblyzer
 from resemblyzer import preprocess_wav, wav_to_mel_spectrogram
 
 import audio as Audio
+from utils.tools import prosody_averaging
 
 
 class Preprocessor:
@@ -64,88 +65,110 @@ class Preprocessor:
         os.makedirs((os.path.join(self.out_dir, "duration")), exist_ok=True)
         os.makedirs((os.path.join(self.out_dir, "spk_ref_mel_slices")), exist_ok=True)
 
-        print("Processing Data ...")
+        tqdm.write("Processing Data ...")
         n_frames = 0
         pitch_scaler = StandardScaler()
         energy_scaler = StandardScaler()
 
         # Compute pitch, energy, duration, and mel-spectrogram
+        # outs = {}
+        # dsets = []
+        # for dset in [self.val_set, self.train_set, self.test_set]:
+            # if dset is None:
+                # continue
+            # elif isinstance(dset, list):
+                # dsets += dset
+            # elif isinstance(dset, str):
+                # dsets.append(dset)
+
+        # for dset in dsets:
+            # os.makedirs((os.path.join(self.out_dir, dset, "mel")), exist_ok=True)
+            # os.makedirs((os.path.join(self.out_dir, dset, "pitch")), exist_ok=True)
+            # os.makedirs((os.path.join(self.out_dir, dset, "energy")), exist_ok=True)
+            # os.makedirs((os.path.join(self.out_dir, dset, "duration")), exist_ok=True)
+            # os.makedirs((os.path.join(self.out_dir, dset, "spk_ref_mel_slices")), exist_ok=True)
+
+            # n_frames = 0
+            # pitch_scaler = StandardScaler()
+            # energy_scaler = StandardScaler()
         speakers = {}
-        i = 0   # index of total speakers (train + val + test)
-        outs = {}
-        dsets = []
-        for dset in [self.train_set, self.val_set, self.test_set]:
-            if dset is None:
-                continue
-            elif isinstance(dset, list):
-                dsets += dset
-            elif isinstance(dset, str):
-                dsets.append(dset)
 
-        for dset in dsets:
-            dset_dir = os.path.join(self.in_dir, dset)
-            out = list()
-            for speaker in tqdm(os.listdir(dset_dir), desc=dset):
-                speakers[speaker] = i
-                for wav_name in tqdm(os.listdir(os.path.join(dset_dir, speaker)), leave=False):
-                    if ".wav" not in wav_name:
+            # dset_dir = os.path.join(self.in_dir, dset)
+        out = list()
+        for i, speaker in enumerate(tqdm(os.listdir(self.in_dir))):
+            speakers[speaker] = i
+            for wav_name in tqdm(os.listdir(os.path.join(self.in_dir, speaker)), leave=False):
+                if ".wav" not in wav_name:
+                    continue
+
+                basename = wav_name.split(".")[0]
+                tg_path = os.path.join(
+                    self.out_dir, "TextGrid", speaker, "{}.TextGrid".format(basename)
+                )
+                # tqdm.write(os.path.join(self.in_dir, speaker, wav_name))
+                # tqdm.write(tg_path)
+                if os.path.exists(tg_path):
+                    ret = self.process_utterance(self.in_dir, speaker, basename)
+                    if ret is None:
                         continue
+                    else:
+                        info, pitch, energy, n = ret
+                    out.append(info)
 
-                    basename = wav_name.split(".")[0]
-                    tg_path = os.path.join(
-                        self.out_dir, "TextGrid", speaker, "{}.TextGrid".format(basename)
-                    )
-                    if os.path.exists(tg_path):
-                        ret = self.process_utterance(dset_dir, speaker, basename)
-                        if ret is None:
-                            continue
-                        else:
-                            info, pitch, energy, n = ret
-                        out.append(info)
+                if len(pitch) > 0:
+                    pitch_scaler.partial_fit(pitch.reshape((-1, 1)))
+                if len(energy) > 0:
+                    energy_scaler.partial_fit(energy.reshape((-1, 1)))
 
-                    if len(pitch) > 0:
-                        pitch_scaler.partial_fit(pitch.reshape((-1, 1)))
-                    if len(energy) > 0:
-                        energy_scaler.partial_fit(energy.reshape((-1, 1)))
+                n_frames += n
+            i += 1
 
-                    n_frames += n
-                i += 1
-            outs[dset] = out
+        tqdm.write("Computing statistic quantities ...")
+        # # Perform normalization if necessary
+        # if self.pitch_normalization:
+            # # For additional corpus/set
+            # # if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
+            # if os.path.exists(os.path.join(self.out_dir, "stats.json")):
+                # stats = json.load(open(os.path.join(self.out_dir, "stats.json"), 'r'))
+                # pitch_mean = stats['pitch'][2]
+                # pitch_std = stats['pitch'][3]
+            # else:
+                # pitch_mean = pitch_scaler.mean_[0]
+                # pitch_std = pitch_scaler.scale_[0]
+        # else:
+            # # A numerical trick to avoid normalization...
+            # pitch_mean = 0
+            # pitch_std = 1
+        # if self.energy_normalization:
+            # # if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
+            # if os.path.exists(os.path.join(self.out_dir, "stats.json")):
+                # stats = json.load(open(os.path.join(self.out_dir, "stats.json"), 'r'))
+                # energy_mean = stats['energy'][2]
+                # energy_std = stats['energy'][3]
+            # else:
+                # energy_mean = energy_scaler.mean_[0]
+                # energy_std = energy_scaler.scale_[0]
+        # else:
+            # energy_mean = 0
+            # energy_std = 1
 
-        print("Computing statistic quantities ...")
-        # Perform normalization if necessary
-        if self.pitch_normalization:
-            # For additional corpus/set
-            # if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
-            if os.path.exists(os.path.join(self.out_dir, "stats.json")):
-                stats = json.load(open(os.path.join(self.out_dir, "stats.json"), 'r'))
-                pitch_mean = stats['pitch'][2]
-                pitch_std = stats['pitch'][3]
-            else:
-                pitch_mean = pitch_scaler.mean_[0]
-                pitch_std = pitch_scaler.scale_[0]
-        else:
-            # A numerical trick to avoid normalization...
-            pitch_mean = 0
-            pitch_std = 1
-        if self.energy_normalization:
-            # if self.train_set is None and os.path.exists(os.path.join(self.out_dir, "stats.json")):
-            if os.path.exists(os.path.join(self.out_dir, "stats.json")):
-                stats = json.load(open(os.path.join(self.out_dir, "stats.json"), 'r'))
-                energy_mean = stats['energy'][2]
-                energy_std = stats['energy'][3]
-            else:
-                energy_mean = energy_scaler.mean_[0]
-                energy_std = energy_scaler.scale_[0]
-        else:
-            energy_mean = 0
-            energy_std = 1
-
+        # pitch_min, pitch_max = self.normalize(
+            # os.path.join(self.out_dir, "pitch"), pitch_mean, pitch_std
+        # )
+        # energy_min, energy_max = self.normalize(
+            # os.path.join(self.out_dir, "energy"), energy_mean, energy_std
+        # )
+        tqdm.write(f"n_samples: {pitch_scaler.n_samples_seen_}")
+        pitch_mean = pitch_scaler.mean_[0]
+        pitch_std = pitch_scaler.scale_[0]
+        energy_mean = energy_scaler.mean_[0]
+        energy_std = energy_scaler.scale_[0]
+        # Do not normalize here. Normalize at Dataset.__getitem__.
         pitch_min, pitch_max = self.normalize(
-            os.path.join(self.out_dir, "pitch"), pitch_mean, pitch_std
+            os.path.join(self.out_dir, "pitch"), 0, 1
         )
         energy_min, energy_max = self.normalize(
-            os.path.join(self.out_dir, "energy"), energy_mean, energy_std
+            os.path.join(self.out_dir, "energy"), 0, 1
         )
 
         # Save files
@@ -154,42 +177,39 @@ class Preprocessor:
 
         with open(os.path.join(self.out_dir, "stats.json"), "w") as f:
             stats = {
-                "pitch": [
-                    # float(min(pitch_min, -2)),
-                    # float(max(pitch_max, 13)),
-                    float(pitch_min),
-                    float(pitch_max),
-                    float(pitch_mean),
-                    float(pitch_std),
-                ],
-                "energy": [
-                    # float(min(energy_min, -1.3)),
-                    # float(max(energy_max, 11)),
-                    float(energy_min),
-                    float(energy_max),
-                    float(energy_mean),
-                    float(energy_std),
-                ],
+                "pitch": {
+                    "n_samples": int(pitch_scaler.n_samples_seen_),
+                    "min": float(pitch_min),
+                    "max": float(pitch_max),
+                    "mean": float(pitch_mean),
+                    "std": float(pitch_std),
+                },
+                "energy": {
+                    "n_samples": int(energy_scaler.n_samples_seen_),
+                    "min": float(energy_min),
+                    "max": float(energy_max),
+                    "mean": float(energy_mean),
+                    "std": float(energy_std),
+                },
             }
+            tqdm.write(json.dumps(stats, indent = 4))
             f.write(json.dumps(stats))
 
-        print(
+        tqdm.write(
             "Total time: {} hours".format(
                 n_frames * self.hop_length / self.sampling_rate / 3600
             )
         )
 
         # Write metadata
-        for dset in outs:
-            out = outs[dset]
-            with open(os.path.join(self.out_dir, f"{dset}.txt"), "w", encoding="utf-8") as f:
-                for m in out:
-                    f.write(m + "\n")
+        with open(os.path.join(self.out_dir, "total.txt"), "w", encoding="utf-8") as f:
+            for m in out:
+                f.write(m + "\n")
 
-        return outs
+        return out
 
 
-    def process_utterance(self, in_dir, speaker, basename):
+    def process_utterance(self, in_dir, speaker, basename, dset=None):
         wav_path = os.path.join(in_dir, speaker, "{}.wav".format(basename))
         text_path = os.path.join(in_dir, speaker, "{}.lab".format(basename))
         tg_path = os.path.join(
@@ -198,12 +218,13 @@ class Preprocessor:
 
         # Get alignments
         textgrid = tgt.io.read_textgrid(tg_path)
-        # phone, duration, start, end = self.get_alignment(
-            # textgrid.get_tier_by_name("phones")
-        # )
-        phone, duration, start, end, word, word_boundary = self.get_word_phone_alignment(
-            textgrid.get_tier_by_name("phones"), textgrid.get_tier_by_name("words")
+        phone, duration, start, end = self.get_alignment(
+            textgrid.get_tier_by_name("phones")
         )
+        word, word_boundary = None, None
+        # phone, duration, start, end, word, word_boundary = self.get_word_phone_alignment(
+            # textgrid.get_tier_by_name("phones"), textgrid.get_tier_by_name("words")
+        # )
         text = "{" + " ".join(phone) + "}"
         if start >= end:
             return None
@@ -220,35 +241,33 @@ class Preprocessor:
 
         # Compute fundamental frequency
         try:
-            pitch, word_pitch = self.extract_pitch(wav, duration, word_boundary)
+            pitch = self.extract_pitch(wav, duration)
+            if pitch is None:
+                return None
         except:
             return None
 
         # Compute mel-scale spectrogram and energy
-        mel_spectrogram, energy, word_energy = self.extract_melspec_and_energy(
-            wav, duration, word_boundary
-        )
+        mel_spectrogram, energy = self.extract_melspec_and_energy(wav, duration)
 
         # Save files
+        if dset is not None:
+            out_dir = os.path.join(self.out_dir, dset)
+        else:
+            out_dir = self.out_dir
+
         dur_filename = "{}-duration-{}.npy".format(speaker, basename)
-        np.save(os.path.join(self.out_dir, "duration", dur_filename), duration)
+        np.save(os.path.join(out_dir, "duration", dur_filename), duration)
 
         pitch_filename = "{}-pitch-{}.npy".format(speaker, basename)
-        np.save(os.path.join(self.out_dir, "pitch", pitch_filename), pitch)
-        if word_pitch is not None:
-            pitch_filename = "{}-word-pitch-{}.npy".format(speaker, basename)
-            np.save(os.path.join(self.out_dir, "pitch", pitch_filename), word_pitch)
+        np.save(os.path.join(out_dir, "pitch", pitch_filename), pitch)
 
         energy_filename = "{}-energy-{}.npy".format(speaker, basename)
-        np.save(os.path.join(self.out_dir, "energy", energy_filename), energy)
-        if word_energy is not None:
-            energy_filename = "{}-word-energy-{}.npy".format(speaker, basename)
-            np.save(os.path.join(self.out_dir, "energy", energy_filename), word_energy)
-
+        np.save(os.path.join(out_dir, "energy", energy_filename), energy)
 
         mel_filename = "{}-mel-{}.npy".format(speaker, basename)
         np.save(
-            os.path.join(self.out_dir, "mel", mel_filename),
+            os.path.join(out_dir, "mel", mel_filename),
             mel_spectrogram.T,
         )
 
@@ -256,13 +275,13 @@ class Preprocessor:
         # spk_ref_mel_slices = self.get_mel_slices_for_d_vec(wav_path)
         # spk_ref_mel_slices_filename = mel_filename
         # np.save(
-            # os.path.join(self.out_dir, "spk_ref_mel_slices", spk_ref_mel_slices_filename),
+            # os.path.join(out_dir, "spk_ref_mel_slices", spk_ref_mel_slices_filename),
             # spk_ref_mel_slices,
         # )
 
-        if "<unk>" in [t.text for t in textgrid.get_tier_by_name("words")]:
-            # At least still save files, just not include all.txt
-            return None
+        # if "<unk>" in [t.text for t in textgrid.get_tier_by_name("words")]:
+            # # At least still save files, just not include all.txt
+            # return None
 
         return (
             "|".join([basename, speaker, text, raw_text]),
@@ -313,8 +332,12 @@ class Preprocessor:
 
     def remove_outlier(self, values):
         values = np.array(values)
-        p25 = np.percentile(values, 25)
-        p75 = np.percentile(values, 75)
+        try:
+            p25 = np.percentile(values, 25)
+            p75 = np.percentile(values, 75)
+        except Exception as e:
+            print(values)
+            raise e
         lower = p25 - 1.5 * (p75 - p25)
         upper = p75 + 1.5 * (p75 - p25)
         normal_indices = np.logical_and(values > lower, values < upper)
@@ -463,7 +486,7 @@ class Preprocessor:
         spk_ref_mel_slices = [spk_ref_mel[s] for s in mel_slices]
         return spk_ref_mel_slices
 
-    def extract_pitch(self, wav, duration, word_boundary=None):
+    def extract_pitch(self, wav, duration):
         pitch, t = pw.dio(
             wav.astype(np.float64),
             self.sampling_rate,
@@ -475,7 +498,6 @@ class Preprocessor:
         if np.sum(pitch != 0) <= 1:
             return None
 
-        word_pitch = None
         if self.pitch_phoneme_averaging:
             # perform linear interpolation
             nonzero_ids = np.where(pitch != 0)[0]
@@ -487,51 +509,11 @@ class Preprocessor:
             )
             pitch = interp_fn(np.arange(0, len(pitch)))
 
-            # Word-level average
-            if word_boundary is not None:
-                word_pitch = np.empty_like(pitch[: len(duration)])
-                for i, (s, e) in enumerate(word_boundary):
-                    if s < e:
-                        word_pitch[i] = np.mean(pitch[s:e])
-                    else:
-                        word_pitch[i] = 0
+        return pitch
 
-            # Phoneme-level average
-            pos = 0
-            for i, d in enumerate(duration):
-                if d > 0:
-                    pitch[i] = np.mean(pitch[pos : pos + d])
-                else:
-                    pitch[i] = 0
-                pos += d
-            pitch = pitch[: len(duration)]
-
-        return pitch, word_pitch
-
-    def extract_melspec_and_energy(self, wav, duration, word_boundary=None):
+    def extract_melspec_and_energy(self, wav, duration):
         mel_spectrogram, energy = Audio.tools.get_mel_from_wav(wav, self.STFT)
         mel_spectrogram = mel_spectrogram[:, : sum(duration)]
         energy = energy[: sum(duration)]
 
-        word_energy = None
-        if self.energy_phoneme_averaging:
-            # Word-level average
-            if word_boundary is not None:
-                word_energy = np.empty_like(energy[: len(duration)])
-                for i, (s, e) in enumerate(word_boundary):
-                    if s < e:
-                        word_energy[i] = np.mean(energy[s:e])
-                    else:
-                        word_energy[i] = 0
-
-            # Phoneme-level average
-            pos = 0
-            for i, d in enumerate(duration):
-                if d > 0:
-                    energy[i] = np.mean(energy[pos : pos + d])
-                else:
-                    energy[i] = 0
-                pos += d
-            energy = energy[: len(duration)]
-            
-        return mel_spectrogram, energy, word_energy
+        return mel_spectrogram, energy

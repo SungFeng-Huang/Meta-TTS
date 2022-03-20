@@ -1,6 +1,8 @@
 import os
 import argparse
 import yaml
+import pandas as pd
+from tqdm import tqdm
 
 from preprocessor import libritts, vctk
 
@@ -26,10 +28,17 @@ def main(config):
     if "VCTK" in config["dataset"]:
         corpus_path = config["path"]["corpus_path"]
         raw_path = config["path"]["raw_path"]
-        for dmode, dset in config["subsets"].items():
-            # config["path"]["corpus_path"] = corpus_path
-            config["path"]["raw_path"] = os.path.join(raw_path, dset)
-            vctk.prepare_align(config)
+        df = pd.read_csv(os.path.join(corpus_path, "speaker-info.csv"))
+        df = df.fillna("Unknown")
+        for accent in tqdm(df.groupby(["ACCENTS", "REGION"])):
+            subset = '/'.join(accent[0])
+            speakers = accent[1]["pID"].values.tolist()
+        # for dmode, dset in config["subsets"].items():
+            # # config["path"]["corpus_path"] = corpus_path
+            config["path"]["raw_path"] = os.path.join(raw_path, subset)
+            if not os.path.exists(config["path"]["raw_path"]):
+                tqdm.write(subset)
+                vctk.prepare_align(config, speakers)
 
 
 if __name__ == "__main__":

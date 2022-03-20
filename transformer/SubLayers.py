@@ -20,11 +20,11 @@ class MultiHeadAttention(nn.Module):
         self.w_vs = nn.Linear(d_model, n_head * d_v)
 
         self.attention = ScaledDotProductAttention(temperature=np.power(d_k, 0.5))
-        self.layer_norm = nn.LayerNorm(d_model)
 
         self.fc = nn.Linear(n_head * d_v, d_model)
 
         self.dropout = nn.Dropout(dropout)
+        self.layer_norm = nn.LayerNorm(d_model)
 
     def forward(self, q, k, v, mask=None):
 
@@ -56,6 +56,10 @@ class MultiHeadAttention(nn.Module):
 
         return output, attn
 
+    def add_adapter(self, d_hid, kernel_size):
+        self.meta_adapter = AdapterLayer(self.fc.out_features, d_hid, kernel_size)
+        self.adapter = AdapterLayer(self.fc.out_features, d_hid, kernel_size)
+
 
 class PositionwiseFeedForward(nn.Module):
     """ A two-feed-forward-layer module """
@@ -79,8 +83,8 @@ class PositionwiseFeedForward(nn.Module):
             padding=(kernel_size[1] - 1) // 2,
         )
 
-        self.layer_norm = nn.LayerNorm(d_in)
         self.dropout = nn.Dropout(dropout)
+        self.layer_norm = nn.LayerNorm(d_in)
 
     def forward(self, x):
         residual = x
@@ -91,3 +95,40 @@ class PositionwiseFeedForward(nn.Module):
         output = self.layer_norm(output + residual)
 
         return output
+
+    def add_adapter(self, d_hid, kernel_size):
+        self.meta_adapter = AdapterLayer(self.w2.out_channels, d_hid, kernel_size)
+        self.adapter = AdapterLayer(self.w2.out_channels, d_hid, kernel_size)
+
+
+class AdapterLayer(nn.Module):
+    """ A two-feed-forward-layer module """
+
+    def __init__(self, d_in, d_hid, kernel_size):
+        super().__init__()
+
+        # Use Conv1D
+        # position-wise
+        self.w_1 = nn.Conv1d(
+            d_in,
+            d_hid,
+            kernel_size=kernel_size[0],
+            padding=(kernel_size[0] - 1) // 2,
+        )
+        # position-wise
+        self.w_2 = nn.Conv1d(
+            d_hid,
+            d_in,
+            kernel_size=kernel_size[1],
+            padding=(kernel_size[1] - 1) // 2,
+        )
+
+    def forward(self, x):
+        # x: (B, T, D)
+        residual = x
+        output = x.transpose(1, 2)
+        output = self.w_2(F.relu(self.w_1(output)))
+        output = output.transpose(1, 2)
+        output = self.dropout(output)
+
+        return output + residual

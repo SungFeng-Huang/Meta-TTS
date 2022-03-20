@@ -1,0 +1,36 @@
+dataset: "VCTK"
+lang_id: 0
+
+root:
+  corpus_path: "/home/r06942045/myData/VCTK-Corpus"
+  lexicon_path: "lexicon/librispeech-lexicon.txt"
+  raw_path: "./raw_data/VCTK"
+  preprocessed_path: "./preprocessed_data/VCTK"
+
+path:
+  child_path: "English"
+  preprocessed_path: "./preprocessed_data/VCTK/English"
+
+subsets:
+  English:
+    - _English/Birmingham
+    - _English/Cheshire
+    - _English/Cumbria
+    - _English/Essex
+    - _English/Leicester
+    - _English/London
+    - _English/Manchester
+    - _English/NE  England
+    - _English/Newcastle
+    - _English/Nottingham
+    - _English/Oxford
+    - _English/SE  England
+    - _English/SW  England
+    - _English/Southern  England
+    - _English/Staffordshire
+    - _English/Stockton-on-tees
+    - _English/Suffolk
+    - _English/Surrey
+    - _English/York
+    - _English/Yorkshire
+

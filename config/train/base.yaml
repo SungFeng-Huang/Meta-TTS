@@ -11,6 +11,6 @@ optimizer:
 step:
   total_step: 100000
   log_step: 100
-  synth_step: 1000
+  synth_step: 1000  # Not used?
   val_step: 1000
-  save_step: 1000
+  save_step: 10000  # synth & save?

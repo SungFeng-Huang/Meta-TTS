@@ -8,13 +8,15 @@ import resemblyzer
 from resemblyzer.audio import preprocess_wav, wav_to_mel_spectrogram
 
 from text import text_to_sequence
-from utils.tools import pad_1D, pad_2D
+from utils.tools import pad_1D, pad_2D, prosody_averaging, merge_stats, merge_speaker_map
 
 
 class TTSDataset(Dataset):
     def __init__(
-        self, filename, preprocess_config, train_config, sort=False, drop_last=False, spk_refer_wav=False
+        self, dset, preprocess_config, train_config,
+        spk_refer_wav=False
     ):
+        self.dset = dset
         self.dataset_name = preprocess_config["dataset"]
         self.preprocessed_path = preprocess_config["path"]["preprocessed_path"]
         self.cleaners = preprocess_config["preprocessing"]["text"]["text_cleaners"]
@@ -22,18 +24,52 @@ class TTSDataset(Dataset):
 
         self.spk_refer_wav = spk_refer_wav
         # if spk_refer_wav:
-            # dset = filename.split('.')[0]
-            # self.raw_path = os.path.join(preprocess_config["path"]["raw_path"], dset)
+        # self.raw_path = preprocess_config["path"]["raw_path"]
+
+        self.pitch_phoneme_averaging = (
+            preprocess_config["preprocessing"]["pitch"]["feature"] == "phoneme_level"
+        )
+        self.energy_phoneme_averaging = (
+            preprocess_config["preprocessing"]["energy"]["feature"] == "phoneme_level"
+        )
+        self.pitch_log = preprocess_config["preprocessing"]["pitch"]["log"]
+        self.energy_log = preprocess_config["preprocessing"]["energy"]["log"]
+        self.pitch_normalization = (
+            preprocess_config["preprocessing"]["pitch"]["normalization"]
+        )
+        self.energy_normalization = (
+            preprocess_config["preprocessing"]["energy"]["normalization"]
+        )
 
         self.basename, self.speaker, self.text, self.raw_text = self.process_meta(
-            filename
+            dset
         )
         with open(os.path.join(self.preprocessed_path, "speakers.json")) as f:
-            self.speaker_map = json.load(f)
-        self.sort = sort
-        self.drop_last = drop_last
+            self.set_speaker_map(json.load(f))
+        if self.pitch_normalization or self.energy_normalization:
+            with open(os.path.join(self.preprocessed_path, "stats.json")) as f:
+                self.set_stats(json.load(f))
+
 
         print(f"\nLength of dataset: {len(self.text)}")
+
+    def set_stats(self, stats):
+        self.stats = stats
+
+    def merge_stats(self, other_stats):
+        if getattr(self, "stats", None) is None:
+            self.stats = other_stats
+            return
+        self.stats = merge_stats(self.stats, other_stats)
+
+    def set_speaker_map(self, speaker_map):
+        self.speaker_map = speaker_map
+
+    def merge_speaker_map(self, speaker_map):
+        if getattr(self, "speaker_map", None) is None:
+            self.speaker_map = speaker_map
+            return
+        self.speaker_map = merge_speaker_map(self.speaker_map, speaker_map)
 
     def __len__(self):
         return len(self.text)
@@ -44,30 +80,46 @@ class TTSDataset(Dataset):
         speaker_id = self.speaker_map[speaker]
         raw_text = self.raw_text[idx]
         phone = np.array(text_to_sequence(self.text[idx], self.cleaners))
+
         mel_path = os.path.join(
             self.preprocessed_path,
             "mel",
             "{}-mel-{}.npy".format(speaker, basename),
         )
         mel = np.load(mel_path)
-        pitch_path = os.path.join(
-            self.preprocessed_path,
-            "pitch",
-            "{}-pitch-{}.npy".format(speaker, basename),
-        )
-        pitch = np.load(pitch_path)
-        energy_path = os.path.join(
-            self.preprocessed_path,
-            "energy",
-            "{}-energy-{}.npy".format(speaker, basename),
-        )
-        energy = np.load(energy_path)
+
         duration_path = os.path.join(
             self.preprocessed_path,
             "duration",
             "{}-duration-{}.npy".format(speaker, basename),
         )
         duration = np.load(duration_path)
+
+        pitch_path = os.path.join(
+            self.preprocessed_path,
+            "pitch",
+            "{}-pitch-{}.npy".format(speaker, basename),
+        )
+        pitch = np.load(pitch_path)
+        if self.pitch_phoneme_averaging:
+            pitch = prosody_averaging(pitch, duration, interp=True)
+        if self.pitch_log:
+            pitch = np.log(pitch + 1e-12)
+        elif self.pitch_normalization:
+            pitch = (pitch - self.stats["pitch"]["mean"]) / self.stats["pitch"]["std"] 
+
+        energy_path = os.path.join(
+            self.preprocessed_path,
+            "energy",
+            "{}-energy-{}.npy".format(speaker, basename),
+        )
+        energy = np.load(energy_path)
+        if self.energy_phoneme_averaging:
+            energy = prosody_averaging(energy, duration)
+        if self.energy_log:
+            energy = np.log(energy + 1e-12)
+        elif self.energy_normalization:
+            energy = (energy - self.stats["energy"]["mean"]) / self.stats["energy"]["std"]
 
         sample = {
             "id": basename,
@@ -92,86 +144,29 @@ class TTSDataset(Dataset):
 
         return sample
 
-    def process_meta(self, filename):
+    def process_meta(self, dset):
+        name = []
+        speaker = []
+        text = []
+        raw_text = []
         with open(
-            os.path.join(self.preprocessed_path, filename), "r", encoding="utf-8"
+            os.path.join(self.preprocessed_path, f"{dset}.txt"), "r", encoding="utf-8"
         ) as f:
-            name = []
-            speaker = []
-            text = []
-            raw_text = []
             for line in f.readlines():
                 n, s, t, r = line.strip("\n").split("|")
                 name.append(n)
                 speaker.append(s)
                 text.append(t)
                 raw_text.append(r)
-            return name, speaker, text, raw_text
-
-    def reprocess(self, data, idxs):
-        """ Depreciated """
-        ids = [data[idx]["id"] for idx in idxs]
-        speakers = [data[idx]["speaker"] for idx in idxs]
-        texts = [data[idx]["text"] for idx in idxs]
-        raw_texts = [data[idx]["raw_text"] for idx in idxs]
-        mels = [data[idx]["mel"] for idx in idxs]
-        pitches = [data[idx]["pitch"] for idx in idxs]
-        energies = [data[idx]["energy"] for idx in idxs]
-        durations = [data[idx]["duration"] for idx in idxs]
-
-        text_lens = np.array([text.shape[0] for text in texts])
-        mel_lens = np.array([mel.shape[0] for mel in mels])
-
-        speakers = np.array(speakers)
-        texts = pad_1D(texts)
-        mels = pad_2D(mels)
-        pitches = pad_1D(pitches)
-        energies = pad_1D(energies)
-        durations = pad_1D(durations)
-
-        return (
-            ids,
-            raw_texts,
-            speakers,
-            texts,
-            text_lens,
-            max(text_lens),
-            mels,
-            mel_lens,
-            max(mel_lens),
-            pitches,
-            energies,
-            durations,
-        )
-
-    def collate_fn(self, data):
-        """ Depreciated """
-        data_size = len(data)
-
-        if self.sort:
-            len_arr = np.array([d["text"].shape[0] for d in data])
-            idx_arr = np.argsort(-len_arr)
-        else:
-            idx_arr = np.arange(data_size)
-
-        tail = idx_arr[len(idx_arr) - (len(idx_arr) % self.batch_size):]
-        idx_arr = idx_arr[: len(idx_arr) - (len(idx_arr) % self.batch_size)]
-        idx_arr = idx_arr.reshape((-1, self.batch_size)).tolist()
-        if not self.drop_last and len(tail) > 0:
-            idx_arr += [tail.tolist()]
-
-        output = list()
-        for idx in idx_arr:
-            output.append(self.reprocess(data, idx))
-
-        return output
+        return name, speaker, text, raw_text
 
 
 class MonolingualTTSDataset(TTSDataset):
     def __init__(
-        self, filename, preprocess_config, train_config, sort=False, drop_last=False, spk_refer_wav=False
+        self, dset, preprocess_config, train_config,
+        spk_refer_wav=False
     ):
-        super().__init__(filename, preprocess_config, train_config, sort, drop_last, spk_refer_wav)
+        super().__init__(dset, preprocess_config, train_config, spk_refer_wav)
         self.lang_id = preprocess_config["lang_id"]
 
     def __getitem__(self, idx):

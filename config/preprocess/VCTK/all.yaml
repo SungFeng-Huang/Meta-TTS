@@ -1,0 +1,110 @@
+dataset: "VCTK"
+lang_id: 0
+
+root:
+  corpus_path: "/home/r06942045/myData/VCTK-Corpus"
+  lexicon_path: "lexicon/librispeech-lexicon.txt"
+  raw_path: "./raw_data/VCTK"
+  preprocessed_path: "./preprocessed_data/VCTK"
+
+path:
+  child_path: "all"
+  preprocessed_path: "./preprocessed_data/VCTK/all"
+
+subsets:
+  all:
+    - American
+    - AustralianEnglish
+    - British
+    - Canadian
+    - English
+    - Indian
+    - Irish
+    - NewZealand
+    - NorthernIrish
+    - Scottish
+    - SouthAfrican
+    - Welsh
+
+  #American:
+    #- _American/Alabama
+    #- _American/California
+    #- _American/Chicago
+    #- _American/Florida
+    #- _American/Indiana
+    #- _American/Iowa
+    #- _American/Napa
+    #- _American/New  Jersey
+    #- _American/New  York
+    #- _American/North  Carolina
+    #- _American/Ohio
+    #- _American/Pennsylvania
+    #- _American/Philadelphia
+    #- _American/San  Francisco
+    #- _American/Tennessee
+    #- _American/Unknown
+  #AustralianEnglish:
+    #- _AustralianEnglish/Sydney
+    #- _AustralianEnglish/Unknown
+  #British:
+    #- _British/Unknown
+  #Canadian:
+    #- _Canadian/Alberta
+    #- _Canadian/Hamilton
+    #- _Canadian/Montreal
+    #- _Canadian/Ontario
+    #- _Canadian/Toronto
+  #English:
+    #- _English/Birmingham
+    #- _English/Cheshire
+    #- _English/Cumbria
+    #- _English/Essex
+    #- _English/Leicester
+    #- _English/London
+    #- _English/Manchester
+    #- _English/NE  England
+    #- _English/Newcastle
+    #- _English/Nottingham
+    #- _English/Oxford
+    #- _English/SE  England
+    #- _English/SW  England
+    #- _English/Southern  England
+    #- _English/Staffordshire
+    #- _English/Stockton-on-tees
+    #- _English/Suffolk
+    #- _English/Surrey
+    #- _English/York
+    #- _English/Yorkshire
+  #Indian:
+    #- _Indian/Unknown
+  #Irish:
+    #- _Irish/Athlone
+    #- _Irish/Cork
+    #- _Irish/County  Down
+    #- _Irish/Donegal
+    #- _Irish/Dublin
+    #- _Irish/Tipperary
+  #NewZealand:
+    #- _NewZealand/English
+  #NorthernIrish:
+    #- _NorthernIrish/Belfast
+    #- _NorthernIrish/Derry
+  #Scottish:
+    #- _Scottish/Aberdeen
+    #- _Scottish/Argyll
+    #- _Scottish/Edinburgh
+    #- _Scottish/Fife
+    #- _Scottish/Galloway
+    #- _Scottish/Midlothian
+    #- _Scottish/Orkney
+    #- _Scottish/Perth
+    #- _Scottish/Ross
+    #- _Scottish/Selkirk
+    #- _Scottish/West  Dumfries
+    #- _Scottish/West  Lothian
+  #SouthAfrican:
+    #- _SouthAfrican/Cape  Town
+    #- _SouthAfrican/Johannesburg
+    #- _SouthAfrican/Pretoria
+  #Welsh:
+    #- _Welsh/Cardiff

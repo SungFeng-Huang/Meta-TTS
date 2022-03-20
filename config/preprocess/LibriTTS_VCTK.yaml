@@ -1,23 +1,41 @@
-dataset: "LibriTTS"
+dataset: "LibriTTS_VCTK"
 lang_id: 0
 
-path:
-  corpus_path: "/home/r06942045/myData/LibriTTS"
+root:
+  corpus_path: "/home/r06942045/myData"
   lexicon_path: "lexicon/librispeech-lexicon.txt"
-  raw_path: "./raw_data/LibriTTS"
-  preprocessed_path: "./preprocessed_data/LibriTTS"
+  raw_path: "./raw_data"
+  preprocessed_path: "./preprocessed_data"
+
+path:
+  child_path: "LibriTTS_VCTK"
+  corpus_path: "/home/r06942045/myData"
+  lexicon_path: "lexicon/librispeech-lexicon.txt"
+  raw_path: "./raw_data"
+  preprocessed_path: "./preprocessed_data/LibriTTS_VCTK"
 
 subsets:
   #train: "train-all"
   #train: "train-clean"
   train:
-    - train-clean-100
-    - train-clean-360
-    - train-other-500
+    - LibriTTS/train-all
+  transfer:
+    - VCTK/American
+    - VCTK/Canadian
+    - VCTK/English
+    - VCTK/Irish
+    - VCTK/Scottish
+    - VCTK/SouthAfrican
   val:
-    - dev-clean
+    - LibriTTS/dev-clean
+    - VCTK/British
+    - VCTK/Indian
+    - VCTK/NewZealand
   test:
-    - test-clean
+    - LibriTTS/test-clean
+    - VCTK/AustralianEnglish
+    - VCTK/NorthernIrish
+    - VCTK/Welsh
 
 preprocessing:
   val_size: 512
@@ -45,3 +63,4 @@ preprocessing:
     normalization: True
     log: False # don't use with normalization
     word: False  # word-level average
+

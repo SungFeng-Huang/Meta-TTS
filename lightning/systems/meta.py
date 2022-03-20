@@ -10,7 +10,7 @@ import learn2learn as l2l
 from learn2learn.algorithms.lightning import LightningMAML
 
 from utils.tools import get_mask_from_lengths
-from lightning.systems.base_adaptor import BaseAdaptorSystem
+from lightning.systems.new_base_adaptor import BaseAdaptorSystem
 from lightning.utils import loss2dict
 
 
@@ -76,8 +76,11 @@ class MetaSystem(BaseAdaptorSystem):
 
         # Log metrics to CometLogger
         loss_dict = {f"Train/{k}": v for k, v in loss2dict(train_loss).items()}
-        self.log_dict(loss_dict, sync_dist=True)
-        return {'loss': train_loss[0], 'losses': train_loss, 'output': predictions, '_batch': qry_batch}
+        self.log_dict(loss_dict, sync_dist=True, batch_size=1)
+        return {'loss': train_loss[0],
+                'losses': [loss.detach() for loss in train_loss],
+                'output': [p.detach() for p in predictions],
+                '_batch': qry_batch}
 
     def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
         self._on_meta_batch_start(batch)
@@ -93,5 +96,5 @@ class MetaSystem(BaseAdaptorSystem):
 
         # Log metrics to CometLogger
         loss_dict = {f"Val/{k}": v for k, v in loss2dict(val_loss).items()}
-        self.log_dict(loss_dict, sync_dist=True)
+        self.log_dict(loss_dict, sync_dist=True, batch_size=1)
         return {'losses': val_loss, 'output': predictions, '_batch': qry_batch}

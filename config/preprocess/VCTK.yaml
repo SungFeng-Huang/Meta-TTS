@@ -8,7 +8,22 @@ path:
   preprocessed_path: "./preprocessed_data/VCTK"
 
 subsets:
-  test: "all"
+  train:
+    - American
+    - Canadian
+    - English
+    - Irish
+    - Scottish
+    - SouthAfrican
+  val:
+    - British
+    - Indian
+    - NewZealand
+  test:
+    - AustralianEnglish
+    - NorthernIrish
+    - Welsh
+
 
 preprocessing:
   val_size: 0
@@ -28,7 +43,9 @@ preprocessing:
     mel_fmax: Null # set to null for MelGAN vocoder
   pitch:
     feature: "phoneme_level" # support 'phoneme_level' or 'frame_level'
-    normalization: True
+    normalization: False
+    log: True # don't use with normalization
   energy:
     feature: "phoneme_level" # support 'phoneme_level' or 'frame_level'
     normalization: True
+    log: False # don't use with normalization

@@ -1,0 +1,32 @@
+dataset: "VCTK"
+lang_id: 0
+
+root:
+  corpus_path: "/home/r06942045/myData/VCTK-Corpus"
+  lexicon_path: "lexicon/librispeech-lexicon.txt"
+  raw_path: "./raw_data/VCTK"
+  preprocessed_path: "./preprocessed_data/VCTK"
+
+path:
+  child_path: "American"
+  preprocessed_path: "./preprocessed_data/VCTK/American"
+
+subsets:
+  American:
+    - _American/Alabama
+    - _American/California
+    - _American/Chicago
+    - _American/Florida
+    - _American/Indiana
+    - _American/Iowa
+    - _American/Napa
+    - _American/New  Jersey
+    - _American/New  York
+    - _American/North  Carolina
+    - _American/Ohio
+    - _American/Pennsylvania
+    - _American/Philadelphia
+    - _American/San  Francisco
+    - _American/Tennessee
+    - _American/Unknown
+

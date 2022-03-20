@@ -6,6 +6,7 @@ from torch.nn import Module
 from typing import List, Callable
 
 import learn2learn as l2l
+from learn2learn.algorithms.maml import maml_update
 from learn2learn.utils import clone_module, update_module, detach_module, clone_parameters
 
 import hypergrad as hg
@@ -23,6 +24,22 @@ class MAML(l2l.algorithms.MAML):
                  allow_nograd=False):
         super().__init__(model, lr, first_order, allow_unused, allow_nograd)
 
+    def inner_freeze(self, module_name=""):
+        for p in self.module.get_submodule(module_name).parameters():
+            p.inner_freeze = True
+
+    def inner_unfreeze(self, module_name=""):
+        for p in self.module.get_submodule(module_name).parameters():
+            p.inner_freeze = False
+
+    def outer_freeze(self, module_name=""):
+        for p in self.module.get_submodule(module_name).parameters():
+            p.requires_grad = False
+
+    def outer_unfreeze(self, module_name=""):
+        for p in self.module.get_submodule(module_name).parameters():
+            p.requires_grad = True
+
     def adapt(self,
               loss,
               first_order=None,
@@ -37,14 +54,58 @@ class MAML(l2l.algorithms.MAML):
         return copied
 
     def adapt_(self,
-              loss,
-              first_order=None,
-              allow_unused=None,
-              allow_nograd=None):
+               loss,
+               first_order=None,
+               allow_unused=None,
+               allow_nograd=None):
         """
         In-place adapt. Same as l2l.algorithms.MAML.adapt().
         """
-        return super().adapt(loss, first_order, allow_unused, allow_nograd)
+        # return super().adapt(loss, first_order, allow_unused, allow_nograd)
+        if first_order is None:
+            first_order = self.first_order
+        if allow_unused is None:
+            allow_unused = self.allow_unused
+        if allow_nograd is None:
+            allow_nograd = self.allow_nograd
+        second_order = not first_order
+
+        if allow_nograd:
+            # Compute relevant gradients
+            diff_params = [p for p in self.module.parameters()
+                           if p.requires_grad
+                           and not getattr(p, "inner_freeze", False)]
+            grad_params = torch_grad(loss,
+                                     diff_params,
+                                     retain_graph=second_order,
+                                     create_graph=second_order,
+                                     allow_unused=allow_unused)
+            gradients = []
+            grad_counter = 0
+
+            # Handles gradients for non-differentiable parameters
+            for n, p in self.module.named_parameters():
+                if (p.requires_grad
+                        and not getattr(p, "inner_freeze", False)):
+                    gradient = grad_params[grad_counter]
+                    grad_counter += 1
+                else:
+                    gradient = None
+                gradients.append(gradient)
+        else:
+            try:
+                gradients = torch_grad(loss,
+                                       self.module.parameters(),
+                                       retain_graph=second_order,
+                                       create_graph=second_order,
+                                       allow_unused=allow_unused)
+            except RuntimeError:
+                traceback.print_exc()
+                print('learn2learn: Maybe try with allow_nograd=True and/or allow_unused=True ?')
+
+        # Update the module
+        updates = [-self.lr * g if g is not None else None for g in gradients]
+        self.module = update_module(self.module, updates)
 
     def clone(self, first_order=None, allow_unused=None, allow_nograd=None):
         if first_order is None:

@@ -1,0 +1,17 @@
+dataset: "VCTK"
+lang_id: 0
+
+root:
+  corpus_path: "/home/r06942045/myData/VCTK-Corpus"
+  lexicon_path: "lexicon/librispeech-lexicon.txt"
+  raw_path: "./raw_data/VCTK"
+  preprocessed_path: "./preprocessed_data/VCTK"
+
+path:
+  child_path: "Indian"
+  preprocessed_path: "./preprocessed_data/VCTK/Indian"
+
+subsets:
+  Indian:
+    - _Indian/Unknown
+

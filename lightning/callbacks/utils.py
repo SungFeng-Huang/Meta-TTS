@@ -1,5 +1,6 @@
 import os
 import json
+import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
@@ -31,7 +32,15 @@ def synth_one_sample_with_target(targets, predictions, vocoder, preprocess_confi
         os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
     ) as f:
         stats = json.load(f)
-        stats = stats["pitch"] + stats["energy"][:2]
+        # stats = stats["pitch"] + stats["energy"][:2]
+    if preprocess_config["preprocessing"]["pitch"]["log"]:
+        pitch = np.exp(pitch)
+    elif preprocess_config["preprocessing"]["pitch"]["normalization"]:
+        pitch = pitch * stats["pitch"]["std"] + stats["pitch"]["mean"]
+    if preprocess_config["preprocessing"]["energy"]["log"]:
+        energy = np.exp(energy)
+    elif preprocess_config["preprocessing"]["energy"]["normalization"]:
+        energy = energy * stats["energy"]["std"] + stats["energy"]["mean"]
 
     fig = plot_mel(
         [
@@ -75,7 +84,15 @@ def recon_samples(targets, predictions, vocoder, preprocess_config, figure_dir, 
             os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
         ) as f:
             stats = json.load(f)
-            stats = stats["pitch"] + stats["energy"][:2]
+            # stats = stats["pitch"] + stats["energy"][:2]
+        if preprocess_config["preprocessing"]["pitch"]["log"]:
+            pitch = np.exp(pitch)
+        elif preprocess_config["preprocessing"]["pitch"]["normalization"]:
+            pitch = pitch * stats["pitch"]["std"] + stats["pitch"]["mean"]
+        if preprocess_config["preprocessing"]["energy"]["log"]:
+            energy = np.exp(energy)
+        elif preprocess_config["preprocessing"]["energy"]["normalization"]:
+            energy = energy * stats["energy"]["std"] + stats["energy"]["mean"]
 
         fig = plot_mel(
             [
@@ -119,7 +136,15 @@ def synth_samples(targets, predictions, vocoder, preprocess_config, figure_dir, 
             os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
         ) as f:
             stats = json.load(f)
-            stats = stats["pitch"] + stats["energy"][:2]
+            # stats = stats["pitch"] + stats["energy"][:2]
+        if preprocess_config["preprocessing"]["pitch"]["log"]:
+            pitch = np.exp(pitch)
+        elif preprocess_config["preprocessing"]["pitch"]["normalization"]:
+            pitch = pitch * stats["pitch"]["std"] + stats["pitch"]["mean"]
+        if preprocess_config["preprocessing"]["energy"]["log"]:
+            energy = np.exp(energy)
+        elif preprocess_config["preprocessing"]["energy"]["normalization"]:
+            energy = energy * stats["energy"]["std"] + stats["energy"]["mean"]
 
         fig = plot_mel(
             [

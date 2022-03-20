@@ -71,12 +71,16 @@ def main(args, configs):
         del trainer_training_config['gradient_clip_val']
 
     if args.stage == 'train':
-        log_dir = str(tempfile.TemporaryDirectory())
-        result_dir = str(tempfile.TemporaryDirectory())
+        # log_dir = str(tempfile.TemporaryDirectory())
+        # result_dir = str(tempfile.TemporaryDirectory())
+        log_dir = tempfile.mkdtemp()
+        result_dir = tempfile.mkdtemp()
     else:
         assert args.exp_key is not None
-        log_dir = str(tempfile.TemporaryDirectory())
-        result_dir = str(tempfile.TemporaryDirectory())
+        # log_dir = str(tempfile.TemporaryDirectory())
+        # result_dir = str(tempfile.TemporaryDirectory())
+        log_dir = tempfile.mkdtemp()
+        result_dir = tempfile.mkdtemp()
 
     # Get dataset
     datamodule = get_datamodule(algorithm_config["type"])(
@@ -84,6 +88,7 @@ def main(args, configs):
     )
 
     if args.stage == 'train':
+        # datamodule.setup("fit")
         # Get model
         system = get_system(algorithm_config["type"])
         model = system(
@@ -128,8 +133,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-p", "--preprocess_config", type=str, nargs='+', help="path to preprocess.yaml",
-        default=['config/preprocess/miniLibriTTS.yaml'],
+        # default=['config/preprocess/miniLibriTTS.yaml'],
         # default=['config/preprocess/LibriTTS.yaml'],
+        default=['config/preprocess/LibriTTS_VCTK.yaml'],
     )
     parser.add_argument(
         "-m", "--model_config", type=str, help="path to model.yaml",
@@ -138,7 +144,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-t", "--train_config", type=str, nargs='+', help="path to train.yaml",
-        default=['config/train/dev.yaml', 'config/train/miniLibriTTS.yaml'],
+        default=['config/train/dev.yaml', 'config/train/LibriTTS.yaml'],
         # default=['config/train/base.yaml', 'config/train/LibriTTS.yaml'],
     )
     parser.add_argument(
@@ -160,22 +166,41 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read Config
-    preprocess_configs = [
-        yaml.load(open(path, "r"), Loader=yaml.FullLoader)
-        for path in args.preprocess_config
-    ]
-    model_config = yaml.load(
-        open(args.model_config, "r"), Loader=yaml.FullLoader
-    )
-    train_config = yaml.load(
-        open(args.train_config[0], "r"), Loader=yaml.FullLoader
-    )
-    train_config.update(
-        yaml.load(open(args.train_config[1], "r"), Loader=yaml.FullLoader)
-    )
     algorithm_config = yaml.load(
         open(args.algorithm_config, "r"), Loader=yaml.FullLoader
     )
+    if "parser_args" in algorithm_config:
+        args_config = algorithm_config["parser_args"]
+        preprocess_configs = [
+            yaml.load(open(path, "r"), Loader=yaml.FullLoader)
+            for path in args_config["preprocess_config"]
+        ]
+        model_config = yaml.load(
+            open(args_config["model_config"], "r"), Loader=yaml.FullLoader
+        )
+        train_config = yaml.load(
+            open(args_config["train_config"][0], "r"), Loader=yaml.FullLoader
+        )
+        train_config.update(
+            yaml.load(open(args_config["train_config"][1], "r"), Loader=yaml.FullLoader)
+        )
+        args.exp_key = args_config["exp_key"]
+        args.ckpt_file = args_config["ckpt_file"]
+        args.stage = args_config["stage"]
+    else:
+        preprocess_configs = [
+            yaml.load(open(path, "r"), Loader=yaml.FullLoader)
+            for path in args.preprocess_config
+        ]
+        model_config = yaml.load(
+            open(args.model_config, "r"), Loader=yaml.FullLoader
+        )
+        train_config = yaml.load(
+            open(args.train_config[0], "r"), Loader=yaml.FullLoader
+        )
+        train_config.update(
+            yaml.load(open(args.train_config[1], "r"), Loader=yaml.FullLoader)
+        )
     configs = (preprocess_configs, model_config, train_config, algorithm_config)
 
     main(args, configs)

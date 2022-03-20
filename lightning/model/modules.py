@@ -42,13 +42,13 @@ class VarianceAdaptor(nn.Module):
             os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
         ) as f:
             stats = json.load(f)
-            pitch_min, pitch_max = stats["pitch"][:2]
-            energy_min, energy_max = stats["energy"][:2]
+            pitch_min, pitch_max = stats["pitch"]["min"], stats["pitch"]["max"]
+            energy_min, energy_max = stats["energy"]["min"], stats["energy"]["max"]
 
         if pitch_quantization == "log":
             self.pitch_bins = nn.Parameter(
                 torch.exp(
-                    torch.linspace(np.log(pitch_min), np.log(pitch_max), n_bins - 1)
+                    torch.linspace(np.log(pitch_min+1e-12), np.log(pitch_max), n_bins - 1)
                 ),
                 requires_grad=False,
             )
@@ -60,7 +60,7 @@ class VarianceAdaptor(nn.Module):
         if energy_quantization == "log":
             self.energy_bins = nn.Parameter(
                 torch.exp(
-                    torch.linspace(np.log(energy_min), np.log(energy_max), n_bins - 1)
+                    torch.linspace(np.log(energy_min+1e-12), np.log(energy_max), n_bins - 1)
                 ),
                 requires_grad=False,
             )

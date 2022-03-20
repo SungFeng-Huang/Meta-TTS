@@ -1,7 +1,18 @@
 name: dev meta_emb_va_d table
-type: imaml # meta/baseline/imaml
+type: meta # meta/baseline/imaml
 #meta_type: spk
-#
+
+parser_args:
+  preprocess_config:
+    - config/preprocess/LibriTTS_VCTK.yaml
+  model_config: config/model/dev.yaml
+  train_config:
+    - config/train/LibriTTS.yaml
+    - config/train/dev.yaml
+  exp_key: null
+  ckpt_file: last.ckpt
+  stage: train
+
 _phn_emb_config:
   embedding: &embedding
     type: embedding
@@ -15,10 +26,23 @@ _phn_emb_config:
       share: False
 
 adapt:
-  type: lang # spk/lang
-  class: iMAML # MAML/iMAML
+  type: spk # spk/lang
+  class: MAML # MAML/iMAML
   speaker_emb: table # shared/table/encoder
-  phoneme_emb: *codebook  # *embedding/*codebook
+  phoneme_emb: *embedding  # *embedding/*codebook
+
+  AdaLN:
+    speaker: True
+    speaker_modules:
+      - encoder
+      - decoder
+    prosody:
+      log_f0: True
+      energy: False
+    prosody_modules:
+      - encoder
+      - decoder
+
   imaml:
     K: 5  # CG steps  # TODO: need tuning
     reg_param: 1  # TODO: need tuning
@@ -26,7 +50,7 @@ adapt:
     stochastic: True
 
   modules:
-    - encoder
+    - speaker_emb
     - variance_adaptor
     - decoder
     - mel_linear
@@ -34,7 +58,7 @@ adapt:
 
   task: &task
     ways: 1
-    shots: 10
+    shots: 5
     queries: 5
     lr: 0.001
 

@@ -66,10 +66,10 @@ def main(args, configs):
         # should manually clip grad
         del trainer_training_config['gradient_clip_val']
 
-    if args.stage == 'train':
+    if args.stage == "train" or args.stage == "transfer":
         # Init logger
         comet_logger = pl.loggers.CometLogger(
-            save_dir=os.path.join(train_config["path"]["log_path"], "meta"),
+            save_dir=os.path.join(train_config["path"]["log_path"], COMET_CONFIG["project_name"]),
             experiment_key=args.exp_key,
             experiment_name=algorithm_config["name"],
             **COMET_CONFIG
@@ -83,15 +83,15 @@ def main(args, configs):
         loggers = [comet_logger]
         log_dir = os.path.join(comet_logger._save_dir, comet_logger.version)
         result_dir = os.path.join(
-            train_config['path']['result_path'], comet_logger.version
+            train_config['path']['result_path'], COMET_CONFIG["project_name"], comet_logger.version
         )
     else:
         assert args.exp_key is not None
         log_dir = os.path.join(
-            train_config["path"]["log_path"], "meta", args.exp_key
+            train_config["path"]["log_path"], COMET_CONFIG["project_name"], args.exp_key
         )
         result_dir = os.path.join(
-            train_config['path']['result_path'], args.exp_key, algorithm_config["name"]
+            train_config['path']['result_path'], COMET_CONFIG["project_name"], args.exp_key, algorithm_config["name"]
         )
 
     # Get dataset
@@ -99,7 +99,7 @@ def main(args, configs):
         preprocess_configs, train_config, algorithm_config, log_dir, result_dir
     )
 
-    if args.stage == 'train':
+    if args.stage == "train":
         # Get model
         system = get_system(algorithm_config["type"])
         model = system(
@@ -113,7 +113,26 @@ def main(args, configs):
         pl.seed_everything(43, True)
         trainer.fit(model, datamodule=datamodule)
 
-    elif args.stage == 'test' or args.stage == 'predict':
+    elif args.stage == "transfer":
+        # Get model
+        system = get_system(algorithm_config["type"])
+        model = system.load_from_checkpoint(
+            ckpt_file,
+            preprocess_config=preprocess_configs[0],
+            model_config=model_config,
+            train_config=train_config,
+            algorithm_config=algorithm_config,
+            log_dir=log_dir, result_dir=result_dir,
+            strict=False,
+        )
+        # Train
+        trainer = pl.Trainer(
+            logger=loggers, **TRAINER_CONFIG, **trainer_training_config
+        )
+        pl.seed_everything(43, True)
+        trainer.fit(model, datamodule=datamodule)
+
+    elif args.stage == "test" or args.stage == "predict":
         # Get model
         system = get_system(algorithm_config["type"])
         model = system.load_from_checkpoint(
@@ -129,12 +148,12 @@ def main(args, configs):
         trainer = pl.Trainer(**TRAINER_CONFIG)
         trainer.test(model, datamodule=datamodule)
 
-    elif args.stage == 'debug':
+    elif args.stage == "debug":
         del datamodule
         datamodule = get_datamodule("base")(
             preprocess_configs, train_config, algorithm_config, log_dir, result_dir
         )
-        datamodule.setup('test')
+        datamodule.setup("test")
         for _ in tqdm(datamodule.test_dataset, desc="test_dataset"):
             pass
 
@@ -169,28 +188,47 @@ if __name__ == "__main__":
         default="last.ckpt",
     )
     parser.add_argument(
-        "-s", "--stage", type=str, help="stage (train/val/test/predict)",
+        "-s", "--stage", type=str, help="stage (train/val/test/predict/transfer)",
         default="train",
     )
     args = parser.parse_args()
 
     # Read Config
-    preprocess_configs = [
-        yaml.load(open(path, "r"), Loader=yaml.FullLoader)
-        for path in args.preprocess_config
-    ]
-    model_config = yaml.load(
-        open(args.model_config, "r"), Loader=yaml.FullLoader
-    )
-    train_config = yaml.load(
-        open(args.train_config[0], "r"), Loader=yaml.FullLoader
-    )
-    train_config.update(
-        yaml.load(open(args.train_config[1], "r"), Loader=yaml.FullLoader)
-    )
     algorithm_config = yaml.load(
         open(args.algorithm_config, "r"), Loader=yaml.FullLoader
     )
+    if "parser_args" in algorithm_config:
+        args_config = algorithm_config["parser_args"]
+        preprocess_configs = [
+            yaml.load(open(path, "r"), Loader=yaml.FullLoader)
+            for path in args_config["preprocess_config"]
+        ]
+        model_config = yaml.load(
+            open(args_config["model_config"], "r"), Loader=yaml.FullLoader
+        )
+        train_config = yaml.load(
+            open(args_config["train_config"][0], "r"), Loader=yaml.FullLoader
+        )
+        train_config.update(
+            yaml.load(open(args_config["train_config"][1], "r"), Loader=yaml.FullLoader)
+        )
+        args.exp_key = args_config["exp_key"]
+        args.ckpt_file = args_config["ckpt_file"]
+        args.stage = args_config["stage"]
+    else:
+        preprocess_configs = [
+            yaml.load(open(path, "r"), Loader=yaml.FullLoader)
+            for path in args.preprocess_config
+        ]
+        model_config = yaml.load(
+            open(args.model_config, "r"), Loader=yaml.FullLoader
+        )
+        train_config = yaml.load(
+            open(args.train_config[0], "r"), Loader=yaml.FullLoader
+        )
+        train_config.update(
+            yaml.load(open(args.train_config[1], "r"), Loader=yaml.FullLoader)
+        )
     configs = (preprocess_configs, model_config, train_config, algorithm_config)
 
     main(args, configs)

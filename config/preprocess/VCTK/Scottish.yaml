@@ -1,0 +1,27 @@
+dataset: "VCTK"
+lang_id: 0
+
+root:
+  corpus_path: "/home/r06942045/myData/VCTK-Corpus"
+  lexicon_path: "lexicon/librispeech-lexicon.txt"
+  raw_path: "./raw_data/VCTK"
+  preprocessed_path: "./preprocessed_data/VCTK"
+
+path:
+  child_path: "Scottish"
+  preprocessed_path: "./preprocessed_data/VCTK/Scottish"
+
+subsets:
+  Scottish:
+    - _Scottish/Aberdeen
+    - _Scottish/Argyll
+    - _Scottish/Edinburgh
+    - _Scottish/Fife
+    - _Scottish/Galloway
+    - _Scottish/Midlothian
+    - _Scottish/Orkney
+    - _Scottish/Perth
+    - _Scottish/Ross
+    - _Scottish/Selkirk
+    - _Scottish/West  Dumfries
+    - _Scottish/West  Lothian

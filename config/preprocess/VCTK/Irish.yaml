@@ -1,0 +1,22 @@
+dataset: "VCTK"
+lang_id: 0
+
+root:
+  corpus_path: "/home/r06942045/myData/VCTK-Corpus"
+  lexicon_path: "lexicon/librispeech-lexicon.txt"
+  raw_path: "./raw_data/VCTK"
+  preprocessed_path: "./preprocessed_data/VCTK"
+
+path:
+  child_path: "Irish"
+  preprocessed_path: "./preprocessed_data/VCTK/Irish"
+
+subsets:
+  Irish:
+    - _Irish/Athlone
+    - _Irish/Cork
+    - _Irish/County  Down
+    - _Irish/Donegal
+    - _Irish/Dublin
+    - _Irish/Tipperary
+
