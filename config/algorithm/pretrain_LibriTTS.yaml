@@ -1,0 +1,79 @@
+name: pretrain_LibriTTS
+type: baseline # meta/baseline/imaml
+#meta_type: spk
+
+parser_args:
+  preprocess_config:
+    - config/preprocess/LibriTTS_VCTK.yaml
+  model_config: config/model/base.yaml
+  train_config:
+    - config/train/LibriTTS.yaml
+    - config/train/base.yaml
+  exp_key: null
+  ckpt_file: last.ckpt
+  stage: train
+
+_phn_emb_config:
+  embedding: &embedding
+    type: embedding
+    refresh: False
+  codebook: &codebook
+    type: codebook
+    size: 30
+    representation_dim: 1024
+    attention:
+      type: hard
+      share: False
+
+adapt:
+  type: spk # spk/lang
+  class: MAML # MAML/iMAML
+  speaker_emb: table # shared/table/encoder
+  phoneme_emb: *embedding  # *embedding/*codebook
+
+  AdaLN:
+    speaker: True
+    speaker_modules:
+      - encoder
+      - decoder
+    prosody:
+      log_f0: True
+      energy: False
+    prosody_modules:
+      - encoder
+      - decoder
+
+  additive:
+    speaker: True
+    speaker_modules:
+      - variance_adaptor
+      - decoder
+
+  imaml:
+    K: 5  # CG steps  # TODO: need tuning
+    reg_param: 1  # TODO: need tuning
+    batch_size: 5
+    stochastic: True
+
+  modules:
+    - speaker_emb
+    - variance_adaptor
+    - decoder
+    - mel_linear
+    - postnet
+
+  task: &task
+    ways: 1
+    shots: 5
+    queries: 5
+    lr: 0.001
+
+  train:
+    << : *task
+    steps: 5
+    meta_batch_size: 8
+
+  test:
+    << : *task
+    queries: 1
+    steps: 1000 # max adaptation steps for testing
