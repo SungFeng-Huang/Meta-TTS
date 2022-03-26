@@ -56,17 +56,20 @@ class BaseAdaptorSystem(System):
         reference_prosody = sup_batch[9].unsqueeze(2) if self.reference_prosody else None
         first_order = not train
         for step in range(adaptation_steps):
-            preds = learner(*sup_batch[2:], reference_prosody=reference_prosody)
+            preds = learner(*sup_batch[2:],
+                            reference_prosody=reference_prosody)
             train_error = self.loss_func(sup_batch, preds)
-            learner.adapt_(train_error[0], first_order=first_order, allow_unused=False, allow_nograd=True)
+            learner.adapt_(train_error[0],
+                           first_order=first_order,
+                           allow_unused=False,
+                           allow_nograd=True)
         return learner
 
     def meta_learn(self, batch, batch_idx, train=True):
-        learner = self.adapt(batch, min(self.adaptation_steps, self.test_adaptation_steps), train=train)
-        if train:
-            learner.module.variance_adaptor.eval()
-        else:
-            learner.eval()
+        learner = self.adapt(batch, min(self.adaptation_steps, self.test_adaptation_steps),
+                             train=train)
+        # learner.module.variance_adaptor.eval()
+        learner.eval()
 
         sup_batch = batch[0][0][0]
         qry_batch = batch[0][1][0]
@@ -128,7 +131,7 @@ class BaseAdaptorSystem(System):
         # Evaluating the initial model
         predictions = self.learner(sup_batch[2], *qry_batch[3:],
                                    average_spk_emb=True,
-                                   reference_prosody=qry_batch[9].unsqueeze(2))
+                                   reference_prosody=reference_prosody)
         valid_error = self.loss_func(qry_batch, predictions)
         outputs[f"step_0"] = {"recon": {"losses": valid_error, "output": predictions}}
 

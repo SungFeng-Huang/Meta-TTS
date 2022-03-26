@@ -12,16 +12,16 @@ from .modules import VarianceAdaptor
 from .speaker_encoder import SpeakerEncoder
 from .phoneme_embedding import PhonemeEmbedding
 from .adapters import SpeakerAdaLNAdapter, ProsodyEncoder, ProsodyAdaLNAdapter
+from .utils import reset_LN
 from utils.tools import get_mask_from_lengths
 
 
 class FastSpeech2(pl.LightningModule):
     """ FastSpeech2 """
 
-    def __init__(self, preprocess_config, model_config, algorithm_config):
+    def __init__(self, preprocess_config, model_config):
         super(FastSpeech2, self).__init__()
         self.model_config = model_config
-        self.algorithm_config = algorithm_config
 
         self.encoder = Encoder(model_config)
         self.variance_adaptor = VarianceAdaptor(preprocess_config, model_config)
@@ -31,98 +31,6 @@ class FastSpeech2(pl.LightningModule):
             preprocess_config["preprocessing"]["mel"]["n_mel_channels"],
         )
         self.postnet = PostNet()
-
-        # If not using multi-speaker, would return None
-        self.speaker_emb = SpeakerEncoder(preprocess_config, model_config, algorithm_config)
-
-        if algorithm_config["adapt"]["type"] == "lang":
-            self.phn_emb_generator = PhonemeEmbedding(model_config, algorithm_config)
-            print("PhonemeEmbedding", self.phn_emb_generator)
-
-        if algorithm_config["adapt"].get("AdaLN", None) is not None:
-            self.add_AdaLN_adapters()
-
-    def add_AdaLN_adapters(self):
-        d_hidden_map = {
-            "encoder": self.model_config["transformer"]["encoder_hidden"],
-            "variance_adaptor": self.model_config["variance_predictor"]["filter_size"],
-            "decoder": self.model_config["transformer"]["decoder_hidden"],
-        }
-
-        def reset_LN(module):
-            module.reset_parameters()
-            module.elementwise_affine = False
-            for p in module.parameters():
-                p.requires_grad = False
-
-        self.AdaLN_adapters = {}
-        self.spk_AdaLN_adapters = nn.ModuleList()
-        self.psd_AdaLN_adapters = nn.ModuleList()
-
-        if "speaker" in self.algorithm_config["adapt"]["AdaLN"]:
-            d_spk_emb = self.model_config["transformer"]["encoder_hidden"]
-            for module_name in self.algorithm_config["adapt"]["AdaLN"]["speaker_modules"]:
-                d_hidden = d_hidden_map[module_name]
-                for name, module in self.get_submodule(module_name).named_modules():
-                    key = f"{module_name}.{name}"
-                    if isinstance(module, nn.LayerNorm):
-                        if key not in self.AdaLN_adapters:
-                            self.AdaLN_adapters[key] = {}
-                        self.AdaLN_adapters[key].update({
-                            "speaker": len(self.spk_AdaLN_adapters),
-                        })
-                        self.spk_AdaLN_adapters.append(SpeakerAdaLNAdapter(d_spk_emb, d_hidden))
-                        reset_LN(module)
-
-        if "prosody" in self.algorithm_config["adapt"]["AdaLN"]:
-            d_psd_emb = self.model_config["transformer"]["encoder_hidden"]
-            self.prosody_encoder = ProsodyEncoder(
-                d_psd_emb, n_layers=3,
-                log_f0=self.algorithm_config["adapt"]["AdaLN"]["prosody"]["log_f0"],
-                energy=self.algorithm_config["adapt"]["AdaLN"]["prosody"]["energy"],
-            )
-            for module_name in self.algorithm_config["adapt"]["AdaLN"]["prosody_modules"]:
-                d_hidden = d_hidden_map[module_name]
-                for name, module in self.get_submodule(module_name).named_modules():
-                    key = f"{module_name}.{name}"
-                    if isinstance(module, nn.LayerNorm):
-                        if key not in self.AdaLN_adapters:
-                            self.AdaLN_adapters[key] = {}
-                        self.AdaLN_adapters[key].update({
-                            "prosody": len(self.psd_AdaLN_adapters),
-                        })
-                        self.psd_AdaLN_adapters.append(ProsodyAdaLNAdapter(d_psd_emb, d_hidden))
-                        reset_LN(module)
-
-    def register_AdaLN_hooks(self, spk_emb=None, psd_emb=None):
-        d_hidden_map = {
-            "encoder": self.model_config["transformer"]["encoder_hidden"],
-            "variance_adaptor": self.model_config["variance_predictor"]["filter_size"],
-            "decoder": self.model_config["transformer"]["decoder_hidden"],
-        }
-        handles = {}
-
-        for key in self.AdaLN_adapters:
-            d_hidden = d_hidden_map[key.split('.')[0]]
-            module = self.get_submodule(key)
-
-            if psd_emb is not None:
-                AdaLN_params = torch.zeros(psd_emb.shape[0], 2, d_hidden).to(psd_emb.device)
-            else:
-                AdaLN_params = torch.zeros(spk_emb.shape[0], 2, d_hidden).to(spk_emb.device)
-
-            if spk_emb is not None and "speaker" in self.AdaLN_adapters[key]:
-                spk_AdaLN_params = self.spk_AdaLN_adapters[self.AdaLN_adapters[key]["speaker"]](spk_emb)
-                AdaLN_params += spk_AdaLN_params
-            if psd_emb is not None and "prosody" in self.AdaLN_adapters[key]:
-                psd_AdaLN_params = self.psd_AdaLN_adapters[self.AdaLN_adapters[key]["prosody"]](psd_emb)
-                AdaLN_params += psd_AdaLN_params
-
-            def hook(layer, input, output):
-                return output * AdaLN_params[:, 0, None] + AdaLN_params[:, 1, None]
-            handles[key] = module.register_forward_hook(hook)
-
-        return handles
 
     def forward(
         self,
@@ -139,23 +47,7 @@ class FastSpeech2(pl.LightningModule):
         p_control=1.0,
         e_control=1.0,
         d_control=1.0,
-        average_spk_emb=False,
-        reference_prosody=None,
     ):
-        if self.speaker_emb is not None:
-            spk_emb = self.speaker_emb(speaker_args)
-            if average_spk_emb:
-                spk_emb = spk_emb.mean(dim=0, keepdim=True)
-        else:
-            spk_emb = None
-
-        if reference_prosody is not None and hasattr(self, "prosody_encoder"):
-            psd_emb = self.prosody_encoder(reference_prosody)
-        else:
-            psd_emb = None
-
-        if self.algorithm_config["adapt"].get("AdaLN", None) is not None:
-            handles = self.register_AdaLN_hooks(spk_emb, psd_emb)
 
         src_masks = get_mask_from_lengths(src_lens, max_src_len)
         mel_masks = (
@@ -165,9 +57,6 @@ class FastSpeech2(pl.LightningModule):
         )
 
         output = self.encoder(texts, src_masks)
-
-        if spk_emb is not None:
-            output += spk_emb.unsqueeze(1).expand(output.shape[0], max_src_len, -1)
 
         (
             output,
@@ -190,17 +79,10 @@ class FastSpeech2(pl.LightningModule):
             d_control,
         )
 
-        if spk_emb is not None:
-            output += spk_emb.unsqueeze(1).expand(output.shape[0], max(mel_lens), -1)
-
         output, mel_masks = self.decoder(output, mel_masks)
         output = self.mel_linear(output)
 
         postnet_output = self.postnet(output) + output
-
-        if self.algorithm_config["adapt"].get("AdaLN", None) is not None:
-            for k, h in handles.items():
-                h.remove()
 
         return (
             output,
@@ -217,6 +99,153 @@ class FastSpeech2(pl.LightningModule):
 
 
 class AdaptiveFastSpeech2(FastSpeech2):
+    """ Adaptive FastSpeech2 """
+
+    def __init__(self, preprocess_config, model_config, algorithm_config):
+        super().__init__(preprocess_config, model_config)
+        self.algorithm_config = algorithm_config
+
+        transformer_config = model_config["transformer"]
+        variance_adaptor_config = model_config["variance_predictor"]
+
+        self.d_hidden_map = {
+            "encoder": transformer_config["encoder_hidden"],
+            "variance_adaptor": variance_adaptor_config["filter_size"],
+            "decoder": transformer_config["decoder_hidden"],
+        }
+
+        self.handles = defaultdict(dict)
+        self.forward_hooks = defaultdict(list)
+        self.forward_pre_hooks = defaultdict(list)
+
+        if algorithm_config["adapt"]["speaker_emb"] is not None:
+            # If not using multi-speaker, would return None
+            self.speaker_emb = SpeakerEncoder(preprocess_config, model_config, algorithm_config)
+            self.d_spk_emb = self.model_config["transformer"]["encoder_hidden"]
+
+        if algorithm_config["adapt"]["type"] == "lang":
+            self.phn_emb_generator = PhonemeEmbedding(model_config, algorithm_config)
+            print("PhonemeEmbedding", self.phn_emb_generator)
+
+        if algorithm_config["adapt"].get("AdaLN", None) is not None:
+            AdaLN_config = algorithm_config["adapt"]["AdaLN"]
+            self.AdaLN_adapter_ids = defaultdict(dict)
+
+            if "speaker" in AdaLN_config:
+                self.spk_AdaLN_adapters = nn.ModuleList()
+                self.add_spk_AdaLN_adapters(AdaLN_config)
+
+            if "prosody" in AdaLN_config:
+                self.d_psd_emb = model_config["transformer"]["encoder_hidden"]
+                log_f0 = AdaLN_config["prosody"]["log_f0"]
+                energy = AdaLN_config["prosody"]["energy"]
+
+                self.prosody_encoder = ProsodyEncoder(
+                    self.d_psd_emb, n_layers=3, log_f0=log_f0, energy=energy,
+                )
+                self.psd_AdaLN_adapters = nn.ModuleList()
+                self.add_psd_AdaLN_adapters(AdaLN_config)
+
+    def add_spk_AdaLN_adapters(self, AdaLN_config):
+        for name in AdaLN_config["speaker_modules"]:
+            for sub_name, sub_module in self.get_submodule(name).named_modules():
+                if isinstance(sub_module, nn.LayerNorm):
+                    self.AdaLN_adapter_ids[f"{name}.{sub_name}"].update({
+                        "speaker": len(self.spk_AdaLN_adapters),
+                    })
+                    self.spk_AdaLN_adapters.append(
+                        SpeakerAdaLNAdapter(self.d_spk_emb, self.d_hidden_map[name])
+                    )
+                    reset_LN(sub_module)
+
+    def add_psd_AdaLN_adapters(self, AdaLN_config):
+        for name in AdaLN_config["prosody_modules"]:
+            for sub_name, sub_module in self.get_submodule(name).named_modules():
+                if isinstance(sub_module, nn.LayerNorm):
+                    self.AdaLN_adapter_ids[f"{name}.{sub_name}"].update({
+                        "prosody": len(self.psd_AdaLN_adapters),
+                    })
+                    self.psd_AdaLN_adapters.append(
+                        ProsodyAdaLNAdapter(self.d_psd_emb, self.d_hidden_map[name])
+                    )
+                    reset_LN(sub_module)
+
+    def register_AdaLN_hooks(self, spk_emb=None, psd_emb=None):
+        for key in self.AdaLN_adapter_ids:
+            d_hidden = self.d_hidden_map[key.split('.')[0]]
+            module = self.get_submodule(key)
+            adapter_ids = self.AdaLN_adapter_ids[key]
+
+            if psd_emb is not None:
+                AdaLN_params = torch.zeros(psd_emb.shape[0], 2, d_hidden).to(psd_emb.device)
+            else:
+                AdaLN_params = torch.zeros(spk_emb.shape[0], 2, d_hidden).to(spk_emb.device)
+
+            if spk_emb is not None and "speaker" in adapter_ids:
+                AdaLN_params += self.spk_AdaLN_adapters[adapter_ids["speaker"]](spk_emb)
+            if psd_emb is not None and "prosody" in adapter_ids:
+                AdaLN_params += self.psd_AdaLN_adapters[adapter_ids["prosody"]](psd_emb)
+
+            def hook(layer, input, output):
+                return output * AdaLN_params[:, 0, None] + AdaLN_params[:, 1, None]
+            self.forward_hooks[key].append(module.register_forward_hook(hook))
+
+    def register_additive_hooks(self, spk_emb, max_src_len, max_mel_len=None):
+        additive_config = self.algorithm_config["adapt"]["additive"]
+
+        if (additive_config.get("speaker_modules", None) is not None
+                and spk_emb is not None):
+            # for name in additive_config["speaker_modules"]:
+            if "variance_adaptor" in additive_config["speaker_modules"]:
+                def VA_pre_hook(module, input):
+                    batch_size = input[0].shape[0]
+                    return (
+                        input[0]
+                        + (spk_emb.unsqueeze(1)
+                           .expand(batch_size, max_src_len, -1)),
+                        *input[1:]
+                    )
+                    
+                self.forward_pre_hooks["variance_adaptor"].append(
+                    self.variance_adaptor.register_forward_pre_hook(VA_pre_hook)
+                )
+
+            if "decoder" in additive_config["speaker_modules"]:
+                if max_mel_len is None:
+                    def get_max_mel_len(module, input, output):
+                        self.register_buffer("max_mel_len", output[5], persistent=False)
+
+                    self.forward_hooks["variance_adaptor"].append(
+                        self.variance_adaptor.register_forward_hook(get_max_mel_len)
+                    )
+
+                    def decoder_pre_hook(module, input):
+                        batch_size = input[0].shape[0]
+                        return (
+                            input[0]
+                            + (spk_emb.unsqueeze(1)
+                               .expand(batch_size, self.max_mel_len, -1)),
+                            *input[1:]
+                        )
+
+                    self.forward_pre_hooks["decoder"].append(
+                        self.decoder.register_forward_pre_hook(decoder_pre_hook)
+                    )
+
+                else:
+                    def decoder_pre_hook(module, input):
+                        batch_size = input[0].shape[0]
+                        return (
+                            input[0]
+                            + (spk_emb.unsqueeze(1)
+                               .expand(batch_size, max_mel_len, -1)),
+                            *input[1:]
+                        )
+
+                    self.forward_pre_hooks["decoder"].append(
+                        self.decoder.register_forward_pre_hook(decoder_pre_hook)
+                    )
+
     def add_adapters(self):
         n_src_vocab, d_word_vec = self.encoder.src_word_emb.weight.shape
         self.meta_phn_emb = nn.Embedding(
@@ -284,12 +313,12 @@ class AdaptiveFastSpeech2(FastSpeech2):
                     )
                 ))
 
-        self.handles[id(self)] = handles
+        # self.handles[id(self)] = handles
 
     def remove_hooks(self):
         for h in self.handles[id(self)]:
             h.remove()
-        del self.handles[id(self)]
+        # del self.handles[id(self)]
 
     def forward(
         self,
@@ -309,48 +338,29 @@ class AdaptiveFastSpeech2(FastSpeech2):
         average_spk_emb=False,
         reference_prosody=None,
     ):
-        psd_AdaLN_params = self.prosody_AdaLN_adapter(reference_prosody)
-        if self.speaker_emb is not None:
+        spk_emb = None
+        if hasattr(self, "speaker_emb"):
             spk_emb = self.speaker_emb(speaker_args)
             if average_spk_emb:
                 spk_emb = spk_emb.mean(dim=0, keepdim=True)
-            spk_AdaLN_params = self.speaker_AdaLN_adapter(spk_emb)
-        else:
-            spk_emb = None
-            spk_AdaLN_params = torch.zeros_like(psd_AdaLN_params)
 
-        AdaLN_params = spk_AdaLN_params + psd_AdaLN_params
-        i = 0
-        for module in [self.encoder, self.decoder]:
-            for layer in module.layer_stack:
-                layer.slf_attn.set_AdaLN_params(AdaLN_params[:, i, 0])
-                layer.pos_ffn.set_AdaLN_params(AdaLN_params[:, i, 1])
-                i += 1
+        psd_emb = None
+        if hasattr(self, "prosody_encoder") and reference_prosody is not None:
+            psd_emb = self.prosody_encoder(reference_prosody)
 
-        src_masks = get_mask_from_lengths(src_lens, max_src_len)
-        mel_masks = (
-            get_mask_from_lengths(mel_lens, max_mel_len)
-            if mel_lens is not None
-            else None
-        )
+        if hasattr(self, "AdaLN_adapter_ids"):
+            self.register_AdaLN_hooks(spk_emb, psd_emb)
 
-        output = self.encoder(texts, src_masks)
+        if self.algorithm_config["adapt"].get("additive", None) is not None:
+            self.register_additive_hooks(spk_emb, max_src_len, max_mel_len)
 
-        if spk_emb is not None:
-            output += spk_emb.unsqueeze(1).expand(output.shape[0], max_src_len, -1)
-
-        (
-            output,
-            p_predictions,
-            e_predictions,
-            log_d_predictions,
-            d_rounded,
+        outputs = super().forward(
+            speaker_args,
+            texts,
+            src_lens,
+            max_src_len,
+            mels,
             mel_lens,
-            mel_masks,
-        ) = self.variance_adaptor(
-            output,
-            src_masks,
-            mel_masks,
             max_mel_len,
             p_targets,
             e_targets,
@@ -360,23 +370,14 @@ class AdaptiveFastSpeech2(FastSpeech2):
             d_control,
         )
 
-        if spk_emb is not None:
-            output += spk_emb.unsqueeze(1).expand(output.shape[0], max(mel_lens), -1)
+        for key in self.forward_hooks:
+            for handle in self.forward_hooks[key]:
+                handle.remove()
+        for key in self.forward_pre_hooks:
+            for handle in self.forward_pre_hooks[key]:
+                handle.remove()
+        # if self.algorithm_config["adapt"].get("AdaLN", None) is not None:
+            # for k, h in handles.items():
+                # h.remove()
 
-        output, mel_masks = self.decoder(output, mel_masks)
-        output = self.mel_linear(output)
-
-        postnet_output = self.postnet(output) + output
-
-        return (
-            output,
-            postnet_output,
-            p_predictions,
-            e_predictions,
-            log_d_predictions,
-            d_rounded,
-            src_masks,
-            mel_masks,
-            src_lens,
-            mel_lens,
-        )
+        return outputs
