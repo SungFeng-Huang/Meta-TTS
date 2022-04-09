@@ -1,10 +1,10 @@
-name: pretrain_LibriTTS.orig
+name: pretrain_LibriTTS.1
 type: baseline # meta/baseline/imaml
 #meta_type: spk
 
 parser_args:
   preprocess_config:
-    - config/preprocess/LibriTTS_VCTK.orig.yaml
+    - config/preprocess/LibriTTS_VCTK.yaml
   model_config: config/model/base.yaml
   train_config:
     - config/train/LibriTTS.yaml
@@ -21,6 +21,18 @@ adapt:
     type: embedding
     refresh: False
 
+  AdaLN:
+    speaker: True
+    speaker_modules:
+      - encoder
+      - decoder
+    prosody:
+      log_f0: True
+      energy: False
+    prosody_modules:
+      - encoder
+      - decoder
+
   additive:
     speaker: True
     speaker_modules:
@@ -35,6 +47,7 @@ adapt:
 
   modules:
     - speaker_emb
+    - encoder
     - variance_adaptor
     - decoder
     - mel_linear
@@ -55,4 +68,3 @@ adapt:
     << : *task
     queries: 1
     steps: 1000 # max adaptation steps for testing
-

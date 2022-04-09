@@ -1,4 +1,4 @@
-name: pretrain_LibriTTS
+name: pretrain_LibriTTS.2.1
 type: baseline # meta/baseline/imaml
 #meta_type: spk
 
@@ -13,35 +13,13 @@ parser_args:
   ckpt_file: last.ckpt
   stage: train
 
-_phn_emb_config:
-  embedding: &embedding
-    type: embedding
-    refresh: False
-  codebook: &codebook
-    type: codebook
-    size: 30
-    representation_dim: 1024
-    attention:
-      type: hard
-      share: False
-
 adapt:
   type: spk # spk/lang
   class: MAML # MAML/iMAML
   speaker_emb: table # shared/table/encoder
-  phoneme_emb: *embedding  # *embedding/*codebook
-
-  AdaLN:
-    speaker: True
-    speaker_modules:
-      - encoder
-      - decoder
-    prosody:
-      log_f0: True
-      energy: False
-    prosody_modules:
-      - encoder
-      - decoder
+  phoneme_emb:
+    type: embedding
+    refresh: False
 
   additive:
     speaker: True

@@ -42,10 +42,26 @@ class VarianceAdaptor(nn.Module):
             os.path.join(preprocess_config["path"]["preprocessed_path"], "stats.json")
         ) as f:
             stats = json.load(f)
-            pitch_min, pitch_max = stats["pitch"]["min"], stats["pitch"]["max"]
-            energy_min, energy_max = stats["energy"]["min"], stats["energy"]["max"]
+            if preprocess_config["preprocessing"]["pitch"]["normalization"]:
+                pitch_min = (stats["pitch"]["min"] - stats["pitch"]["mean"]) / stats["pitch"]["std"]
+                pitch_max = (stats["pitch"]["max"] - stats["pitch"]["mean"]) / stats["pitch"]["std"]
+            elif preprocess_config["preprocessing"]["pitch"]["log"]:
+                pitch_min = np.log(stats["pitch"]["min"] + 1e-12)
+                pitch_max = np.log(stats["pitch"]["max"] + 1e-12)
+            else:
+                pitch_min, pitch_max = stats["pitch"]["min"], stats["pitch"]["max"]
+            if preprocess_config["preprocessing"]["energy"]["normalization"]:
+                energy_min = (stats["energy"]["min"] - stats["energy"]["mean"]) / stats["energy"]["std"]
+                energy_max = (stats["energy"]["max"] - stats["energy"]["mean"]) / stats["energy"]["std"]
+            elif preprocess_config["preprocessing"]["energy"]["log"]:
+                energy_min = np.log(stats["energy"]["min"] + 1e-12)
+                energy_max = np.log(stats["energy"]["max"] + 1e-12)
+            else:
+                energy_min, energy_max = stats["energy"]["min"], stats["energy"]["max"]
 
         if pitch_quantization == "log":
+            assert not preprocess_config["preprocessing"]["pitch"]["normalization"]
+            assert not preprocess_config["preprocessing"]["pitch"]["log"]
             self.pitch_bins = nn.Parameter(
                 torch.exp(
                     torch.linspace(np.log(pitch_min+1e-12), np.log(pitch_max), n_bins - 1)
@@ -58,6 +74,8 @@ class VarianceAdaptor(nn.Module):
                 requires_grad=False,
             )
         if energy_quantization == "log":
+            assert not preprocess_config["preprocessing"]["energy"]["normalization"]
+            assert not preprocess_config["preprocessing"]["energy"]["log"]
             self.energy_bins = nn.Parameter(
                 torch.exp(
                     torch.linspace(np.log(energy_min+1e-12), np.log(energy_max), n_bins - 1)

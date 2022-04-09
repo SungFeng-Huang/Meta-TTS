@@ -13,23 +13,13 @@ parser_args:
   ckpt_file: last.ckpt
   stage: train
 
-_phn_emb_config:
-  embedding: &embedding
-    type: embedding
-    refresh: False
-  codebook: &codebook
-    type: codebook
-    size: 30
-    representation_dim: 1024
-    attention:
-      type: hard
-      share: False
-
 adapt:
   type: spk # spk/lang
   class: MAML # MAML/iMAML
   speaker_emb: table # shared/table/encoder
-  phoneme_emb: *embedding  # *embedding/*codebook
+  phoneme_emb:
+    type: embedding
+    refresh: False
 
   additive:
     speaker: True
@@ -45,6 +35,7 @@ adapt:
 
   modules:
     - speaker_emb
+    - encoder
     - variance_adaptor
     - decoder
     - mel_linear
