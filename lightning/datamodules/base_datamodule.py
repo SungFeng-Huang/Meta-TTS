@@ -10,7 +10,8 @@ from lightning.collate import get_single_collate
 
 
 class BaseDataModule(pl.LightningDataModule):
-    def __init__(self, preprocess_configs, train_config, algorithm_config, log_dir, result_dir):
+    def __init__(self, preprocess_configs, train_config, algorithm_config,
+            log_dir, result_dir, stage="train"):
         super().__init__()
         self.preprocess_configs = preprocess_configs
         self.train_config = train_config
@@ -18,6 +19,7 @@ class BaseDataModule(pl.LightningDataModule):
 
         self.log_dir = log_dir
         self.result_dir = result_dir
+        self.stage = stage
 
 
     def setup(self, stage=None):
@@ -27,7 +29,7 @@ class BaseDataModule(pl.LightningDataModule):
         if stage in (None, 'fit', 'validate'):
             self.train_datasets = [
                 Dataset(
-                    "train",
+                    self.stage,
                     preprocess_config, self.train_config, spk_refer_wav=spk_refer_wav
                 ) for preprocess_config in self.preprocess_configs
             ]

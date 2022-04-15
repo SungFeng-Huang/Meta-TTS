@@ -1,0 +1,58 @@
+name: transfer_VCTK.2
+type: baseline # meta/baseline/imaml
+#meta_type: spk
+
+parser_args:
+  preprocess_config:
+    - config/preprocess/LibriTTS_VCTK.yaml
+  model_config: config/model/base.yaml
+  train_config:
+    - config/train/LibriTTS.yaml
+    - config/train/base.yaml
+  exp_key: 1d34914e07244f87ad10c580ab85656c
+  ckpt_file: epoch=49-step=49999.ckpt
+  stage: transfer
+
+adapt:
+  type: spk # spk/lang
+  class: MAML # MAML/iMAML
+  speaker_emb: table # shared/table/encoder
+  phoneme_emb:
+    type: embedding
+    refresh: False
+
+  additive:
+    speaker: True
+    speaker_modules:
+      - variance_adaptor
+      - decoder
+
+  imaml:
+    K: 5  # CG steps  # TODO: need tuning
+    reg_param: 1  # TODO: need tuning
+    batch_size: 5
+    stochastic: True
+
+  modules:
+    - speaker_emb
+    - encoder
+    - variance_adaptor
+    - decoder
+    - mel_linear
+    - postnet
+
+  task: &task
+    ways: 1
+    shots: 5
+    queries: 5
+    lr: 0.001
+
+  train:
+    << : *task
+    steps: 5
+    meta_batch_size: 8
+
+  test:
+    << : *task
+    queries: 1
+    steps: 1000 # max adaptation steps for testing

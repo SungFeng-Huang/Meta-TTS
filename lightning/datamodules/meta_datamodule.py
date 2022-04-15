@@ -7,8 +7,10 @@ from .utils import few_shot_task_dataset
 
 
 class MetaDataModule(BaselineDataModule):
-    def __init__(self, preprocess_config, train_config, algorithm_config, log_dir, result_dir):
-        super().__init__(preprocess_config, train_config, algorithm_config, log_dir, result_dir)
+    def __init__(self, preprocess_config, train_config, algorithm_config,
+            log_dir, result_dir, stage):
+        super().__init__(preprocess_config, train_config, algorithm_config,
+                log_dir, result_dir, stage)
 
 
     def setup(self, stage=None):

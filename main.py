@@ -46,31 +46,42 @@ def main(args, configs):
     for p in train_config["path"].values():
         os.makedirs(p, exist_ok=True)
 
-    # Checkpoint for resume training or testing
-    ckpt_file = None
-    if args.exp_key is not None:
-        ckpt_file = os.path.join(
-            'output/ckpt/LibriTTS', COMET_CONFIG["project_name"],
-            args.exp_key, 'checkpoints', args.ckpt_file
-        )
-
     trainer_training_config = {
         'max_steps': train_config["step"]["total_step"],
         'log_every_n_steps': train_config["step"]["log_step"],
         'weights_save_path': train_config["path"]["ckpt_path"],
         'gradient_clip_val': train_config["optimizer"]["grad_clip_thresh"],
         'accumulate_grad_batches': train_config["optimizer"]["grad_acc_step"],
-        'resume_from_checkpoint': ckpt_file,
     }
+
     if algorithm_config["type"] == 'imaml':
         # should manually clip grad
         del trainer_training_config['gradient_clip_val']
 
-    if args.stage == "train" or args.stage == "transfer":
+    if args.stage == "train":
         # Init logger
         comet_logger = pl.loggers.CometLogger(
             save_dir=os.path.join(train_config["path"]["log_path"], COMET_CONFIG["project_name"]),
             experiment_key=args.exp_key,
+            experiment_name=algorithm_config["name"],
+            **COMET_CONFIG
+        )
+        comet_logger.log_hyperparams({
+            "preprocess_config": preprocess_configs,
+            "model_config": model_config,
+            "train_config": train_config,
+            "algorithm_config": algorithm_config,
+        })
+        loggers = [comet_logger]
+        log_dir = os.path.join(comet_logger._save_dir, comet_logger.version)
+        result_dir = os.path.join(
+            train_config['path']['result_path'], COMET_CONFIG["project_name"], comet_logger.version
+        )
+    elif args.stage == "transfer":
+        # Init logger
+        comet_logger = pl.loggers.CometLogger(
+            save_dir=os.path.join(train_config["path"]["log_path"], COMET_CONFIG["project_name"]),
+            experiment_key=None,
             experiment_name=algorithm_config["name"],
             **COMET_CONFIG
         )
@@ -96,7 +107,8 @@ def main(args, configs):
 
     # Get dataset
     datamodule = get_datamodule(algorithm_config["type"])(
-        preprocess_configs, train_config, algorithm_config, log_dir, result_dir
+        preprocess_configs, train_config, algorithm_config, log_dir, result_dir,
+        stage=args.stage,
     )
 
     if args.stage == "train":
@@ -108,7 +120,8 @@ def main(args, configs):
         )
         # Train
         trainer = pl.Trainer(
-            logger=loggers, **TRAINER_CONFIG, **trainer_training_config
+            logger=loggers, resume_from_checkpoint=args.ckpt_file,
+            **TRAINER_CONFIG, **trainer_training_config
         )
         pl.seed_everything(43, True)
         trainer.fit(model, datamodule=datamodule)
@@ -117,7 +130,7 @@ def main(args, configs):
         # Get model
         system = get_system(algorithm_config["type"])
         model = system.load_from_checkpoint(
-            ckpt_file,
+            args.ckpt_file,
             preprocess_config=preprocess_configs[0],
             model_config=model_config,
             train_config=train_config,
@@ -136,7 +149,7 @@ def main(args, configs):
         # Get model
         system = get_system(algorithm_config["type"])
         model = system.load_from_checkpoint(
-            ckpt_file,
+            args.ckpt_file,
             preprocess_config=preprocess_configs[0],
             model_config=model_config,
             train_config=train_config,
@@ -230,5 +243,14 @@ if __name__ == "__main__":
             yaml.load(open(args.train_config[1], "r"), Loader=yaml.FullLoader)
         )
     configs = (preprocess_configs, model_config, train_config, algorithm_config)
+
+    # Checkpoint for resume training or testing
+    ckpt_file = None
+    if args.exp_key is not None:
+        ckpt_file = os.path.join(
+            'output/ckpt/LibriTTS', COMET_CONFIG["project_name"],
+            args.exp_key, 'checkpoints', args.ckpt_file
+        )
+    args.ckpt_file = ckpt_file
 
     main(args, configs)

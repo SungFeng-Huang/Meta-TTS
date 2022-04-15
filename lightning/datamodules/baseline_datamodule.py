@@ -11,8 +11,11 @@ from .utils import few_shot_task_dataset, prefetch_tasks
 
 
 class BaselineDataModule(BaseDataModule):
-    def __init__(self, preprocess_config, train_config, algorithm_config, log_dir, result_dir):
-        super().__init__(preprocess_config, train_config, algorithm_config, log_dir, result_dir)
+    def __init__(self, preprocess_config, train_config, algorithm_config,
+            log_dir, result_dir, stage):
+        super().__init__(preprocess_config, train_config, algorithm_config,
+                log_dir, result_dir, stage)
+
         self.meta_type = self.algorithm_config["adapt"]["type"]
 
         self.train_ways = self.algorithm_config["adapt"]["train"]["ways"]

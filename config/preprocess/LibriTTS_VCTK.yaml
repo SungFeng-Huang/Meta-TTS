@@ -27,10 +27,10 @@ subsets:
     - VCTK/Scottish
     - VCTK/SouthAfrican
   val:
-    - LibriTTS/dev-clean
-    - VCTK/British
     - VCTK/Indian
+    - VCTK/British
     - VCTK/NewZealand
+    - LibriTTS/dev-clean
   test:
     - LibriTTS/test-clean
     - VCTK/AustralianEnglish
