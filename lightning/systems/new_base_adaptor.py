@@ -99,7 +99,7 @@ class BaseAdaptorSystem(System):
     def on_test_batch_start(self, batch, batch_idx, dataloader_idx):
         self._on_meta_batch_start(batch)
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, batch_idx, dataloader_idx=0):
         all_outputs = []
         qry_batch = batch[0][1][0]
         if self.algorithm_config["adapt"]["test"].get("1-shot", False):
@@ -112,13 +112,13 @@ class BaseAdaptorSystem(System):
                 outputs = self._test_step(mini_batch, batch_idx)
                 all_outputs.append(outputs)
         else:
-            outputs = self._test_step(batch, batch_idx)
+            outputs = self._test_step(batch, batch_idx, dataloader_idx)
             all_outputs.append(outputs)
         torch.distributed.barrier()
 
         return all_outputs
 
-    def _test_step(self, batch, batch_idx):
+    def _test_step(self, batch, batch_idx, dataloader_idx):
         outputs = {}
 
         saving_steps = self.algorithm_config["adapt"]["test"].get("saving_steps", [5, 10, 20, 50, 100])

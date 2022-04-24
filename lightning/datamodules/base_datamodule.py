@@ -11,7 +11,7 @@ from lightning.collate import get_single_collate
 
 class BaseDataModule(pl.LightningDataModule):
     def __init__(self, preprocess_configs, train_config, algorithm_config,
-            log_dir, result_dir, stage="train"):
+                 log_dir, result_dir, stage="train"):
         super().__init__()
         self.preprocess_configs = preprocess_configs
         self.train_config = train_config
@@ -19,32 +19,38 @@ class BaseDataModule(pl.LightningDataModule):
 
         self.log_dir = log_dir
         self.result_dir = result_dir
+
+        # Discriminate train/transfer
         self.stage = stage
 
 
     def setup(self, stage=None):
         spk_refer_wav = (self.algorithm_config["adapt"]["speaker_emb"]
-                     in ["dvec", "encoder", "scratch_encoder"])
+                         in ["dvec", "encoder", "scratch_encoder"])
 
-        if stage in (None, 'fit', 'validate'):
+        if stage in (None, 'fit'):
             self.train_datasets = [
                 Dataset(
                     self.stage,
                     preprocess_config, self.train_config, spk_refer_wav=spk_refer_wav
                 ) for preprocess_config in self.preprocess_configs
             ]
-            self.val_datasets = [
-                Dataset(
-                    "val",
-                    preprocess_config, self.train_config, spk_refer_wav=spk_refer_wav
-                ) for preprocess_config in self.preprocess_configs
-            ]
+
+        if stage in (None, 'fit', 'validate'):
+            self.val_datasets = []
+            for preprocess_config in self.preprocess_configs:
+                self.val_datasets += [
+                    Dataset(
+                        dset,
+                        preprocess_config, self.train_config, spk_refer_wav=spk_refer_wav
+                    ) for dset in preprocess_config["subsets"]["val"]
+                ]
 
         if stage in (None, 'test', 'predict'):
             self.test_datasets = [
                 Dataset(
                     "test",
-                    preprocess_config, self.train_config, sort=False, drop_last=False, spk_refer_wav=spk_refer_wav
+                    preprocess_config, self.train_config, spk_refer_wav=spk_refer_wav
                 ) for preprocess_config in self.preprocess_configs
             ]
 

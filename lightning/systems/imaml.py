@@ -27,7 +27,7 @@ class IMAMLSystem(BaseAdaptorSystem):
         super().__init__(*args, **kwargs)
         self.automatic_optimization = False
 
-    def on_after_batch_transfer(self, batch, dataloader_idx):
+    def on_after_batch_transfer(self, batch, dataloader_idx=0):
         # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
         # the same variable, they are not two variables with the same values.
         sup_batch, qry_batch, ref_phn_feats = batch[0]
@@ -111,7 +111,7 @@ class IMAMLSystem(BaseAdaptorSystem):
             preds = self.forward_learner(learner, sup_data[2], *mini_batch[3:], average_spk_emb=True)
             losses = self.loss_func(mini_batch, preds)
             return losses[0], losses, preds
-            
+
         if train:
             task.reset_iterator()
             grads, valid_error, predictions = CG(learner, self.model,
@@ -150,10 +150,10 @@ class IMAMLSystem(BaseAdaptorSystem):
         return valid_error, predictions
 
 
-    def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
+    def on_train_batch_start(self, batch, batch_idx, dataloader_idx=0):
         self._on_meta_batch_start(batch)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx, dataloader_idx=0):
         """ Normal forwarding.
 
         Function:
@@ -167,10 +167,10 @@ class IMAMLSystem(BaseAdaptorSystem):
         self.log_dict(loss_dict, sync_dist=True)
         return {'loss': train_loss[0], 'losses': train_loss, 'output': predictions, '_batch': qry_batch}
 
-    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
+    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx=0):
         self._on_meta_batch_start(batch)
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx, dataloader_idx=0):
         """ Adapted forwarding.
 
         Function:
@@ -184,7 +184,7 @@ class IMAMLSystem(BaseAdaptorSystem):
         self.log_dict(loss_dict, sync_dist=True)
         return {'losses': val_loss, 'output': predictions, '_batch': qry_batch}
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, batch_idx, dataloader_idx=0):
         outputs = {}
 
         sup_batch = batch[0][0][0]

@@ -21,7 +21,7 @@ class MetaSystem(BaseAdaptorSystem):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def on_after_batch_transfer(self, batch, dataloader_idx):
+    def on_after_batch_transfer(self, batch, dataloader_idx=0):
         if self.algorithm_config["adapt"]["phoneme_emb"]["type"] == "codebook":
             # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
             # the same variable, they are not two variables with the same values.
@@ -62,10 +62,10 @@ class MetaSystem(BaseAdaptorSystem):
             # )
         # return learner
 
-    def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
+    def on_train_batch_start(self, batch, batch_idx, dataloader_idx=0):
         self._on_meta_batch_start(batch)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx, dataloader_idx=0):
         """ Normal forwarding.
 
         Function:
@@ -82,10 +82,10 @@ class MetaSystem(BaseAdaptorSystem):
                 'output': [p.detach() for p in predictions],
                 '_batch': qry_batch}
 
-    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
+    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx=0):
         self._on_meta_batch_start(batch)
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx, dataloader_idx=0):
         """ Adapted forwarding.
 
         Function:

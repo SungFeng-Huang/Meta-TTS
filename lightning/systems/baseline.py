@@ -19,10 +19,10 @@ class BaselineSystem(BaseAdaptorSystem):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
+    def on_train_batch_start(self, batch, batch_idx, dataloader_idx=0):
         assert len(batch) == 12, "data with 12 elements"
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx, dataloader_idx=0):
         """ Normal forwarding.
 
         Function:
@@ -38,10 +38,10 @@ class BaselineSystem(BaseAdaptorSystem):
                 'output': [o.detach() for o in output],
                 '_batch': batch}
 
-    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
+    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx=0):
         self._on_meta_batch_start(batch)
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx, dataloader_idx=0):
         """ Adapted forwarding.
 
         Function:

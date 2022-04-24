@@ -13,7 +13,7 @@ from .define import LANG_ID2SYMBOLS
 
 def few_shot_task_dataset(_dataset, ways, shots, queries, n_tasks_per_label=-1, epoch_length=-1, type="spk"):
     """
-        _dataset is already a `ConcatDataset`
+    _dataset is already a `ConcatDataset`
     """
     if type == "spk":
         id2lb = get_multispeaker_id2lb(_dataset.datasets)
@@ -111,21 +111,26 @@ def get_SQids2Tid(tasks, tag):
     return SQids, SQids2Tid
 
 
-def prefetch_tasks(tasks, tag='val', log_dir=''):
-    if (os.path.exists(os.path.join(log_dir, f'{tag}_descriptions.json'))
-            and os.path.exists(os.path.join(log_dir, f'{tag}_SQids.json'))):
-        # Recover descriptions
-        load_descriptions(tasks, os.path.join(log_dir, f'{tag}_descriptions.json'))
-        SQids, SQids2Tid = load_SQids2Tid(os.path.join(log_dir, f'{tag}_SQids.json'), tag)
-
-    else:
-        os.makedirs(log_dir, exist_ok=True)
-
+def prefetch_tasks(tasks, tag='val', SQids_filename=None, desc_filename=None):
+    if SQids_filename is None or desc_filename is None:
         # Run through tasks to get descriptions
         SQids, SQids2Tid = get_SQids2Tid(tasks, tag)
-        with open(os.path.join(log_dir, f"{tag}_SQids.json"), 'w') as f:
-            json.dump(SQids, f, indent=4)
-        write_descriptions(tasks, os.path.join(log_dir, f"{tag}_descriptions.json"))
+
+    else:
+        if (os.path.exists(desc_filename) and os.path.exists(SQids_filename)):
+            # Recover descriptions
+            load_descriptions(tasks, desc_filename)
+            SQids, SQids2Tid = load_SQids2Tid(SQids_filename, tag)
+
+        else:
+            # Run through tasks to get descriptions
+            SQids, SQids2Tid = get_SQids2Tid(tasks, tag)
+
+            os.makedirs(os.path.dirname(SQids_filename), exist_ok=True)
+            with open(SQids_filename, 'w') as f:
+                json.dump(SQids, f, indent=4)
+
+            write_descriptions(tasks, desc_filename)
 
     return SQids2Tid
 
@@ -135,8 +140,8 @@ def get_multispeaker_id2lb(datasets):
     total = 0
     for dataset in datasets:
         l = len(dataset)
-        id2lb.update({k: f"corpus_{dataset.lang_id}-spk_{dataset.speaker[k - total]}"
-                     for k in range(total, total + l)})
+        id2lb.update({k: f"corpus_{dataset.dataset_name}_{dataset.dset}-spk_{dataset.speaker[k - total]}"
+                      for k in range(total, total + l)})
         total += l
 
     return id2lb

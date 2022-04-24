@@ -157,6 +157,7 @@ class Saver(Callback):
             os.makedirs(audio_dir, exist_ok=True)
             os.makedirs(log_dir, exist_ok=True)
             csv_file_path = os.path.join(log_dir, f"{task_id}.csv")
+            os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
             loss_dicts = []
             _batch = outputs["_batch"]
@@ -195,9 +196,10 @@ class Saver(Callback):
         sample_rate = self.preprocess_config["preprocessing"]["audio"]["sampling_rate"]
         save_dir = os.path.join(self.log_dir, "audio", stage)
         filename = f"step_{step}_{basename}_{tag}.wav"
+        wav_file_path = os.path.join(save_dir, filename)
 
-        os.makedirs(save_dir, exist_ok=True)
-        wavfile.write(os.path.join(save_dir, filename), sample_rate, audio)
+        os.makedirs(os.path.dirname(wav_file_path), exist_ok=True)
+        wavfile.write(wav_file_path, sample_rate, audio)
 
     def log_text(self, stage, loss_dict, print_fn=print, max_steps=200000, header=False):
         if header:
@@ -211,8 +213,8 @@ class Saver(Callback):
             log_dir = os.path.join(self.log_dir, "csv", stage)
         else:
             log_dir = os.path.join(self.result_dir, "csv", stage)
-        os.makedirs(log_dir, exist_ok=True)
         csv_file_path = os.path.join(log_dir, f"{basename}.csv")
+        os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
         df = pd.DataFrame(loss_dict, columns=CSV_COLUMNS, index=[step])
         df.to_csv(csv_file_path, mode='a', header=not os.path.exists(csv_file_path), index=True, index_label="Step")

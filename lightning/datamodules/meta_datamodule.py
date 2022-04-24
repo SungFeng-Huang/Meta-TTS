@@ -8,21 +8,9 @@ from .utils import few_shot_task_dataset
 
 class MetaDataModule(BaselineDataModule):
     def __init__(self, preprocess_config, train_config, algorithm_config,
-            log_dir, result_dir, stage):
+                 log_dir, result_dir, stage):
         super().__init__(preprocess_config, train_config, algorithm_config,
-                log_dir, result_dir, stage)
-
-
-    def setup(self, stage=None):
-        super(BaselineDataModule, self).setup(stage)
-        # pl.seed_everything(43, True)
-
-        if stage in (None, 'fit', 'validate'):
-            self._train_setup()
-            self._validation_setup()
-
-        if stage in (None, 'test', 'predict'):
-            self._test_setup()
+                         log_dir, result_dir, stage)
 
 
     def _train_setup(self):

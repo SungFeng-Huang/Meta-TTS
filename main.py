@@ -145,6 +145,22 @@ def main(args, configs):
         pl.seed_everything(43, True)
         trainer.fit(model, datamodule=datamodule)
 
+    elif args.stage == "val":
+        # Get model
+        system = get_system(algorithm_config["type"])
+        model = system.load_from_checkpoint(
+            args.ckpt_file,
+            preprocess_config=preprocess_configs[0],
+            model_config=model_config,
+            train_config=train_config,
+            algorithm_config=algorithm_config,
+            log_dir=log_dir, result_dir=result_dir,
+            strict=False,
+        )
+        # Test
+        trainer = pl.Trainer(**TRAINER_CONFIG)
+        trainer.validate(model, datamodule=datamodule)
+
     elif args.stage == "test" or args.stage == "predict":
         # Get model
         system = get_system(algorithm_config["type"])

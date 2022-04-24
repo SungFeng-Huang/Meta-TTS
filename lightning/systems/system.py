@@ -56,7 +56,7 @@ class System(pl.LightningModule):
         loss = self.loss_func(batch, output)
         return loss, output
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx, dataloader_idx=0):
         loss, output = self.common_step(batch, batch_idx, train=True)
 
         # Log metrics to CometLogger
@@ -64,7 +64,7 @@ class System(pl.LightningModule):
         self.log_dict(loss_dict, sync_dist=True)
         return {'loss': loss[0], 'losses': loss, 'output': output, '_batch': batch}
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx, dataloader_idx=0):
         loss, output = self.common_step(batch, batch_idx, train=False)
 
         loss_dict = {f"Val/{k}":v for k,v in loss2dict(loss).items()}
@@ -89,7 +89,7 @@ class System(pl.LightningModule):
         gpu_monitor = GPUStatsMonitor(
             memory_utilization=True, gpu_utilization=True, intra_step_time=True, inter_step_time=True
         )
-        
+
         # Save figures/audios/csvs
         saver = Saver(self.preprocess_config, self.log_dir, self.result_dir)
         self.saver = saver
