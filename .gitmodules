@@ -1,3 +1,4 @@
 [submodule "hypertorch"]
 	path = hypertorch
 	url = git@github.com:SungFeng-Huang/hypertorch.git
+	branch = master
