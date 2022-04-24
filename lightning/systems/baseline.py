@@ -37,21 +37,3 @@ class BaselineSystem(BaseAdaptorSystem):
                 'losses': [l.detach() for l in loss],
                 'output': [o.detach() for o in output],
                 '_batch': batch}
-
-    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx=0):
-        self._on_meta_batch_start(batch)
-
-    def validation_step(self, batch, batch_idx, dataloader_idx=0):
-        """ Adapted forwarding.
-
-        Function:
-            meta_learn(): Defined in `lightning.systems.base_adaptor.BaseAdaptorSystem`
-        """
-        val_loss, predictions = self.meta_learn(batch, batch_idx, train=False)
-        qry_batch = batch[0][1][0]
-
-        # Log metrics to CometLogger
-        loss_dict = {f"Val/{k}":v for k,v in loss2dict(val_loss).items()}
-        self.log_dict(loss_dict, sync_dist=True, batch_size=1)
-        return {'losses': val_loss, 'output': predictions, '_batch': qry_batch}
-

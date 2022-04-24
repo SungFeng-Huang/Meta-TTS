@@ -32,36 +32,6 @@ class MetaSystem(BaseAdaptorSystem):
         else:
             return batch
 
-    # Second order gradients for RNNs
-    # @torch.backends.cudnn.flags(enabled=False)
-    # @torch.enable_grad()
-    # def adapt(self, batch, adaptation_steps=5, learner=None, train=True):
-        # # TODO: overwrite for supporting SGD and iMAML
-        # return super().adapt(batch, adaptation_steps, learner, train)
-
-        # # MAML
-        # # NOTE: skipped
-        # # TODO: SGD data reuse for more steps
-        # if learner is None:
-            # learner = self.learner.clone()
-            # learner.train()
-
-        # sup_batch = batch[0][0][0]
-        # first_order = not train
-        # n_minibatch = 5
-        # for step in range(adaptation_steps):
-            # subset = slice(step*n_minibatch, (step+1)*n_minibatch)
-            # mini_batch = [feat if i in [5, 8] else feat[subset]
-                          # for i, feat in enumerate(sup_batch)]
-
-            # preds = self.forward_learner(learner, *mini_batch[2:])
-            # train_error = self.loss_func(mini_batch, preds)
-            # learner.adapt(
-                # train_error[0], first_order=first_order,
-                # allow_unused=False, allow_nograd=True
-            # )
-        # return learner
-
     def on_train_batch_start(self, batch, batch_idx, dataloader_idx=0):
         self._on_meta_batch_start(batch)
 
@@ -81,20 +51,3 @@ class MetaSystem(BaseAdaptorSystem):
                 'losses': [loss.detach() for loss in train_loss],
                 'output': [p.detach() for p in predictions],
                 '_batch': qry_batch}
-
-    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx=0):
-        self._on_meta_batch_start(batch)
-
-    def validation_step(self, batch, batch_idx, dataloader_idx=0):
-        """ Adapted forwarding.
-
-        Function:
-            meta_learn(): Defined in `lightning.systems.base_adaptor.BaseAdaptorSystem`
-        """
-        val_loss, predictions = self.meta_learn(batch, batch_idx)
-        qry_batch = batch[0][1][0]
-
-        # Log metrics to CometLogger
-        loss_dict = {f"Val/{k}": v for k, v in loss2dict(val_loss).items()}
-        self.log_dict(loss_dict, sync_dist=True, batch_size=1)
-        return {'losses': val_loss, 'output': predictions, '_batch': qry_batch}

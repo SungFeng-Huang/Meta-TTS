@@ -80,7 +80,7 @@ class Saver(Callback):
         loss = outputs['losses']
         output = outputs['output']
         _batch = outputs['_batch']  # batch or qry_batch
-        
+
         step = pl_module.global_step+1
         if isinstance(pl_module.logger, LoggerCollection):
             assert len(list(pl_module.logger)) == 1
@@ -101,7 +101,7 @@ class Saver(Callback):
 
         # Log figure/audio to logger + save audio
         if batch_idx == 0 and pl_module.local_rank == 0:
-            metadata = {'sup_ids': sup_ids}
+            metadata = {'dataloader_idx': dataloader_idx, 'sup_ids': sup_ids}
             fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
                 _batch, output, vocoder, self.preprocess_config
             )
@@ -263,7 +263,7 @@ class Saver(Callback):
         if isinstance(logger, pl.loggers.CometLogger):
             if metadata is None:
                 metadata = {}
-            metadata.update({'stage': stage, 'type': tag, 'id': basename})
+            metadata.update({'stage': stage})
             logger.experiment.log_audio(
                 audio_data=audio / max(abs(audio)),
                 sample_rate=sample_rate,

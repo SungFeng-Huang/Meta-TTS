@@ -15,7 +15,7 @@ from hypergrad import update_tensor_grads
 
 from utils.tools import get_mask_from_lengths
 from lightning.utils import loss2dict
-from lightning.systems.base_adaptor import BaseAdaptorSystem
+from lightning.systems.new_base_adaptor import BaseAdaptorSystem
 from lightning.systems.utils import Task, CG, MAML
 
 
@@ -48,7 +48,8 @@ class IMAMLSystem(BaseAdaptorSystem):
     # Second order gradients for RNNs
     @torch.backends.cudnn.flags(enabled=False)
     @torch.enable_grad()
-    def adapt(self, batch, adaptation_steps=5, learner=None, task=None, train=True):
+    def adapt(self, batch, adaptation_steps=5, learner=None, task=None,
+              return_task=False, train=True):
         """ Regularized adapt for iMAML. """
         if learner is None:
             learner = self.learner.clone()
@@ -66,11 +67,15 @@ class IMAMLSystem(BaseAdaptorSystem):
         reg_param = self.algorithm_config["adapt"]["imaml"]["reg_param"]
         for step in range(adaptation_steps):
             mini_batch = task.next_batch()
-            preds = self.forward_learner(learner, *mini_batch[2:])
+            preds = learner(*mini_batch[2:])
             train_error = self.loss_func(mini_batch, preds)
             loss = (train_error[0] + 0.5 * reg_param * self.bias_reg_f(learner))
             learner.adapt_(loss, first_order=first_order, allow_unused=False, allow_nograd=True)
-        return learner, task
+
+        if return_task:
+            return learner, task
+
+        return learner
 
     @torch.enable_grad()
     def meta_learn(self, batch, batch_idx, train=True):
@@ -78,7 +83,7 @@ class IMAMLSystem(BaseAdaptorSystem):
         qry_data = batch[0][1][0]
 
         # self.gpu_stats(f"Step {self.global_step}: Before inner update")
-        learner, task = self.adapt(batch, self.adaptation_steps, train=train)
+        learner, task = self.adapt(batch, self.adaptation_steps, return_task, train=train)
         # self.gpu_stats(f"Step {self.global_step}: After inner update")
         stochastic = self.algorithm_config["adapt"]["imaml"]["stochastic"]
         reg_param = self.algorithm_config["adapt"]["imaml"]["reg_param"]
@@ -92,7 +97,7 @@ class IMAMLSystem(BaseAdaptorSystem):
                 mini_batch = task.next_batch()
             else:
                 mini_batch = sup_data
-            preds = self.forward_learner(learner, *mini_batch[2:])
+            preds = learner(*mini_batch[2:])
             losses = self.loss_func(mini_batch, preds)
             # biased regularized loss where the bias are the meta-parameters in hparams
             loss = (losses[0] + 0.5 * reg_param * self.bias_reg_f(learner))
@@ -108,7 +113,7 @@ class IMAMLSystem(BaseAdaptorSystem):
             Output: query loss.
             """
             mini_batch = qry_data
-            preds = self.forward_learner(learner, sup_data[2], *mini_batch[3:], average_spk_emb=True)
+            preds = learner(sup_data[2], *mini_batch[3:], average_spk_emb=True)
             losses = self.loss_func(mini_batch, preds)
             return losses[0], losses, preds
 
@@ -167,23 +172,6 @@ class IMAMLSystem(BaseAdaptorSystem):
         self.log_dict(loss_dict, sync_dist=True)
         return {'loss': train_loss[0], 'losses': train_loss, 'output': predictions, '_batch': qry_batch}
 
-    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx=0):
-        self._on_meta_batch_start(batch)
-
-    def validation_step(self, batch, batch_idx, dataloader_idx=0):
-        """ Adapted forwarding.
-
-        Function:
-            meta_learn(): Defined in `lightning.systems.base_adaptor.BaseAdaptorSystem`
-        """
-        val_loss, predictions = self.meta_learn(batch, batch_idx)
-        qry_batch = batch[0][1][0]
-
-        # Log metrics to CometLogger
-        loss_dict = {f"Val/{k}": v for k, v in loss2dict(val_loss).items()}
-        self.log_dict(loss_dict, sync_dist=True)
-        return {'losses': val_loss, 'output': predictions, '_batch': qry_batch}
-
     def test_step(self, batch, batch_idx, dataloader_idx=0):
         outputs = {}
 
@@ -192,28 +180,30 @@ class IMAMLSystem(BaseAdaptorSystem):
         outputs['_batch'] = qry_batch
 
         # Evaluating the initial model
-        predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
+        predictions = self.learner(sup_batch[2], *qry_batch[3:], average_spk_emb=True)
         valid_error = self.loss_func(qry_batch, predictions)
         outputs[f"step_0"] = {"recon": {"losses": valid_error, "output": predictions}}
 
         # synth_samples & save & log
-        predictions = self.forward_learner(self.learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+        predictions = self.learner(sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
         outputs[f"step_0"].update({"synth": {"output": predictions}})
 
         # Adapt
         learner = None
         task = None
         for ft_step in range(self.adaptation_steps, self.test_adaptation_steps+1, self.adaptation_steps):
-            learner, task = self.adapt(batch, self.adaptation_steps, learner=learner, task=task, train=False)
+            learner, task = self.adapt(batch, self.adaptation_steps,
+                                       learner=learner, task=task,
+                                       return_task=True, train=False)
 
             # Evaluating the adapted model
-            predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:], average_spk_emb=True)
+            predictions = learner(sup_batch[2], *qry_batch[3:], average_spk_emb=True)
             valid_error = self.loss_func(qry_batch, predictions)
             outputs[f"step_{ft_step}"] = {"recon": {"losses": valid_error, "output": predictions}}
 
             if ft_step in [5, 10, 20, 50, 100]:
                 # synth_samples & save & log
-                predictions = self.forward_learner(learner, sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
+                predictions = learner(sup_batch[2], *qry_batch[3:6], average_spk_emb=True)
                 outputs[f"step_{ft_step}"].update({"synth": {"output": predictions}})
         del learner
         del task
