@@ -42,12 +42,6 @@ class System(pl.LightningModule):
         self.log_dir = log_dir
         self.result_dir = result_dir
 
-        # Although the vocoder is only used in callbacks, we need it to be
-        # moved to cuda for faster inference, so it is initialized here with the
-        # model, and let pl.Trainer handle the DDP devices.
-        self.vocoder = LightningMelGAN()
-        self.vocoder.freeze()
-
     def forward(self, *args, **kwargs):
         return self.model(*args, **kwargs)
 

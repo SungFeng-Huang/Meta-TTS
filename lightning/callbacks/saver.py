@@ -1,4 +1,5 @@
 import os
+import json
 import pandas as pd
 import pytorch_lightning as pl
 import matplotlib
@@ -35,10 +36,10 @@ class Saver(Callback):
         print("Log directory:", self.log_dir)
         print("Result directory:", self.result_dir)
 
-        self.val_loss_dicts = []
-        self.log_loss_dicts = []
+        self.vocoder = LightningMelGAN()
+        self.vocoder.freeze()
 
-    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
         loss = outputs['losses']
         output = outputs['output']
         _batch = outputs['_batch']  # batch or qry_batch
@@ -48,33 +49,18 @@ class Saver(Callback):
             logger = pl_module.logger[0]
         else:
             logger = pl_module.logger
-        vocoder = pl_module.vocoder
+        self.vocoder.to(pl_module.device)
 
         # Synthesis one sample and log to CometLogger
         if step % pl_module.train_config["step"]["synth_step"] == 0 and pl_module.local_rank == 0:
             metadata = {'sup_ids': batch[0][0][0][0]}
             fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
-                _batch, output, vocoder, self.preprocess_config
+                _batch, output, self.vocoder, self.preprocess_config
             )
             self.log_figure(logger, "Training", step, basename, "", fig)
             self.log_audio(logger, "Training", step, basename, "reconstructed", wav_reconstruction, metadata)
             self.log_audio(logger, "Training", step, basename, "synthesized", wav_prediction, metadata)
             plt.close(fig)
-
-        # Log message to log.txt and print to stdout
-        if step % trainer.log_every_n_steps == 0 and pl_module.local_rank == 0:
-            loss_dict = loss2dict(loss)
-            loss_dict.update({"Step": step, "Stage": "Training"})
-            df = pd.DataFrame([loss_dict], columns=["Step", "Stage"]+CSV_COLUMNS)
-            if len(self.log_loss_dicts)==0:
-                tqdm.write(df.to_string(header=True, index=False, col_space=COL_SPACE))
-            else:
-                tqdm.write(df.to_string(header=True, index=False, col_space=COL_SPACE).split('\n')[-1])
-            self.log_loss_dicts.append(loss_dict)
-
-
-    def on_validation_epoch_start(self, trainer, pl_module):
-        self.val_loss_dicts = []
 
     def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         loss = outputs['losses']
@@ -87,10 +73,9 @@ class Saver(Callback):
             logger = pl_module.logger[0]
         else:
             logger = pl_module.logger
-        vocoder = pl_module.vocoder
+        self.vocoder.to(pl_module.device)
 
         loss_dict = loss2dict(loss)
-        self.val_loss_dicts.append(loss_dict)
 
         # Log loss for each sample to csv files
         sup_ids = batch[0][0][0][0]
@@ -103,41 +88,18 @@ class Saver(Callback):
         if batch_idx == 0 and pl_module.local_rank == 0:
             metadata = {'dataloader_idx': dataloader_idx, 'sup_ids': sup_ids}
             fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
-                _batch, output, vocoder, self.preprocess_config
+                _batch, output, self.vocoder, self.preprocess_config
             )
             self.log_figure(logger, "Validation", step, basename, "", fig)
             self.log_audio(logger, "Validation", step, basename, "reconstructed", wav_reconstruction, metadata)
             self.log_audio(logger, "Validation", step, basename, "synthesized", wav_prediction, metadata)
             plt.close(fig)
 
-    def on_validation_epoch_end(self, trainer, pl_module):
-        # if pl_module.global_step > 0:
-        if True:
-            loss_dict = merge_dicts(self.val_loss_dicts)
-            step = pl_module.global_step+1
-
-            # Log total loss to log.txt and print to stdout
-            loss_dict.update({"Step": step, "Stage": "Validation"})
-            # To stdout
-            df = pd.DataFrame([loss_dict], columns=["Step", "Stage"]+CSV_COLUMNS)
-            if pl_module.local_rank == 0:
-                if len(self.log_loss_dicts)==0:
-                    tqdm.write(df.to_string(header=True, index=False, col_space=COL_SPACE))
-                else:
-                    tqdm.write(df.to_string(header=True, index=False, col_space=COL_SPACE).split('\n')[-1])
-            # To file
-            self.log_loss_dicts.append(loss_dict)
-            log_file_path = os.path.join(self.log_dir, 'log.txt')
-            df = pd.DataFrame(self.log_loss_dicts, columns=["Step", "Stage"]+CSV_COLUMNS).set_index("Step")
-            df.to_csv(log_file_path, mode='a', header=not os.path.exists(log_file_path), index=True)
-            # Reset
-            self.log_loss_dicts = []
-
     def on_test_batch_end(self, trainer, pl_module, all_outputs, batch, batch_idx, dataloader_idx):
         global_step = getattr(pl_module, 'test_global_step', pl_module.global_step)
         adaptation_steps = pl_module.adaptation_steps           # log/save period
         test_adaptation_steps = pl_module.test_adaptation_steps # total fine-tune steps
-        vocoder = pl_module.vocoder
+        self.vocoder.to(pl_module.device)
 
         sup_ids = batch[0][0][0][0]
         qry_ids = batch[0][1][0][0]
@@ -166,7 +128,7 @@ class Saver(Callback):
                 if ft_step == 0:
                     predictions = outputs[f"step_{ft_step}"]["recon"]["output"]
                     recon_samples(
-                        _batch, predictions, vocoder, self.preprocess_config,
+                        _batch, predictions, self.vocoder, self.preprocess_config,
                         figure_dir, audio_dir
                     )
 
@@ -177,7 +139,7 @@ class Saver(Callback):
                 if "synth" in outputs[f"step_{ft_step}"]:
                     predictions = outputs[f"step_{ft_step}"]["synth"]["output"]
                     synth_samples(
-                        _batch, predictions, vocoder, self.preprocess_config,
+                        _batch, predictions, self.vocoder, self.preprocess_config,
                         figure_dir, audio_dir, f"step_{global_step}-FTstep_{ft_step}"
                     )
 

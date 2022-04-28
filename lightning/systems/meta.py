@@ -32,10 +32,10 @@ class MetaSystem(BaseAdaptorSystem):
         else:
             return batch
 
-    def on_train_batch_start(self, batch, batch_idx, dataloader_idx=0):
+    def on_train_batch_start(self, batch, batch_idx):
         self._on_meta_batch_start(batch)
 
-    def training_step(self, batch, batch_idx, dataloader_idx=0):
+    def training_step(self, batch, batch_idx):
         """ Normal forwarding.
 
         Function:

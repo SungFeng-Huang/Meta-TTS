@@ -19,10 +19,10 @@ class BaselineSystem(BaseAdaptorSystem):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def on_train_batch_start(self, batch, batch_idx, dataloader_idx=0):
+    def on_train_batch_start(self, batch, batch_idx):
         assert len(batch) == 12, "data with 12 elements"
 
-    def training_step(self, batch, batch_idx, dataloader_idx=0):
+    def training_step(self, batch, batch_idx):
         """ Normal forwarding.
 
         Function:

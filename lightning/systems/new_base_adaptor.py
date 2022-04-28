@@ -4,6 +4,7 @@ import os
 import json
 import torch
 import numpy as np
+import pandas as pd
 import pytorch_lightning as pl
 import learn2learn as l2l
 
@@ -68,7 +69,6 @@ class BaseAdaptorSystem(System):
     def meta_learn(self, batch, batch_idx, train=True):
         learner = self.adapt(batch, min(self.adaptation_steps, self.test_adaptation_steps),
                              train=train)
-        # learner.module.variance_adaptor.eval()
         learner.eval()
 
         sup_batch = batch[0][0][0]
@@ -96,6 +96,30 @@ class BaseAdaptorSystem(System):
         assert len(batch[0][0]) == 1, "n_batch == 1"
         assert len(batch[0][0][0]) == 12, "data with 12 elements"
 
+    def on_train_epoch_start(self):
+        self.train_loss_dicts = []
+
+    def on_train_batch_end(self, outputs, batch, batch_idx):
+        step = self.global_step + 1
+        if step % self.trainer.log_every_n_steps == 0:
+            key_map = {
+                "Train/Total Loss": "total_loss",
+                "Train/Mel Loss": "mel_loss",
+                "Train/Mel-Postnet Loss": "_mel_loss",
+                "Train/Duration Loss": "d_loss",
+                "Train/Pitch Loss": "p_loss",
+                "Train/Energy Loss": "e_loss",
+            }
+            loss_dict = {"step": step}
+            for k in key_map:
+                loss_dict[key_map[k]] = self.trainer.callback_metrics[k].item()
+            self.train_loss_dicts.append(loss_dict)
+            df = pd.DataFrame(self.train_loss_dicts).set_index("step")
+            if batch_idx + 1 == self.trainer.log_every_n_steps:
+                self.print(df.to_string(header=True, index=True))
+            else:
+                self.print(df.to_string(header=True, index=True).split('\n')[-1])
+
     def on_validation_batch_start(self, batch, batch_idx, dataloader_idx=0):
         self._on_meta_batch_start(batch)
 
@@ -110,20 +134,28 @@ class BaseAdaptorSystem(System):
 
         # Log metrics to CometLogger
         loss_dict = {f"Val/{k}": v for k, v in loss2dict(val_loss).items()}
-        print(json.dumps(loss_dict, indent=4))
         self.log_dict(loss_dict, sync_dist=True, batch_size=1)
         return {'losses': val_loss, 'output': predictions, '_batch': qry_batch}
 
-    # def validation_step_end(self, batch_parts):
-    #     losses = batch_parts["losses"]
-    #     outputs = batch_parts["outputs"]
-    #     _batches = batch_parts["_batch"]
-    #
-    #     gpu_0_output = {
-    #         "losses": losses[0],
-    #         "output": outputs[0],
-    #         "_batch": _batches[0],
-    #     }
+    def on_validation_epoch_end(self):
+        self.print(f"Step {self.global_step+1} - Val losses")
+        loss_dicts = []
+        for i in range(len(self.trainer.datamodule.val_datasets)):
+            key_map = {
+                f"Val/Total Loss/dataloader_idx_{i}": "total_loss",
+                f"Val/Mel Loss/dataloader_idx_{i}": "mel_loss",
+                f"Val/Mel-Postnet Loss/dataloader_idx_{i}": "_mel_loss",
+                f"Val/Duration Loss/dataloader_idx_{i}": "d_loss",
+                f"Val/Pitch Loss/dataloader_idx_{i}": "p_loss",
+                f"Val/Energy Loss/dataloader_idx_{i}": "e_loss",
+            }
+            loss_dict = {"dataloader_idx": int(i)}
+            for k in key_map:
+                loss_dict[key_map[k]] = self.trainer.callback_metrics[k].item()
+            loss_dicts.append(loss_dict)
+
+        df = pd.DataFrame(loss_dicts).set_index("dataloader_idx")
+        self.print(df.to_string(header=True, index=True)+'\n')
 
     def on_test_batch_start(self, batch, batch_idx, dataloader_idx):
         self._on_meta_batch_start(batch)
@@ -150,7 +182,8 @@ class BaseAdaptorSystem(System):
     def _test_step(self, batch, batch_idx, dataloader_idx):
         outputs = {}
 
-        saving_steps = self.algorithm_config["adapt"]["test"].get("saving_steps", [5, 10, 20, 50, 100])
+        assert "saving_steps" in self.algorithm_config["adapt"]["test"]
+        saving_steps = self.algorithm_config["adapt"]["test"]["saving_steps"]
 
         sup_batch = batch[0][0][0]
         qry_batch = batch[0][1][0]

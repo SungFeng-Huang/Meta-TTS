@@ -120,7 +120,7 @@ class BaselineDataModule(BaseDataModule):
                 val_task_dataset,
                 batch_size=1,
                 shuffle=False,
-                num_workers=0,
+                num_workers=4,
                 collate_fn=lambda batch: batch,
             ) for val_task_dataset in self.val_task_datasets
         ]
@@ -134,7 +134,7 @@ class BaselineDataModule(BaseDataModule):
                 test_task_dataset,
                 batch_size=1,
                 shuffle=False,
-                num_workers=0,
+                num_workers=4,
                 collate_fn=lambda batch: batch,
             ) for test_task_dataset in self.test_task_datasets
         ]
