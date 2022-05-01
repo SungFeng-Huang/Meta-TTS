@@ -219,9 +219,6 @@ def plot_mel(data, stats, titles):
     fig, axes = plt.subplots(len(data), 1, squeeze=False)
     if titles is None:
         titles = [None for i in range(len(data))]
-    # pitch_min, pitch_max, pitch_mean, pitch_std, energy_min, energy_max = stats
-    # pitch_min = pitch_min * pitch_std + pitch_mean
-    # pitch_max = pitch_max * pitch_std + pitch_mean
     pitch_min = stats["pitch"]["min"]
     pitch_max = stats["pitch"]["max"]
     energy_min = stats["energy"]["min"]
@@ -235,7 +232,6 @@ def plot_mel(data, stats, titles):
     fig.subplots_adjust(hspace=0.3)
     for i in range(len(data)):
         mel, pitch, energy = data[i]
-        # pitch = pitch * pitch_std + pitch_mean
         axes[i][0].imshow(mel, origin="lower")
         axes[i][0].set_aspect(2.5, adjustable="box")
         axes[i][0].set_ylim(0, mel.shape[0])

@@ -1,5 +1,5 @@
 pytorch-lightning
-learn2learn >= 0.1.6
+learn2learn
 comet-ml
 resemblyzer
 g2p-en
@@ -23,5 +23,5 @@ torchaudio
 
 # Evaluation
 seaborn
--e git+https://github.com/jasminsternkopf/mel_cepstral_distance.git@main#egg=mcd
+mel-cepstral-distance
 -e git+https://github.com/aliutkus/speechmetrics#egg=speechmetrics[gpu]

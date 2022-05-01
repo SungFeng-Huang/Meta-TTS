@@ -1,8 +1,15 @@
+import traceback
+import warnings
+import logging
+import sys
+
 import argparse
 import os
 
-import comet_ml
+# import comet_ml
 import pytorch_lightning as pl
+from pytorch_lightning.loggers import CometLogger
+
 import torch
 import yaml
 import torch.nn as nn
@@ -15,15 +22,22 @@ from config.comet import COMET_CONFIG
 from lightning.datamodules import get_datamodule
 from lightning.systems import get_system
 
-quiet = False
-if quiet:
-    # NOTSET/DEBUG/INFO/WARNING/ERROR/CRITICAL
-    os.environ["COMET_LOGGING_CONSOLE"] = "ERROR"
-    import warnings
-    warnings.filterwarnings("ignore")
-    import logging
-    # configure logging at the root level of lightning
-    logging.getLogger("pytorch_lightning").setLevel(logging.ERROR)
+
+quiet = None
+if quiet is not None:
+    if quiet:
+        # NOTSET/DEBUG/INFO/WARNING/ERROR/CRITICAL
+        os.environ["COMET_LOGGING_CONSOLE"] = "ERROR"
+        warnings.filterwarnings("ignore")
+        # configure logging at the root level of lightning
+        logging.getLogger("pytorch_lightning").setLevel(logging.ERROR)
+    else:
+        def warn_with_traceback(message, category, filename, lineno, file=None, line=None):
+
+            log = file if hasattr(file,'write') else sys.stderr
+            traceback.print_stack(file=log)
+            log.write(warnings.formatwarning(message, category, filename, lineno, line))
+        warnings.showwarning = warn_with_traceback
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -60,7 +74,7 @@ def main(args, configs):
 
     if args.stage == "train":
         # Init logger
-        comet_logger = pl.loggers.CometLogger(
+        comet_logger = CometLogger(
             save_dir=os.path.join(train_config["path"]["log_path"], COMET_CONFIG["project_name"]),
             experiment_key=args.exp_key,
             experiment_name=algorithm_config["name"],
@@ -79,7 +93,7 @@ def main(args, configs):
         )
     elif args.stage == "transfer":
         # Init logger
-        comet_logger = pl.loggers.CometLogger(
+        comet_logger = CometLogger(
             save_dir=os.path.join(train_config["path"]["log_path"], COMET_CONFIG["project_name"]),
             experiment_key=None,
             experiment_name=algorithm_config["name"],
