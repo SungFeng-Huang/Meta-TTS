@@ -16,10 +16,8 @@ class BaselineSystem(BaseAdaptorSystem):
     """A PyTorch Lightning module for ANIL for FastSpeech2.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def on_train_batch_start(self, batch, batch_idx):
+        super().on_train_batch_start(batch, batch_idx)
         assert len(batch) == 12, "data with 12 elements"
 
     def training_step(self, batch, batch_idx):

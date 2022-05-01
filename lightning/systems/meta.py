@@ -18,9 +18,6 @@ class MetaSystem(BaseAdaptorSystem):
     """A PyTorch Lightning module for ANIL for FastSpeech2.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def on_after_batch_transfer(self, batch, dataloader_idx=0):
         if self.algorithm_config["adapt"]["phoneme_emb"]["type"] == "codebook":
             # NOTE: `self.model.encoder` and `self.learner.encoder` are pointing to
@@ -33,6 +30,7 @@ class MetaSystem(BaseAdaptorSystem):
             return batch
 
     def on_train_batch_start(self, batch, batch_idx):
+        super().on_train_batch_start(batch, batch_idx)
         self._on_meta_batch_start(batch)
 
     def training_step(self, batch, batch_idx):

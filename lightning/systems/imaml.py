@@ -57,10 +57,8 @@ class IMAMLSystem(BaseAdaptorSystem):
 
         if task is None:
             sup_data = batch[0][0][0]
-            qry_data = batch[0][1][0]
-            task = Task(sup_data=sup_data,
-                        qry_data=qry_data,
-                        batch_size=self.algorithm_config["adapt"]["imaml"]["batch_size"])
+            batch_size = self.algorithm_config["adapt"]["imaml"]["batch_size"]
+            task = Task(sup_data=sup_data, batch_size=batch_size)
 
         # Adapt the classifier
         first_order = True
@@ -156,6 +154,7 @@ class IMAMLSystem(BaseAdaptorSystem):
 
 
     def on_train_batch_start(self, batch, batch_idx):
+        super().on_train_batch_start(batch, batch_idx)
         self._on_meta_batch_start(batch)
 
     def training_step(self, batch, batch_idx):

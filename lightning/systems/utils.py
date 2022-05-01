@@ -142,9 +142,8 @@ class Task:
     """
     Handles the train and valdation loss for a single task
     """
-    def __init__(self, sup_data, qry_data, batch_size=None, shuffle=True):
+    def __init__(self, sup_data, batch_size=None, shuffle=True):
         self.sup_data = sup_data
-        self.qry_data = qry_data
         sampler = RandomSampler(range(len(sup_data[0]))) if shuffle else range(len(sup_data[0]))
         self.sup_sampler = BatchSampler(sampler,
                                         batch_size=batch_size,
