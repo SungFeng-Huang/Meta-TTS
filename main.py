@@ -6,7 +6,7 @@ import sys
 import argparse
 import os
 
-# import comet_ml
+import comet_ml
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import CometLogger
 
@@ -41,6 +41,7 @@ if quiet is not None:
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 TRAINER_CONFIG = {
     "gpus": -1 if torch.cuda.is_available() else None,
     "strategy": "ddp" if torch.cuda.is_available() else None,
@@ -48,7 +49,7 @@ TRAINER_CONFIG = {
     "limit_train_batches": 1.0,  # Useful for fast experiment
     "deterministic": True,
     "process_position": 1,
-    "profiler": 'simple',
+    "profiler": "simple",
 }
 
 
@@ -63,6 +64,8 @@ def main(args, configs):
     trainer_training_config = {
         'max_steps': train_config["step"]["total_step"],
         'log_every_n_steps': train_config["step"]["log_step"],
+        'check_val_every_n_epoch': int(train_config["step"]["val_step"] //
+                                       train_config["step"]["log_step"]),
         'weights_save_path': train_config["path"]["ckpt_path"],
         'gradient_clip_val': train_config["optimizer"]["grad_clip_thresh"],
         'accumulate_grad_batches': train_config["optimizer"]["grad_acc_step"],
@@ -75,7 +78,8 @@ def main(args, configs):
     if args.stage == "train":
         # Init logger
         comet_logger = CometLogger(
-            save_dir=os.path.join(train_config["path"]["log_path"], COMET_CONFIG["project_name"]),
+            save_dir=os.path.join(train_config["path"]["log_path"],
+                                  COMET_CONFIG["project_name"]),
             experiment_key=args.exp_key,
             experiment_name=algorithm_config["name"],
             **COMET_CONFIG
@@ -89,12 +93,14 @@ def main(args, configs):
         loggers = [comet_logger]
         log_dir = os.path.join(comet_logger._save_dir, comet_logger.version)
         result_dir = os.path.join(
-            train_config['path']['result_path'], COMET_CONFIG["project_name"], comet_logger.version
+            train_config['path']['result_path'], COMET_CONFIG["project_name"],
+            comet_logger.version
         )
     elif args.stage == "transfer":
         # Init logger
         comet_logger = CometLogger(
-            save_dir=os.path.join(train_config["path"]["log_path"], COMET_CONFIG["project_name"]),
+            save_dir=os.path.join(train_config["path"]["log_path"],
+                                  COMET_CONFIG["project_name"]),
             experiment_key=None,
             experiment_name=algorithm_config["name"],
             **COMET_CONFIG
@@ -108,15 +114,39 @@ def main(args, configs):
         loggers = [comet_logger]
         log_dir = os.path.join(comet_logger._save_dir, comet_logger.version)
         result_dir = os.path.join(
-            train_config['path']['result_path'], COMET_CONFIG["project_name"], comet_logger.version
+            train_config['path']['result_path'], COMET_CONFIG["project_name"],
+            comet_logger.version
+        )
+    elif args.stage == "val":
+        # Init logger
+        comet_logger = CometLogger(
+            save_dir=os.path.join(train_config["path"]["log_path"],
+                                  COMET_CONFIG["project_name"]),
+            experiment_key=args.exp_key,
+            experiment_name=algorithm_config["name"],
+            **COMET_CONFIG
+        )
+        comet_logger.log_hyperparams({
+            "preprocess_config": preprocess_configs,
+            "model_config": model_config,
+            "train_config": train_config,
+            "algorithm_config": algorithm_config,
+        })
+        loggers = [comet_logger]
+        log_dir = os.path.join(comet_logger._save_dir, comet_logger.version)
+        result_dir = os.path.join(
+            train_config['path']['result_path'], COMET_CONFIG["project_name"],
+            comet_logger.version, algorithm_config["name"]
         )
     else:
         assert args.exp_key is not None
         log_dir = os.path.join(
-            train_config["path"]["log_path"], COMET_CONFIG["project_name"], args.exp_key
+            train_config["path"]["log_path"], COMET_CONFIG["project_name"],
+            args.exp_key
         )
         result_dir = os.path.join(
-            train_config['path']['result_path'], COMET_CONFIG["project_name"], args.exp_key, algorithm_config["name"]
+            train_config['path']['result_path'], COMET_CONFIG["project_name"],
+            args.exp_key, algorithm_config["name"]
         )
 
     # Get dataset
@@ -162,18 +192,26 @@ def main(args, configs):
     elif args.stage == "val":
         # Get model
         system = get_system(algorithm_config["type"])
-        model = system.load_from_checkpoint(
-            args.ckpt_file,
-            preprocess_config=preprocess_configs[0],
-            model_config=model_config,
-            train_config=train_config,
-            algorithm_config=algorithm_config,
-            log_dir=log_dir, result_dir=result_dir,
-            strict=False,
+        model = system(
+            preprocess_configs[0], model_config, train_config, algorithm_config,
+            log_dir, result_dir
         )
+        # model = system.load_from_checkpoint(
+        #     args.ckpt_file,
+        #     preprocess_config=preprocess_configs[0],
+        #     model_config=model_config,
+        #     train_config=train_config,
+        #     algorithm_config=algorithm_config,
+        #     log_dir=log_dir, result_dir=result_dir,
+        #     strict=False,
+        # )
         # Test
-        trainer = pl.Trainer(**TRAINER_CONFIG)
-        trainer.validate(model, datamodule=datamodule)
+        del TRAINER_CONFIG["auto_select_gpus"], TRAINER_CONFIG["strategy"]
+        TRAINER_CONFIG["gpus"] = [0]
+        trainer = pl.Trainer(
+            logger=loggers, **TRAINER_CONFIG, **trainer_training_config
+        )
+        trainer.validate(model, ckpt_path=args.ckpt_file, datamodule=datamodule)
 
     elif args.stage == "test" or args.stage == "predict":
         # Get model
@@ -189,7 +227,7 @@ def main(args, configs):
         )
         # Test
         trainer = pl.Trainer(**TRAINER_CONFIG)
-        trainer.test(model, datamodule=datamodule)
+        trainer.test(model, ckpt_path=args.ckpt_file, datamodule=datamodule)
 
     elif args.stage == "debug":
         del datamodule

@@ -57,27 +57,32 @@ class Saver(Callback):
             fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
                 _batch, output, self.vocoder, self.preprocess_config
             )
-            self.log_figure(logger, "Training", pl_module.global_step, basename, "", fig)
+            figure_name = f"Training/step_{pl_module.global_step}_{basename}"
+            self.log_figure(logger, figure_name, fig, pl_module.global_step)
             self.log_audio(logger, "Training", pl_module.global_step, basename, "reconstructed", wav_reconstruction, metadata)
             self.log_audio(logger, "Training", pl_module.global_step, basename, "synthesized", wav_prediction, metadata)
             plt.close(fig)
 
-    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_validation_batch_end(self, trainer, pl_module,
+                                outputs, batch, batch_idx, dataloader_idx):
         if trainer.state.fn == "fit":
             # trainer.state.fn == TrainerFn.FITTING == "fit"
             return self._on_val_batch_end_for_fit(
-                trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
+                trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+            )
+        elif trainer.state.fn == "validate":
+            pass
+            # return self._on_val_batch_end_for_validate(
+            #     trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+            # )
 
-    def _on_val_batch_end_for_fit(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def _on_val_batch_end_for_fit(self, trainer, pl_module,
+                                  outputs, batch, batch_idx, dataloader_idx):
         loss = outputs['losses']
         output = outputs['output']
         _batch = outputs['_batch']  # batch or qry_batch
 
-        if isinstance(pl_module.logger, LoggerCollection):
-            assert len(list(pl_module.logger)) == 1
-            logger = pl_module.logger[0]
-        else:
-            logger = pl_module.logger
+        logger = pl_module.logger
 
         self.vocoder.to(pl_module.device)
 
@@ -94,10 +99,47 @@ class Saver(Callback):
             fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
                 _batch, output, self.vocoder, self.preprocess_config
             )
-            self.log_figure(logger, "Validation", pl_module.global_step, basename, "", fig)
+            figure_name = f"Validation/step_{pl_module.global_step}_{basename}"
+            self.log_figure(logger, figure_name, fig, pl_module.global_step)
             self.log_audio(logger, "Validation", pl_module.global_step, basename, "reconstructed", wav_reconstruction, metadata)
             self.log_audio(logger, "Validation", pl_module.global_step, basename, "synthesized", wav_prediction, metadata)
             plt.close(fig)
+
+    def _on_val_batch_end_for_validate(self, trainer, pl_module, outputs,
+                                       batch, batch_idx, dataloader_idx):
+        global_step = getattr(pl_module, 'test_global_step', pl_module.global_step)
+        adaptation_steps = pl_module.adaptation_steps           # log/save period
+        test_adaptation_steps = pl_module.test_adaptation_steps # total fine-tune steps
+        sup_ids = batch[0][0][0][0]
+        qry_ids = batch[0][1][0][0]
+        SQids = f"{'-'.join(sup_ids)}.{'-'.join(qry_ids)}"
+        task_id = trainer.datamodule.val_SQids2Tid[SQids]
+        x = []
+        y = {
+            "Total Loss": [],
+            "Mel Loss": [],
+            "Mel-Postnet Loss": [],
+            "Pitch Loss": [],
+            "Energy Loss": [],
+            "Duration Loss": [],
+        }
+        for ft_step in range(test_adaptation_steps+1):
+            if f"step_{ft_step}" in outputs:
+                x.append(ft_step)
+                loss_dict = loss2dict(outputs[f"step_{ft_step}"]["recon"]["losses"])
+                for k in y:
+                    y[k].append(loss_dict[k])
+        fig, axs = plt.subplots(nrows=2, ncols=3, constrained_layout=True)
+        for ax, k in zip(axs.flat, y):
+            ax.set_title(k)
+            ax.plot(x, y[k], 'o', ls='-', ms=4)
+        figure_name = f"Validation/{task_id}_losses"
+        figure_path = os.path.join(self.result_dir, f"figure/step-{global_step}",
+                                   f"{figure_name}.png")
+        os.makedirs(os.path.dirname(figure_path), exist_ok=True)
+        # plt.savefig(figure_path)
+        self.log_figure(pl_module.logger, figure_name, fig, global_step)
+        plt.close()
 
     def on_test_batch_end(self, trainer, pl_module, all_outputs, batch, batch_idx, dataloader_idx):
         global_step = getattr(pl_module, 'test_global_step', pl_module.global_step)
@@ -185,7 +227,7 @@ class Saver(Callback):
         df = pd.DataFrame(loss_dict, columns=CSV_COLUMNS, index=[step])
         df.to_csv(csv_file_path, mode='a', header=not os.path.exists(csv_file_path), index=True, index_label="Step")
 
-    def log_figure(self, logger, stage, step, basename, tag, figure):
+    def log_figure(self, logger, figure_name, figure, step):
         """
         Parameters:
             logger (LightningLoggerBase): {pl.loggers.CometLogger, pl.loggers.TensorBoardLogger}.
@@ -195,8 +237,8 @@ class Saver(Callback):
             tag (str): {"reconstructed", "synthesized"}.
             figure (matplotlib.pyplot.figure):
         """
-        figure_name = f"{stage}/step_{step}_{basename}"
-        figure_name += f"_{tag}" if tag != "" else ""
+        # print(figure_name)
+        # print(step)
 
         def _log_figure(_logger):
             if isinstance(_logger, pl.loggers.CometLogger):
@@ -218,7 +260,7 @@ class Saver(Callback):
             for _logger in logger:
                 _log_figure(_logger)
         else:
-            _log_figure(_logger)
+            _log_figure(logger)
 
     def log_audio(self, logger, stage, step, basename, tag, audio, metadata=None):
         """
@@ -233,24 +275,30 @@ class Saver(Callback):
         sample_rate = self.preprocess_config["preprocessing"]["audio"]["sampling_rate"]
         self.save_audio(stage, step, basename, tag, audio)
 
-        if isinstance(logger, pl.loggers.CometLogger):
-            if metadata is None:
-                metadata = {}
-            metadata.update({'stage': stage})
-            logger.experiment.log_audio(
-                audio_data=audio / max(abs(audio)),
-                sample_rate=sample_rate,
-                file_name=f"{basename}_{tag}.wav",
-                step=step,
-                metadata=metadata,
-            )
-        elif isinstance(logger, pl.loggers.TensorBoardLogger):
-            logger.experiment.add_audio(
-                tag=f"{stage}/step_{step}_{basename}_{tag}",
-                snd_tensor=audio / max(abs(audio)),
-                global_step=step,
-                sample_rate=sample_rate,
-            )
-        else:
-            print("Failed to log audio: not finding correct logger type")
+        def _log_audio(_logger):
+            if isinstance(_logger, pl.loggers.CometLogger):
+                if metadata is None:
+                    metadata = {}
+                metadata.update({'stage': stage})
+                _logger.experiment.log_audio(
+                    audio_data=audio / max(abs(audio)),
+                    sample_rate=sample_rate,
+                    file_name=f"{basename}_{tag}.wav",
+                    step=step,
+                    metadata=metadata,
+                )
+            elif isinstance(_logger, pl.loggers.TensorBoardLogger):
+                _logger.experiment.add_audio(
+                    tag=f"{stage}/step_{step}_{basename}_{tag}",
+                    snd_tensor=audio / max(abs(audio)),
+                    global_step=step,
+                    sample_rate=sample_rate,
+                )
+            else:
+                print("Failed to log audio: not finding correct logger type")
 
+        if isinstance(logger, LoggerCollection):
+            for _logger in logger:
+                _log_audio(_logger)
+        else:
+            _log_audio(logger)

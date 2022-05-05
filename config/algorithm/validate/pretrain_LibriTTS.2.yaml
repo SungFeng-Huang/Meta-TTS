@@ -9,9 +9,9 @@ parser_args:
   train_config:
     - config/train/LibriTTS.yaml
     - config/train/base.yaml
-  exp_key: null
+  exp_key: 1d34914e07244f87ad10c580ab85656c
   ckpt_file: last.ckpt
-  stage: train
+  stage: val
 
 adapt:
   type: spk # spk/lang

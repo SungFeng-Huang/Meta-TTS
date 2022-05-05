@@ -14,7 +14,7 @@ class MetaDataModule(BaselineDataModule):
 
 
     def _train_setup(self):
-        epoch_length = self.meta_batch_size * self.val_step
+        epoch_length = self.meta_batch_size * self.log_step
         self.train_dataset = ConcatDataset(self.train_datasets)
 
         self.train_task_dataset = few_shot_task_dataset(

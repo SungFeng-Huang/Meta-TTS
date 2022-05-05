@@ -28,7 +28,7 @@ class BaselineDataModule(BaseDataModule):
         self.test_queries = self.algorithm_config["adapt"]["test"]["queries"]
 
         self.meta_batch_size = self.algorithm_config["adapt"]["train"]["meta_batch_size"]
-        self.val_step = self.train_config["step"]["val_step"]
+        self.log_step = self.train_config["step"]["log_step"]
 
 
     def setup(self, stage=None):
@@ -49,7 +49,8 @@ class BaselineDataModule(BaseDataModule):
         self.train_dataset = ConcatDataset(self.train_datasets)
         if not isinstance(self.train_dataset, EpisodicInfiniteWrapper):
             self.batch_size = self.train_ways * (self.train_shots + self.train_queries) * self.meta_batch_size
-            self.train_dataset = EpisodicInfiniteWrapper(self.train_dataset, self.val_step*self.batch_size)
+            self.train_dataset = EpisodicInfiniteWrapper(self.train_dataset,
+                                                         self.log_step*self.batch_size)
 
 
     def _validation_setup(self):
@@ -120,7 +121,7 @@ class BaselineDataModule(BaseDataModule):
                 val_task_dataset,
                 batch_size=1,
                 shuffle=False,
-                num_workers=4,
+                num_workers=0,
                 collate_fn=lambda batch: batch,
             ) for val_task_dataset in self.val_task_datasets
         ]

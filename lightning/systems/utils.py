@@ -73,8 +73,8 @@ class MAML(l2l.algorithms.MAML):
         if allow_nograd:
             # Compute relevant gradients
             diff_params = [p for p in self.module.parameters()
-                           if p.requires_grad
-                           and not getattr(p, "inner_freeze", False)]
+                           if (p.requires_grad
+                               and not getattr(p, "inner_freeze", False))]
             grad_params = torch_grad(loss,
                                      diff_params,
                                      retain_graph=second_order,

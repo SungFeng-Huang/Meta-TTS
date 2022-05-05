@@ -31,7 +31,9 @@ class BaselineSystem(BaseAdaptorSystem):
         # Log metrics to CometLogger
         loss_dict = {f"Train/{k}":v for k,v in loss2dict(loss).items()}
         self.log_dict(loss_dict, sync_dist=True, batch_size=len(batch[0]))
-        return {'loss': loss[0],
-                'losses': [l.detach() for l in loss],
-                'output': [o.detach() for o in output],
-                '_batch': batch}
+        return {
+            'loss': loss[0],
+            'losses': [l.detach() for l in loss],
+            'output': [o.detach() for o in output],
+            '_batch': batch,
+        }

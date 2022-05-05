@@ -39,13 +39,14 @@ class MetaSystem(BaseAdaptorSystem):
         Function:
             common_step(): Defined in `lightning.systems.system.System`
         """
-        train_loss, predictions = self.meta_learn(batch, batch_idx, train=True)
-        qry_batch = batch[0][1][0]
+        _, train_loss, predictions = self.meta_learn(batch, batch_idx, train=True)
 
         # Log metrics to CometLogger
         loss_dict = {f"Train/{k}": v for k, v in loss2dict(train_loss).items()}
         self.log_dict(loss_dict, sync_dist=True, batch_size=1)
-        return {'loss': train_loss[0],
-                'losses': [loss.detach() for loss in train_loss],
-                'output': [p.detach() for p in predictions],
-                '_batch': qry_batch}
+        return {
+            'loss': train_loss[0],
+            'losses': [loss.detach() for loss in train_loss],
+            'output': [p.detach() for p in predictions],
+            '_batch': batch[0][1][0],   # qry_batch
+        }
