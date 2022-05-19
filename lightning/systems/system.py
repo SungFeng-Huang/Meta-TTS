@@ -80,16 +80,17 @@ class System(pl.LightningModule):
 
         # Monitor learning rate / gpu stats
         lr_monitor = LearningRateMonitor()
-        gpu_monitor = GPUStatsMonitor(
-            memory_utilization=True, gpu_utilization=True, intra_step_time=True, inter_step_time=True
-        )
+        # gpu_monitor = GPUStatsMonitor(
+        #     memory_utilization=True, gpu_utilization=True, intra_step_time=True, inter_step_time=True
+        # )
 
         # Save figures/audios/csvs
         saver = Saver(self.preprocess_config, self.log_dir, self.result_dir)
         self.saver = saver
 
         # callbacks = [checkpoint, outer_bar, lr_monitor, gpu_monitor, saver]
-        callbacks = [checkpoint, lr_monitor, gpu_monitor, saver]
+        # callbacks = [checkpoint, lr_monitor, gpu_monitor, saver]
+        callbacks = [checkpoint, lr_monitor, saver]
         # callbacks = []
         return callbacks
 

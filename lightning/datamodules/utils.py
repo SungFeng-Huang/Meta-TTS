@@ -65,9 +65,11 @@ def few_shot_task_dataset(_dataset, ways, shots, queries, n_tasks_per_label=-1, 
     return tasks
 
 
-def load_descriptions(tasks, filename):
-    with open(filename, 'r') as f:
-        loaded_descriptions = json.load(f)
+def load_descriptions(tasks, filename=None, loaded_descriptions=None):
+    if loaded_descriptions is None:
+        assert filename is not None
+        with open(filename, 'r') as f:
+            loaded_descriptions = json.load(f)
     assert len(tasks.datasets) == len(loaded_descriptions), "TaskDataset count mismatch"
 
     for i, _tasks in enumerate(tasks.datasets):
@@ -119,7 +121,7 @@ def prefetch_tasks(tasks, tag='val', SQids_filename=None, desc_filename=None):
     else:
         if (os.path.exists(desc_filename) and os.path.exists(SQids_filename)):
             # Recover descriptions
-            load_descriptions(tasks, desc_filename)
+            load_descriptions(tasks, filename=desc_filename)
             SQids, SQids2Tid = load_SQids2Tid(SQids_filename, tag)
 
         else:

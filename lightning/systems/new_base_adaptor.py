@@ -20,6 +20,7 @@ from lightning.systems.system import System
 from lightning.systems.utils import Task
 from lightning.utils import loss2dict
 
+VERBOSE = False
 
 class BaseAdaptorSystem(System):
     """A PyTorch Lightning module for ANIL for FastSpeech2.
@@ -82,6 +83,10 @@ class BaseAdaptorSystem(System):
 
     def on_validation_start(self,):
         self.mem_stats = torch.cuda.memory_stats(self.device)
+        self.csv_path = os.path.join(self.log_dir, "csv",
+                                     f"validate-{self.global_step}.csv")
+        if os.path.exists(self.csv_path):
+            os.remove(self.csv_path)
 
     def on_validation_batch_start(self, batch, batch_idx, dataloader_idx=0):
         """ LightningModule interface.
@@ -262,21 +267,26 @@ class BaseAdaptorSystem(System):
         for ft_step in [0] + saving_steps:
             step = f"step_{ft_step}"
             loss_dict = loss2dict(outputs[f"step_{ft_step}"]["recon"]["losses"])
-            loss_dict = {f"{outputs['task_id']}/step_{ft_step}/{k}": v for k, v in
-                         loss_dict.items()}
-            self.log_dict(loss_dict, sync_dist=True, batch_size=1,
-                          add_dataloader_idx=False)
-        self.print(f"Log_dict: {time.time() - st} sec")
-        # self.print(json.dumps(self._mem_stats_diff(), indent=4))
-        self.print(pd.DataFrame(self._mem_stats_diff()).T
-                   .to_string(header=True, index=True))
-        # self.print(torch.cuda.memory_summary(self.device, True))
+            df = pd.DataFrame([{
+                "global_step": self.global_step,
+                "ft_step": ft_step,
+                "task_id": outputs["task_id"],
+                "dset_name": outputs["task_id"].rsplit('/', 1)[0],
+                "dataloader_idx": dataloader_idx,
+                "batch_idx": batch_idx,
+                **loss_dict
+            }])
+            df.to_csv(self.csv_path, index=False, mode='a', header=not
+                      os.path.exists(self.csv_path))
+            # loss_dict = {f"{outputs['task_id']}/step_{ft_step}/{k}": v for k, v in
+            #              loss_dict.items()}
+            # self.log_dict(loss_dict, sync_dist=True, batch_size=1,
+            #               add_dataloader_idx=False)
+        self._print_mem_diff(st, "Log_dict")
 
         st = time.time()
         torch.cuda.empty_cache()
-        self.print(f"Empty cache: {time.time() - st} sec")
-        self.print(pd.DataFrame(self._mem_stats_diff()).T
-                   .to_string(header=True, index=True))
+        self._print_mem_diff(st, "Empty cache")
         return outputs
 
     def _test_step(self, batch, batch_idx, dataloader_idx):
@@ -305,16 +315,11 @@ class BaseAdaptorSystem(System):
             "recon": {"losses": val_loss, "output": recon_preds},
             "synth": {"output": synth_preds},
         }
-        self.print(f"Adapt 0: {time.time() - st} sec")
-        self.print(pd.DataFrame(self._mem_stats_diff()).T
-                   .to_string(header=True, index=True))
-        # self.print(torch.cuda.memory_summary(self.device, True))
+        self._print_mem_diff(st, "Adapt 0")
 
         st = time.time()
         torch.cuda.empty_cache()
-        self.print(f"Empty cache: {time.time() - st} sec")
-        self.print(pd.DataFrame(self._mem_stats_diff()).T
-                   .to_string(header=True, index=True))
+        self._print_mem_diff(st, "Empty cache")
 
         # Adapt
         for ft_step, adapt_step in zip(saving_steps, adapt_steps):
@@ -327,17 +332,11 @@ class BaseAdaptorSystem(System):
                 "recon": {"losses": val_loss},
                 "synth": {"output": predictions},
             }
-            self.print(f"Adapt ~{ft_step} ({adapt_step}): {time.time() - st} sec")
-            # self.print(json.dumps(self._mem_stats_diff(), indent=4))
-            self.print(pd.DataFrame(self._mem_stats_diff()).T
-                       .to_string(header=True, index=True))
-            # self.print(torch.cuda.memory_summary(self.device, True))
+            self._print_mem_diff(st, f"Adapt ~{ft_step} ({adapt_step})")
 
             st = time.time()
             torch.cuda.empty_cache()
-            self.print(f"Empty cache: {time.time() - st} sec")
-            self.print(pd.DataFrame(self._mem_stats_diff()).T
-                       .to_string(header=True, index=True))
+            self._print_mem_diff(st, "Empty cache")
 
         del learner
 
@@ -379,6 +378,13 @@ class BaseAdaptorSystem(System):
                 ])
         self.mem_stats = new_mem_stats
         return diff
+
+    def _print_mem_diff(self, st, prefix):
+        if VERBOSE:
+            self.print(f"{prefix}: {time.time() - st} sec")
+            self.print(pd.DataFrame(self._mem_stats_diff()).T
+                    .to_string(header=True, index=True))
+            # self.print(torch.cuda.memory_summary(self.device, True))
 
 def sizeof_fmt(num, suffix="B", sign=False):
     for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:

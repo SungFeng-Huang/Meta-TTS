@@ -10,7 +10,7 @@ parser_args:
     - config/train/LibriTTS.yaml
     - config/train/base.yaml
   exp_key: 1d34914e07244f87ad10c580ab85656c
-  ckpt_file: last.ckpt
+  ckpt_file: epoch=9-step=9999.ckpt
   stage: val
 
 adapt:

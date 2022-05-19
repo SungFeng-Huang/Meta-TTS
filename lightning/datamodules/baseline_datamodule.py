@@ -8,14 +8,12 @@ from lightning.collate import get_single_collate
 from lightning.utils import seed_all, EpisodicInfiniteWrapper
 
 from .base_datamodule import BaseDataModule
-from .utils import few_shot_task_dataset, prefetch_tasks
+from .utils import few_shot_task_dataset, prefetch_tasks, load_descriptions, get_SQids2Tid
 
 
 class BaselineDataModule(BaseDataModule):
-    def __init__(self, preprocess_config, train_config, algorithm_config,
-                 log_dir, result_dir, stage):
-        super().__init__(preprocess_config, train_config, algorithm_config,
-                         log_dir, result_dir, stage)
+    def __init__(self, preprocess_config, train_config, algorithm_config, stage):
+        super().__init__(preprocess_config, train_config, algorithm_config, stage)
 
         self.meta_type = self.algorithm_config["adapt"]["type"]
 
@@ -54,15 +52,13 @@ class BaselineDataModule(BaseDataModule):
 
 
     def _validation_setup(self):
-        self.val_SQids2Tid = {}
         self.val_task_datasets = []
+        if not hasattr(self, "val_SQids2Tid"):
+            self.val_SQids2Tid = {}
+        if not hasattr(self, "val_task_descriptions"):
+            self.val_task_descriptions = {}
 
         for i in range(len(self.val_datasets)):
-            dset_name = self.val_datasets[i].dset
-            log_dir = os.path.join(self.log_dir, "metadata", dset_name)
-            SQids_filename = os.path.join(log_dir, f"val_SQids.json")
-            desc_filename = os.path.join(log_dir, f'val_descriptions.json')
-
             val_task_dataset = few_shot_task_dataset(
                 ConcatDataset([self.val_datasets[i]]),
                 self.test_ways, self.test_shots, self.test_queries,
@@ -70,14 +66,36 @@ class BaselineDataModule(BaseDataModule):
             )
             self.val_task_datasets.append(val_task_dataset)
 
-            with seed_all(43):
-                val_SQids2Tid = prefetch_tasks(
-                    val_task_dataset,
-                    tag=f"{dset_name}/val",
-                    SQids_filename=SQids_filename,
-                    desc_filename=desc_filename,
-                )
-            self.val_SQids2Tid.update(val_SQids2Tid)
+            dset_name = self.val_datasets[i].dset
+            if dset_name in self.val_task_descriptions:
+                descriptions = self.val_task_descriptions[dset_name]
+                load_descriptions(val_task_dataset,
+                                  loaded_descriptions=descriptions)
+            else:
+                with seed_all(43):
+                    SQids, SQids2Tid = get_SQids2Tid(val_task_dataset,
+                                                     tag=f"{dset_name}/val")
+                self.val_SQids2Tid.update(SQids2Tid)
+                descriptions = []
+                for ds in val_task_dataset.datasets:
+                    data_descriptions = {}
+                    for i in ds.sampled_descriptions:
+                        data_descriptions[i] = [desc.index for desc in
+                                                ds.sampled_descriptions[i]]
+                    descriptions.append(data_descriptions)
+                self.val_task_descriptions[dset_name] = descriptions
+
+
+    def state_dict(self):
+        return {
+            "val_SQids2Tid": self.val_SQids2Tid,
+            "val_task_descriptions": self.val_task_descriptions,
+        }
+
+
+    def load_state_dict(self, state_dict):
+        self.val_SQids2Tid = state_dict["val_SQids2Tid"]
+        self.val_task_descriptions = state_dict["val_task_descriptions"]
 
 
     def _test_setup(self):
@@ -88,6 +106,7 @@ class BaselineDataModule(BaseDataModule):
         # )
         # with seed_all(43):
         #     self.test_SQids2Tid = prefetch_tasks(self.test_task_dataset, 'test', self.result_dir)
+        #TODO: remove self.result_dir
         self.test_task_datasets = [
             few_shot_task_dataset(
                 ConcatDataset([test_dataset]),

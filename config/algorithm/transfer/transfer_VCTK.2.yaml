@@ -9,6 +9,9 @@ parser_args:
   train_config:
     - config/train/LibriTTS.yaml
     - config/train/base.yaml
+  pretrain_ckpt_path: output/ckpt/LibriTTS/meta-tts-accent-dev/1d34914e07244f87ad10c580ab85656c/checkpoints/epoch=49-step=49999.ckpt
+  exp_key: null
+  ckpt_file: last.ckpt
   exp_key: 1d34914e07244f87ad10c580ab85656c
   ckpt_file: epoch=49-step=49999.ckpt
   stage: transfer

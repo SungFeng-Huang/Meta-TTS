@@ -11,14 +11,11 @@ from lightning.collate import get_single_collate
 
 class BaseDataModule(pl.LightningDataModule):
     def __init__(self, preprocess_configs, train_config, algorithm_config,
-                 log_dir, result_dir, stage="train"):
+                 stage="train"):
         super().__init__()
         self.preprocess_configs = preprocess_configs
         self.train_config = train_config
         self.algorithm_config = algorithm_config
-
-        self.log_dir = log_dir
-        self.result_dir = result_dir
 
         # Discriminate train/transfer
         self.stage = stage
