@@ -14,8 +14,10 @@ from pytorch_lightning.profiler import AdvancedProfiler
 from pytorch_lightning.callbacks import RichProgressBar, ProgressBar
 
 from config.comet import COMET_CONFIG
-from lightning.datamodules import get_datamodule
+from lightning.model import XvecTDNN
+from lightning.datamodules import get_datamodule, XvecDataModule
 from lightning.systems import get_system
+from dataset import XvecDataset
 
 quiet = False
 os.environ["COMET_LOGGING_CONSOLE"] = "DEBUG"
@@ -28,27 +30,21 @@ if quiet:
     # configure logging at the root level of lightning
     logging.getLogger("pytorch_lightning").setLevel(logging.ERROR)
 
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 TRAINER_CONFIG = {
-    "gpus": -1 if torch.cuda.is_available() else None,
-    "strategy": "ddp" if torch.cuda.is_available() else None,
+    "accelerator": "gpu",
+    "devices": [0],
+    "strategy": None,
     "auto_select_gpus": True,
     "limit_train_batches": 1.0,  # Useful for fast experiment
     "deterministic": True,
-    # "process_position": 1,
-    "profiler": 'simple',
-    # "callbacks": [RichProgressBar()],
+    "profiler": "simple",
 }
 
 
 def main(args, configs):
     print("Prepare training ...")
 
-    preprocess_configs, model_config, train_config, algorithm_config = configs
-
-    for p in train_config["path"].values():
-        os.makedirs(p, exist_ok=True)
+    preprocess_config, model_config, train_config, algorithm_config = configs
 
     # Checkpoint for resume training or testing
     ckpt_file = None
@@ -66,35 +62,27 @@ def main(args, configs):
         'accumulate_grad_batches': train_config["optimizer"]["grad_acc_step"],
         'resume_from_checkpoint': ckpt_file,
     }
-    if algorithm_config["type"] == 'imaml':
-        # should manually clip grad
-        del trainer_training_config['gradient_clip_val']
 
     if args.stage == 'train':
-        # log_dir = str(tempfile.TemporaryDirectory())
-        # result_dir = str(tempfile.TemporaryDirectory())
         log_dir = tempfile.mkdtemp()
         result_dir = tempfile.mkdtemp()
     else:
         assert args.exp_key is not None
-        # log_dir = str(tempfile.TemporaryDirectory())
-        # result_dir = str(tempfile.TemporaryDirectory())
         log_dir = tempfile.mkdtemp()
         result_dir = tempfile.mkdtemp()
 
     # Get dataset
-    datamodule = get_datamodule(algorithm_config["type"])(
-        preprocess_configs, train_config, algorithm_config, log_dir, result_dir
+    datamodule = XvecDataModule(preprocess_config, train_config, split="speaker")
+    # Get model
+    model = XvecTDNN(
+        len(XvecDataset.accent_map),    # accent_map/region_map
+        p_dropout=0
     )
 
     if args.stage == 'train':
         # datamodule.setup("fit")
         # Get model
-        system = get_system(algorithm_config["type"])
-        model = system(
-            preprocess_configs[0], model_config, train_config, algorithm_config,
-            log_dir, result_dir
-        )
+        system = get_system("xvec")
         # Train
         trainer = pl.Trainer(
             **TRAINER_CONFIG, **trainer_training_config,
@@ -108,7 +96,7 @@ def main(args, configs):
         system = get_system(algorithm_config["type"])
         model = system.load_from_checkpoint(
             ckpt_file,
-            preprocess_config=preprocess_configs[0],
+            preprocess_config=preprocess_config,
             model_config=model_config,
             train_config=train_config,
             algorithm_config=algorithm_config,
@@ -119,23 +107,12 @@ def main(args, configs):
         trainer = pl.Trainer(**TRAINER_CONFIG)
         trainer.test(model, datamodule=datamodule)
 
-    elif args.stage == 'debug':
-        del datamodule
-        datamodule = get_datamodule("base")(
-            preprocess_configs, train_config, algorithm_config, log_dir, result_dir
-        )
-        datamodule.setup('test')
-        for _ in tqdm(datamodule.test_dataset, desc="test_dataset"):
-            pass
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-p", "--preprocess_config", type=str, nargs='+', help="path to preprocess.yaml",
-        # default=['config/preprocess/miniLibriTTS.yaml'],
-        # default=['config/preprocess/LibriTTS.yaml'],
-        default=['config/preprocess/LibriTTS_VCTK.yaml'],
+        "-p", "--preprocess_config", type=str, help="path to preprocess.yaml",
+        default='config/preprocess/VCTK-xvec.yaml',
     )
     parser.add_argument(
         "-m", "--model_config", type=str, help="path to model.yaml",
@@ -144,63 +121,21 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-t", "--train_config", type=str, nargs='+', help="path to train.yaml",
-        default=['config/train/dev.yaml', 'config/train/LibriTTS.yaml'],
+        default=['config/train/dev.yaml', 'config/train/miniLibriTTS.yaml'],
         # default=['config/train/base.yaml', 'config/train/LibriTTS.yaml'],
-    )
-    parser.add_argument(
-        "-a", "--algorithm_config", type=str, help="path to algorithm.yaml",
-        default='config/algorithm/dev.yaml',
-    )
-    parser.add_argument(
-        "-e", "--exp_key", type=str, help="experiment key",
-        default=None,
-    )
-    parser.add_argument(
-        "-c", "--ckpt_file", type=str, help="ckpt file name",
-        default="last.ckpt",
-    )
-    parser.add_argument(
-        "-s", "--stage", type=str, help="stage (train/val/test/predict)",
-        default="train",
     )
     args = parser.parse_args()
 
     # Read Config
-    algorithm_config = yaml.load(
-        open(args.algorithm_config, "r"), Loader=yaml.FullLoader
+    preprocess_config = yaml.load(
+        open(args.preprocess_config, "r"), Loader=yaml.FullLoader
     )
-    if "parser_args" in algorithm_config:
-        args_config = algorithm_config["parser_args"]
-        preprocess_configs = [
-            yaml.load(open(path, "r"), Loader=yaml.FullLoader)
-            for path in args_config["preprocess_config"]
-        ]
-        model_config = yaml.load(
-            open(args_config["model_config"], "r"), Loader=yaml.FullLoader
-        )
-        train_config = yaml.load(
-            open(args_config["train_config"][0], "r"), Loader=yaml.FullLoader
-        )
-        train_config.update(
-            yaml.load(open(args_config["train_config"][1], "r"), Loader=yaml.FullLoader)
-        )
-        args.exp_key = args_config["exp_key"]
-        args.ckpt_file = args_config["ckpt_file"]
-        args.stage = args_config["stage"]
-    else:
-        preprocess_configs = [
-            yaml.load(open(path, "r"), Loader=yaml.FullLoader)
-            for path in args.preprocess_config
-        ]
-        model_config = yaml.load(
-            open(args.model_config, "r"), Loader=yaml.FullLoader
-        )
-        train_config = yaml.load(
-            open(args.train_config[0], "r"), Loader=yaml.FullLoader
-        )
-        train_config.update(
-            yaml.load(open(args.train_config[1], "r"), Loader=yaml.FullLoader)
-        )
-    configs = (preprocess_configs, model_config, train_config, algorithm_config)
+    model_config = yaml.load(
+        open(args.model_config, "r"), Loader=yaml.FullLoader
+    )
+    train_config = yaml.load(
+        open(args.train_config[0], "r"), Loader=yaml.FullLoader
+    )
+    configs = (preprocess_config, model_config, train_config)
 
     main(args, configs)

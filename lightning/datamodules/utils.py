@@ -1,7 +1,8 @@
 import os
 import json
+import torch
 
-from torch.utils.data import ConcatDataset
+from torch.utils.data import ConcatDataset, DistributedSampler, Sampler
 from learn2learn.data import MetaDataset, TaskDataset
 from learn2learn.data.transforms import FusedNWaysKShots, LoadData
 from learn2learn.data.task_dataset import DataDescription
@@ -158,3 +159,46 @@ def get_multilingual_id2lb(datasets):
         total += l
 
     return id2lb
+
+
+class DistributedProxySampler(DistributedSampler):
+    """Distributed sampler proxy to adapt user's sampler for distributed data parallelism configuration.
+    Code is based on https://github.com/pytorch/pytorch/issues/23430#issuecomment-562350407
+    Copied from pytorch/ignite
+    .. note::
+        Input sampler is assumed to have a constant size.
+    Args:
+        sampler (Sampler): Input torch data sampler.
+        num_replicas (int, optional): Number of processes participating in distributed training.
+        rank (int, optional): Rank of the current process within ``num_replicas``.
+    """
+
+    def __init__(self, sampler: Sampler, num_replicas=None, rank=None):
+
+        if not isinstance(sampler, Sampler):
+            raise TypeError("Argument sampler should be instance of torch Sampler, but given: {}".format(type(sampler)))
+
+        if not hasattr(sampler, "__len__"):
+            raise TypeError("Argument sampler should have length")
+
+        super(DistributedProxySampler, self).__init__(sampler, num_replicas=num_replicas, rank=rank, shuffle=False)
+        self.sampler = sampler
+
+    def __iter__(self):
+        # deterministically shuffle based on epoch
+        torch.manual_seed(self.epoch)
+        indices = list(self.sampler)
+
+        indices = []
+        while len(indices) < self.total_size:
+            indices += list(self.sampler)
+
+        if len(indices) > self.total_size:
+            indices = indices[: self.total_size]
+
+        # subsample
+        indices = indices[self.rank:self.total_size:self.num_replicas]
+        if len(indices) != self.num_samples:
+            raise RuntimeError("{} vs {}".format(len(indices), self.num_samples))
+
+        return iter(indices)

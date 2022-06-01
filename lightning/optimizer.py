@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-from torch.optim.lr_scheduler import LambdaLR
 
 
 def get_optimizer(model, model_config, train_config):

@@ -1,6 +1,7 @@
 from .base_datamodule import BaseDataModule
 from .baseline_datamodule import BaselineDataModule
 from .meta_datamodule import MetaDataModule
+from .xvec_datamodule import XvecDataModule
 
 
 DATA_MODULE = {
@@ -8,6 +9,7 @@ DATA_MODULE = {
     "meta": MetaDataModule,
     "imaml": MetaDataModule,
     "baseline": BaselineDataModule,
+    "xvec": XvecDataModule,
 }
 
 def get_datamodule(algorithm):

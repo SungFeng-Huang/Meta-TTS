@@ -1,14 +1,86 @@
 import json
-import math
 import os
 
 import numpy as np
+import pandas as pd
 from torch.utils.data import Dataset
-import resemblyzer
-from resemblyzer.audio import preprocess_wav, wav_to_mel_spectrogram
 
 from text import text_to_sequence
-from utils.tools import pad_1D, pad_2D, prosody_averaging, merge_stats, merge_speaker_map
+from utils.tools import pad_1D, prosody_averaging, merge_stats, merge_speaker_map
+
+
+class XvecDataset(Dataset):
+    df = pd.read_csv("preprocessed_data/VCTK-speaker-info.csv").fillna("Unknown")
+    speaker_accent_map = {
+        data["pID"]: data["ACCENTS"] for _, data in df.iterrows()
+    }
+    speaker_region_map = {
+        data["pID"]: (data["ACCENTS"], data["REGION"])
+        for _, data in df.iterrows()
+    }
+    accent_map = {k: i for i, k in enumerate(df.groupby(["ACCENTS"]).groups)}
+    region_map = {
+        k: i for i, k in enumerate(df.groupby(["ACCENTS", "REGION"]).groups)
+    }
+
+    def __init__(self, dset, preprocess_config, train_config):
+        self.preprocessed_path = preprocess_config["path"]["preprocessed_path"]
+        self.batch_size = train_config["optimizer"]["batch_size"]
+
+        self.basename, self.speaker, _, _ = self.process_meta(
+            dset
+        )
+        with open(os.path.join(self.preprocessed_path, "speakers.json")) as f:
+            self.speaker_map = json.load(f)
+        self.accent = [self.speaker_accent_map[spk] for spk in self.speaker]
+        self.region = [self.speaker_region_map[spk] for spk in self.speaker]
+
+        print(f"\nLength of dataset: {len(self.speaker)}")
+
+    def __len__(self):
+        return len(self.speaker)
+
+    def __getitem__(self, idx):
+        basename = self.basename[idx]
+        speaker = self.speaker[idx]
+        accent = self.accent[idx]
+        region = self.region[idx]
+
+        speaker_id = self.speaker_map[speaker]
+        accent_id = self.accent_map[accent]
+        region_id = self.region_map[region]
+
+        mel_path = os.path.join(
+            self.preprocessed_path,
+            "mel",
+            "{}-mel-{}.npy".format(speaker, basename),
+        )
+        mel = np.load(mel_path)
+
+        sample = {
+            "id": basename,
+            "speaker": speaker_id,
+            "accent": accent_id,
+            "region": region_id,
+            "mel": mel,
+        }
+        return sample
+
+    def process_meta(self, dset):
+        name = []
+        speaker = []
+        text = []
+        raw_text = []
+        with open(
+            os.path.join(self.preprocessed_path, f"{dset}.txt"), "r", encoding="utf-8"
+        ) as f:
+            for line in f.readlines():
+                n, s, t, r = line.strip("\n").split("|")
+                name.append(n)
+                speaker.append(s)
+                text.append(t)
+                raw_text.append(r)
+        return name, speaker, text, raw_text
 
 
 class TTSDataset(Dataset):
@@ -16,6 +88,7 @@ class TTSDataset(Dataset):
         self, dset, preprocess_config, train_config,
         spk_refer_wav=False
     ):
+        super().__init__()
         self.dset = dset
         self.dataset_name = preprocess_config["dataset"]
         self.preprocessed_path = preprocess_config["path"]["preprocessed_path"]
@@ -106,7 +179,7 @@ class TTSDataset(Dataset):
         if self.pitch_log:
             pitch = np.log(pitch + 1e-12)
         elif self.pitch_normalization:
-            pitch = (pitch - self.stats["pitch"]["mean"]) / self.stats["pitch"]["std"] 
+            pitch = (pitch - self.stats["pitch"]["mean"]) / self.stats["pitch"]["std"]
 
         energy_path = os.path.join(
             self.preprocessed_path,
@@ -245,58 +318,3 @@ class TextDataset(Dataset):
         return ids, raw_texts, speakers, texts, text_lens, max(text_lens)
 
 
-if __name__ == "__main__":
-    # Test
-    import torch
-    import yaml
-    from torch.utils.data import DataLoader
-    from utils.utils import to_device
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    preprocess_config = yaml.load(
-        open("./config/LJSpeech/preprocess.yaml", "r"), Loader=yaml.FullLoader
-    )
-    train_config = yaml.load(
-        open("./config/LJSpeech/train.yaml", "r"), Loader=yaml.FullLoader
-    )
-
-    train_dataset = TTSDataset(
-        "train.txt", preprocess_config, train_config, sort=True, drop_last=True
-    )
-    val_dataset = TTSDataset(
-        "val.txt", preprocess_config, train_config, sort=False, drop_last=False
-    )
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=train_config["optimizer"]["batch_size"] * 4,
-        shuffle=True,
-        collate_fn=train_dataset.collate_fn,
-    )
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=train_config["optimizer"]["batch_size"],
-        shuffle=False,
-        collate_fn=val_dataset.collate_fn,
-    )
-
-    n_batch = 0
-    for batchs in train_loader:
-        for batch in batchs:
-            to_device(batch, device)
-            n_batch += 1
-    print(
-        "Training set  with size {} is composed of {} batches.".format(
-            len(train_dataset), n_batch
-        )
-    )
-
-    n_batch = 0
-    for batchs in val_loader:
-        for batch in batchs:
-            to_device(batch, device)
-            n_batch += 1
-    print(
-        "Validation set  with size {} is composed of {} batches.".format(
-            len(val_dataset), n_batch
-        )
-    )
