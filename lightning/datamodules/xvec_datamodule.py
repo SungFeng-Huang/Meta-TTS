@@ -27,9 +27,7 @@ class XvecDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         if stage in (None, 'fit'):
-            self.dataset = Dataset(
-                "train", self.preprocess_config, self.train_config,
-            )
+            self.dataset = Dataset("all", self.preprocess_config)
             subsets = self._split(self.dataset)
             self.train_datasets, self.val_datasets, self.test_datasets = subsets
 
@@ -42,13 +40,14 @@ class XvecDataModule(pl.LightningDataModule):
             class_sample_count = torch.tensor([len(sset) for sset in subsets])
             weight = 1. / class_sample_count.double()
             samples_weight = torch.cat(
-                [torch.full(len(sset), weight[i])
+                [torch.full((len(sset),), weight[i], dtype=weight.dtype)
                  for i, sset in enumerate(subsets)]
             )
             return samples_weight
 
         weights = calculate_weights(self.train_datasets)
         num_samples = len(self.train_dataset)
+        assert len(weights) == num_samples
         sampler = WeightedRandomSampler(weights, num_samples)
         self.train_loader = DataLoader(
             self.train_dataset,
@@ -90,17 +89,17 @@ class XvecDataModule(pl.LightningDataModule):
 
     def _split(self, dataset):
         map_ids = defaultdict(list)
-        for idx, spk in enumerate(getattr(dataset, self.split)):
-            map_ids[spk].append(idx)
+        for idx, tgt in enumerate(getattr(dataset, self.split)):
+            map_ids[tgt].append(idx)
 
         train_sets, val_sets, test_sets = [], [], []
-        for spk in sorted(map_ids):
-            total_len = len(map_ids[spk])
+        for tgt in sorted(map_ids):
+            total_len = len(map_ids[tgt])
             val_len, test_len = ceil(total_len * 0.3), ceil(total_len * 0.1)
             split_len = [total_len - val_len - test_len, val_len, test_len]
             assert split_len[0] > 0
             train_subset, val_subset, test_subset = random_split(
-                Subset(dataset, map_ids[spk]), split_len,
+                Subset(dataset, map_ids[tgt]), split_len,
                 generator=torch.Generator().manual_seed(42)
             )
             train_sets.append(train_subset)

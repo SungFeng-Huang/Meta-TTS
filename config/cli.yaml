@@ -1,0 +1,33 @@
+seed_everything: 42
+model:
+  class_path: lightning.systems.XvecFitSystem
+  init_args:
+    model:
+      class_path: lightning.model.XvecTDNN
+      init_args:
+        numSpkrs: 13  # 13/72
+        p_dropout: 0
+data:
+  class_path: lightning.datamodules.XvecDataModule
+  init_args:
+    preprocess_config:
+      path:
+        df_path: "./preprocessed_data/VCTK-speaker-info.csv"
+        preprocessed_path: "./preprocessed_data/VCTK/all"
+    train_config:
+      optimizer:
+        batch_size: 80  # meta_batch_size * (shots + query) # Only used by baseline model
+    split: accent
+trainer:
+  accelerator: gpu
+  devices: [0]
+  strategy: ddp
+  auto_select_gpus: True
+  deterministic: True
+  profiler: simple
+
+  enable_checkpointing: True
+  default_root_dir: output/xvec
+  max_epochs: 200
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1

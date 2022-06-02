@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
-import os
-import json
 import torch
-import numpy as np
 import pytorch_lightning as pl
 import matplotlib
 matplotlib.use("Agg")
@@ -13,11 +10,9 @@ class XvecFitSystem(pl.LightningModule):
 
     default_monitor: str = "val_loss"
 
-    def __init__(self, model, total_steps):
+    def __init__(self, model: pl.LightningModule):
         super().__init__()
-        self.save_hyperparameters()
-
-        self.total_steps = total_steps
+        self.save_hyperparameters(ignore=['model'])
 
         self.model = model
         self.loss_func = torch.nn.CrossEntropyLoss()
@@ -26,8 +21,8 @@ class XvecFitSystem(pl.LightningModule):
         return self.model(*args, **kwargs)
 
     def common_step(self, batch, batch_idx, train=True):
-        output = self(*(batch[4]))
-        loss = self.loss_func(batch[2], output)
+        output = self(batch[4].transpose(1, 2))
+        loss = self.loss_func(output, batch[2])
         return loss
 
     def training_step(self, batch, batch_idx, dataloader_idx=0):
@@ -70,7 +65,7 @@ class XvecFitSystem(pl.LightningModule):
             cycle_momentum=False,
             div_factor=5,
             final_div_factor=1e+3,
-            total_steps=self.total_steps,
+            total_steps=self.trainer.estimated_stepping_batches,
             pct_start=0.15
         )
         self.scheduler = {

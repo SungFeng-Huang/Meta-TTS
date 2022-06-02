@@ -10,22 +10,27 @@ from utils.tools import pad_1D, prosody_averaging, merge_stats, merge_speaker_ma
 
 
 class XvecDataset(Dataset):
-    df = pd.read_csv("preprocessed_data/VCTK-speaker-info.csv").fillna("Unknown")
-    speaker_accent_map = {
-        data["pID"]: data["ACCENTS"] for _, data in df.iterrows()
-    }
-    speaker_region_map = {
-        data["pID"]: (data["ACCENTS"], data["REGION"])
-        for _, data in df.iterrows()
-    }
-    accent_map = {k: i for i, k in enumerate(df.groupby(["ACCENTS"]).groups)}
-    region_map = {
-        k: i for i, k in enumerate(df.groupby(["ACCENTS", "REGION"]).groups)
-    }
 
-    def __init__(self, dset, preprocess_config, train_config):
+    def __init__(self, dset, preprocess_config):
+        super().__init__()
+        print(os.getcwd())
+        self.df = pd.read_csv(preprocess_config["path"]["df_path"]).fillna("Unknown")
+        self.speaker_accent_map = {
+            data["pID"]: data["ACCENTS"] for _, data in self.df.iterrows()
+        }
+        self.speaker_region_map = {
+            data["pID"]: (data["ACCENTS"], data["REGION"])
+            for _, data in self.df.iterrows()
+        }
+        self.accent_map = {
+            k: i for i, k in enumerate(self.df.groupby(["ACCENTS"]).groups)
+        }
+        self.region_map = {
+            k: i for i, k in
+            enumerate(self.df.groupby(["ACCENTS", "REGION"]).groups)
+        }
+
         self.preprocessed_path = preprocess_config["path"]["preprocessed_path"]
-        self.batch_size = train_config["optimizer"]["batch_size"]
 
         self.basename, self.speaker, _, _ = self.process_meta(
             dset

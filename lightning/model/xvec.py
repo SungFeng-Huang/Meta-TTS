@@ -20,7 +20,7 @@ class SimpleTDNN(DropoutMixin, pl.LightningModule):
 
     def __init__(self, numSpkrs, p_dropout):
         super().__init__()
-        self.tdnn1 = nn.Conv1d(in_channels=30, out_channels=128, kernel_size=5, dilation=1)
+        self.tdnn1 = nn.Conv1d(in_channels=80, out_channels=128, kernel_size=5, dilation=1)
         self.bn_tdnn1 = nn.BatchNorm1d(128, momentum=0.1, affine=False)
         self.dropout_tdnn1 = nn.Dropout(p=p_dropout)
 
@@ -45,7 +45,7 @@ class SimpleTDNN(DropoutMixin, pl.LightningModule):
         self.aug = SpecAugmentMM(time_mix_width=100, time_stripes_num=2,
                                  freq_mix_width=20, freq_stripes_num=2)
 
-    def forward(self, x, eps):
+    def forward(self, x, eps=1e-5):
         # Note: x must be (batch_size, feat_dim, chunk_len)
         x = self.aug(x)
 
@@ -67,7 +67,7 @@ class XvecTDNN(DropoutMixin, pl.LightningModule):
 
     def __init__(self, numSpkrs, p_dropout):
         super().__init__()
-        self.tdnn1 = nn.Conv1d(in_channels=30, out_channels=512, kernel_size=5, dilation=1)
+        self.tdnn1 = nn.Conv1d(in_channels=80, out_channels=512, kernel_size=5, dilation=1)
         self.bn_tdnn1 = nn.BatchNorm1d(512, momentum=0.1, affine=False)
         self.dropout_tdnn1 = nn.Dropout(p=p_dropout)
 
@@ -100,7 +100,7 @@ class XvecTDNN(DropoutMixin, pl.LightningModule):
         self.aug = SpecAugmentMM(time_mix_width=100, time_stripes_num=2,
                                  freq_mix_width=20, freq_stripes_num=2)
 
-    def forward(self, x, eps):
+    def forward(self, x, eps=1e-5):
         # Note: x must be (batch_size, feat_dim, chunk_len)
         x = self.aug(x)
 
