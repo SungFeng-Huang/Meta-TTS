@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 import pytorch_lightning as pl
 
-# TODO: SpecAugment++ in forward()
+from lightning.augments import SpecAugmentMM
 
 
 class DropoutMixin:
@@ -14,6 +14,7 @@ class DropoutMixin:
         for x in self.modules():
             if isinstance(x, nn.Dropout):
                 x.p = p_drop
+
 
 class SimpleTDNN(DropoutMixin, pl.LightningModule):
 
@@ -41,12 +42,17 @@ class SimpleTDNN(DropoutMixin, pl.LightningModule):
 
         self.fc3 = nn.Linear(64,numSpkrs)
 
+        self.aug = SpecAugmentMM(time_mix_width=100, time_stripes_num=2,
+                                 freq_mix_width=20, freq_stripes_num=2)
+
     def forward(self, x, eps):
         # Note: x must be (batch_size, feat_dim, chunk_len)
+        x = self.aug(x)
 
         x = self.dropout_tdnn1(self.bn_tdnn1(F.relu(self.tdnn1(x))))
         x = self.dropout_tdnn2(self.bn_tdnn2(F.relu(self.tdnn2(x))))
         x = self.dropout_tdnn3(self.bn_tdnn3(F.relu(self.tdnn3(x))))
+        x = self.aug(x)
 
         if self.training:
             x = x + torch.randn(x.size(), device=self.device)*eps
@@ -91,17 +97,22 @@ class XvecTDNN(DropoutMixin, pl.LightningModule):
 
         self.fc3 = nn.Linear(512,numSpkrs)
 
+        self.aug = SpecAugmentMM(time_mix_width=100, time_stripes_num=2,
+                                 freq_mix_width=20, freq_stripes_num=2)
+
     def forward(self, x, eps):
         # Note: x must be (batch_size, feat_dim, chunk_len)
+        x = self.aug(x)
 
         x = self.dropout_tdnn1(self.bn_tdnn1(F.relu(self.tdnn1(x))))
         x = self.dropout_tdnn2(self.bn_tdnn2(F.relu(self.tdnn2(x))))
         x = self.dropout_tdnn3(self.bn_tdnn3(F.relu(self.tdnn3(x))))
         x = self.dropout_tdnn4(self.bn_tdnn4(F.relu(self.tdnn4(x))))
         x = self.dropout_tdnn5(self.bn_tdnn5(F.relu(self.tdnn5(x))))
+        x = self.aug(x)
 
         if self.training:
-            x = x + torch.randn(x.size(), device=self.device)*eps
+            x = x + torch.randn(x.size()).to(x)*eps
             # shape = x.size()
             # noise = torch.cuda.FloatTensor(shape)
             # torch.randn(shape, out=noise)

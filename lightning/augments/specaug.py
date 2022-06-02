@@ -88,7 +88,7 @@ class SpecAug(torch.nn.Module):
 
     def forward(self, xs, x_lengths=None):
         """Forward SpecAug.
-        
+
         Args:
             xs: list of features [(T, D)] x batchsize
             x_lengths: length of features
@@ -231,8 +231,8 @@ class MaskAlongAxis(torch.nn.Module):
         D = spec.shape[self.dim]
         T = self.mask_width_range[1]
         num_mask = self.num_mask
-        
-        
+
+
         if self.dim == 1 & self.adaptive :
           if self.adaptive_number_ratio > 0:
             num_mask = min(int(self.adaptive_number_ratio * D), self.max_n_time_masks)

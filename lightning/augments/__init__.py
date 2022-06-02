@@ -2,6 +2,9 @@ from .specaug import SpecAug
 from .specaug_pp import SpecAugmentation, SpecMixAugmentation, SpecCutAugmentation
 
 
+__all__ = ["SpecAugment", "SpecAugmentZM", "SpecAugmentMM", "SpecAugmentCM"]
+
+
 class SpecAugment(SpecAug):
     """ SpecAugment wrapper for input shape resizing. """
 
@@ -11,6 +14,9 @@ class SpecAugment(SpecAug):
         SpecAug input shape: list of (time, freq)
         apply_specaug input shape: (batch_size, time, freq)
         """
+        if self.training is False:
+            return xs, x_lengths
+
         xs_pad = xs.transpose(1, 2).contiguous()
         xs_pad, _ = self.apply_specaug(xs_pad, x_lengths)
         xs_pad = xs_pad.transpose(1, 2).contiguous()
@@ -26,6 +32,9 @@ class SpecAugmentZM(SpecAugmentation):
         XvecTDNN input shape: (batch_size, freq, time)
         SpecAug input shape: (batch_size, channel, time, freq)
         """
+        if self.training is False:
+            return input
+
         orig_size = input.shape
         assert len(orig_size) == 3
         x = input.transpose(1, 2).contiguous().unsqueeze(1)
@@ -43,6 +52,9 @@ class SpecAugmentMM(SpecMixAugmentation):
         XvecTDNN input shape: (batch_size, freq, time)
         SpecAug input shape: (batch_size, channel, time, freq)
         """
+        if self.training is False:
+            return input
+
         orig_size = input.shape
         assert len(orig_size) == 3
         x = input.transpose(1, 2).contiguous().unsqueeze(1)
@@ -60,6 +72,9 @@ class SpecAugmentCM(SpecCutAugmentation):
         XvecTDNN input shape: (batch_size, freq, time)
         SpecAug input shape: (batch_size, channel, time, freq)
         """
+        if self.training is False:
+            return input
+
         orig_size = input.shape
         assert len(orig_size) == 3
         x = input.transpose(1, 2).contiguous().unsqueeze(1)
