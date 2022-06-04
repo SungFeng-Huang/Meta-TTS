@@ -18,7 +18,7 @@ class DropoutMixin:
 
 class SimpleTDNN(DropoutMixin, pl.LightningModule):
 
-    def __init__(self, numSpkrs, p_dropout):
+    def __init__(self, numSpkrs: int, p_dropout: float):
         super().__init__()
         self.tdnn1 = nn.Conv1d(in_channels=80, out_channels=128, kernel_size=5, dilation=1)
         self.bn_tdnn1 = nn.BatchNorm1d(128, momentum=0.1, affine=False)
@@ -65,7 +65,7 @@ class SimpleTDNN(DropoutMixin, pl.LightningModule):
 
 class XvecTDNN(DropoutMixin, pl.LightningModule):
 
-    def __init__(self, numSpkrs, p_dropout):
+    def __init__(self, numSpkrs: int, p_dropout: float):
         super().__init__()
         self.tdnn1 = nn.Conv1d(in_channels=80, out_channels=512, kernel_size=5, dilation=1)
         self.bn_tdnn1 = nn.BatchNorm1d(512, momentum=0.1, affine=False)

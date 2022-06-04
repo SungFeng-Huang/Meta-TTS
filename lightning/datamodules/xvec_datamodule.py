@@ -24,10 +24,11 @@ class XvecDataModule(pl.LightningDataModule):
 
         # Discriminate train/transfer
         self.split = split
+        self.dataset = Dataset("all", self.preprocess_config)
+        self.num_tgt = len(getattr(self.dataset, f"{self.split}_map"))
 
     def setup(self, stage=None):
         if stage in (None, 'fit'):
-            self.dataset = Dataset("all", self.preprocess_config)
             subsets = self._split(self.dataset)
             self.train_datasets, self.val_datasets, self.test_datasets = subsets
 
@@ -38,7 +39,7 @@ class XvecDataModule(pl.LightningDataModule):
 
         def calculate_weights(subsets):
             class_sample_count = torch.tensor([len(sset) for sset in subsets])
-            weight = 1. / class_sample_count.double()
+            weight = 1. / class_sample_count.double().sqrt()
             samples_weight = torch.cat(
                 [torch.full((len(sset),), weight[i], dtype=weight.dtype)
                  for i, sset in enumerate(subsets)]
@@ -48,7 +49,9 @@ class XvecDataModule(pl.LightningDataModule):
         weights = calculate_weights(self.train_datasets)
         num_samples = len(self.train_dataset)
         assert len(weights) == num_samples
-        sampler = WeightedRandomSampler(weights, num_samples)
+        sampler = WeightedRandomSampler(
+            weights, num_samples, generator=torch.Generator().manual_seed(42)
+        )
         self.train_loader = DataLoader(
             self.train_dataset,
             batch_size=batch_size//torch.cuda.device_count(),
@@ -61,17 +64,16 @@ class XvecDataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         batch_size = self.train_config["optimizer"]["batch_size"]
-        self.val_loaders = [
-            DataLoader(
-                val_dataset,
-                batch_size=batch_size//torch.cuda.device_count(),
-                shuffle=False,
-                drop_last=False,
-                num_workers=4,
-                collate_fn=get_single_collate(False),
-            ) for val_dataset in self.val_datasets
-        ]
-        return self.val_loaders
+        self.val_dataset = ConcatDataset(self.val_datasets)
+        self.val_loader = DataLoader(
+            self.val_dataset,
+            batch_size=batch_size//torch.cuda.device_count(),
+            shuffle=False,
+            drop_last=False,
+            num_workers=4,
+            collate_fn=get_single_collate(False),
+        )
+        return self.val_loader
 
     def test_dataloader(self):
         batch_size = self.train_config["optimizer"]["batch_size"]

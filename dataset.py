@@ -13,7 +13,6 @@ class XvecDataset(Dataset):
 
     def __init__(self, dset, preprocess_config):
         super().__init__()
-        print(os.getcwd())
         self.df = pd.read_csv(preprocess_config["path"]["df_path"]).fillna("Unknown")
         self.speaker_accent_map = {
             data["pID"]: data["ACCENTS"] for _, data in self.df.iterrows()
