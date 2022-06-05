@@ -1,0 +1,11 @@
+  class_path: lightning.datamodules.XvecDataModule
+  init_args:
+    preprocess_config:
+      path:
+        df_path: "./preprocessed_data/VCTK-speaker-info.csv"
+        preprocessed_path: "./preprocessed_data/VCTK/all"
+    train_config:
+      optimizer:
+        batch_size: 64
+    target: accent
+

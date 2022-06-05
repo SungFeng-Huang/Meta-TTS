@@ -6,6 +6,7 @@ from torch.utils.data.dataset import ConcatDataset
 import pytorch_lightning as pl
 from collections import defaultdict
 from math import ceil
+from typing import Literal
 
 from .utils import DistributedProxySampler
 from dataset import XvecDataset as Dataset
@@ -13,19 +14,35 @@ from utils.tools import pad_2D
 
 
 class XvecDataModule(pl.LightningDataModule):
-    def __init__(self, preprocess_config, train_config, *, split="speaker"):
-        """
+    """Datamodule for Xvec.
+
+    Attributes:
+        num_classes: Number of target labels.
+    """
+
+    def __init__(self,
+                 preprocess_config: dict,
+                 train_config: dict,
+                 *args,
+                 target: Literal["speaker", "region", "accent"] = "speaker"):
+        """Initialize XvecDataModule.
+
         Args:
-            split: speaker/region/accent
+            preprocess_config:
+                A dict at least containing paths required by XvecDataset.
+            train_config:
+                A dict at least containing batch_size.
+            target:
+                speaker/region/accent.
         """
         super().__init__()
         self.preprocess_config = preprocess_config
         self.train_config = train_config
 
         # Discriminate train/transfer
-        self.split = split
+        self.target = target
         self.dataset = Dataset("all", self.preprocess_config)
-        self.num_tgt = len(getattr(self.dataset, f"{self.split}_map"))
+        self.num_classes = len(getattr(self.dataset, f"{self.target}_map"))
 
     def setup(self, stage=None):
         if stage in (None, 'fit'):
@@ -91,7 +108,7 @@ class XvecDataModule(pl.LightningDataModule):
 
     def _split(self, dataset):
         map_ids = defaultdict(list)
-        for idx, tgt in enumerate(getattr(dataset, self.split)):
+        for idx, tgt in enumerate(getattr(dataset, self.target)):
             map_ids[tgt].append(idx)
 
         train_sets, val_sets, test_sets = [], [], []

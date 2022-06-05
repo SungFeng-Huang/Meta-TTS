@@ -9,27 +9,39 @@ import matplotlib
 matplotlib.use("Agg")
 from collections import Counter
 from pytorch_lightning.utilities.cli import instantiate_class
+from lightning.model import XvecTDNN
 
 
 class XvecFitSystem(pl.LightningModule):
 
     default_monitor: str = "val_loss"
 
-    def __init__(self, model: pl.LightningModule, num_tgt: int,
-                 optim_config: dict, scheduler_config: dict):
+    def __init__(self,
+                 model: XvecTDNN,
+                 num_classes: int,
+                 optim_config: dict,
+                 lr_sched_config: dict):
+        """A system wrapper for fitting XvecTDNN.
+
+        Args:
+            model: X-vector model.
+            num_classes: Number of speakers/regions/accents.
+            optim_config: Config of optimizer.
+            lr_sched_config: Config of learning rate scheduler.
+        """
         super().__init__()
         self.save_hyperparameters(ignore=['model'])
-        self.num_tgt = num_tgt
+        self.num_classes = num_classes
         self.model = model
         self.optim_config = optim_config
-        self.scheduler_config = scheduler_config
+        self.lr_sched_config = lr_sched_config
 
         self.loss_func = torch.nn.CrossEntropyLoss()
-        self.train_acc = torchmetrics.Accuracy(num_classes=num_tgt,
+        self.train_acc = torchmetrics.Accuracy(num_classes=num_classes,
                                                average="macro")
-        self.train_class_acc = torchmetrics.Accuracy(num_classes=num_tgt,
+        self.train_class_acc = torchmetrics.Accuracy(num_classes=num_classes,
                                                      average=None)
-        self.val_class_acc = torchmetrics.Accuracy(num_classes=num_tgt,
+        self.val_class_acc = torchmetrics.Accuracy(num_classes=num_classes,
                                                    average=None)
 
     def forward(self, *args, **kwargs):
@@ -88,8 +100,8 @@ class XvecFitSystem(pl.LightningModule):
                     if k in ["train_loss", "train_acc", "val_loss", "val_acc"]})
 
         data = {
-            "train_count": [self.train_count[i] for i in range(self.num_tgt)],
-            "val_count": [self.val_count[i] for i in range(self.num_tgt)],
+            "train_count": [self.train_count[i] for i in range(self.num_classes)],
+            "val_count": [self.val_count[i] for i in range(self.num_classes)],
         }
         self.train_count.clear()
         self.val_count.clear()
@@ -120,11 +132,12 @@ class XvecFitSystem(pl.LightningModule):
         """Initialize optimizers, batch-wise and epoch-wise schedulers."""
         self.optimizer = instantiate_class(self.model.parameters(), self.optim_config)
 
-        if self.scheduler_config["class_path"].split('.')[-1] == "OneCycleLR":
-            self.scheduler_config["init_args"].update({
+        if issubclass(eval(self.lr_sched_config["class_path"]),
+                      torch.optim.lr_scheduler.OneCycleLR):
+            self.lr_sched_config["init_args"].update({
                 "total_steps": self.trainer.estimated_stepping_batches,
             })
-        scheduler = instantiate_class(self.optimizer, self.scheduler_config)
+        scheduler = instantiate_class(self.optimizer, self.lr_sched_config)
         self.scheduler = {
             "scheduler": scheduler,
             'interval': 'step', # "epoch" or "step"

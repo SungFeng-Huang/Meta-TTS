@@ -18,7 +18,7 @@ class DropoutMixin:
 
 class SimpleTDNN(DropoutMixin, pl.LightningModule):
 
-    def __init__(self, numSpkrs: int, p_dropout: float):
+    def __init__(self, num_classes: int, p_dropout: float):
         super().__init__()
         self.tdnn1 = nn.Conv1d(in_channels=80, out_channels=128, kernel_size=5, dilation=1)
         self.bn_tdnn1 = nn.BatchNorm1d(128, momentum=0.1, affine=False)
@@ -40,7 +40,7 @@ class SimpleTDNN(DropoutMixin, pl.LightningModule):
         self.bn_fc2 = nn.BatchNorm1d(64, momentum=0.1, affine=False)
         self.dropout_fc2 = nn.Dropout(p=p_dropout)
 
-        self.fc3 = nn.Linear(64,numSpkrs)
+        self.fc3 = nn.Linear(64,num_classes)
 
         self.aug = SpecAugmentMM(time_mix_width=100, time_stripes_num=2,
                                  freq_mix_width=20, freq_stripes_num=2)
@@ -65,7 +65,13 @@ class SimpleTDNN(DropoutMixin, pl.LightningModule):
 
 class XvecTDNN(DropoutMixin, pl.LightningModule):
 
-    def __init__(self, numSpkrs: int, p_dropout: float):
+    def __init__(self, num_classes: int, p_dropout: float = 0.5):
+        """Initializer for XvecTDNN.
+
+        Args:
+            num_classes: Number of speakers/regions/accents.
+            p_dropout: Dropout rate.
+        """
         super().__init__()
         self.tdnn1 = nn.Conv1d(in_channels=80, out_channels=512, kernel_size=5, dilation=1)
         self.bn_tdnn1 = nn.BatchNorm1d(512, momentum=0.1, affine=False)
@@ -95,7 +101,7 @@ class XvecTDNN(DropoutMixin, pl.LightningModule):
         self.bn_fc2 = nn.BatchNorm1d(512, momentum=0.1, affine=False)
         self.dropout_fc2 = nn.Dropout(p=p_dropout)
 
-        self.fc3 = nn.Linear(512,numSpkrs)
+        self.fc3 = nn.Linear(512,num_classes)
 
         self.aug = SpecAugmentMM(time_mix_width=100, time_stripes_num=2,
                                  freq_mix_width=20, freq_stripes_num=2)
