@@ -43,6 +43,8 @@ class XvecFitSystem(pl.LightningModule):
                                                      average=None)
         self.val_class_acc = torchmetrics.Accuracy(num_classes=num_classes,
                                                    average=None)
+        self.test_class_acc = torchmetrics.Accuracy(num_classes=num_classes,
+                                                    average=None)
 
     def forward(self, *args, **kwargs):
         return self.model(*args, **kwargs)
@@ -77,7 +79,7 @@ class XvecFitSystem(pl.LightningModule):
     #
     #     self.model.set_dropout_rate(p_drop)
 
-    def on_fit_start(self):
+    def on_train_start(self):
         self.train_count = Counter()
 
     def on_validation_start(self):
@@ -124,6 +126,43 @@ class XvecFitSystem(pl.LightningModule):
         except Exception as e:
             self.print(e)
         self.val_class_acc.reset()
+
+        df = pd.DataFrame(data)
+        self.print(df.to_string(header=True, index=True))
+
+    def on_test_start(self):
+        self.test_count = Counter()
+
+    def test_step(self, batch, batch_idx, dataloader_idx=0):
+        output = self(batch[4].transpose(1, 2))
+
+        loss = self.loss_func(output, batch[2])
+        self.log("test_loss", loss.item(), sync_dist=True)
+
+        self.test_class_acc.update(output, batch[2])
+        self.test_count.update(batch[2].cpu().numpy().tolist())
+
+        return {'loss': loss}
+
+    def on_test_epoch_end(self,):
+        self.print(f"Epoch {self.current_epoch}")
+        self.print({k: v.item() for k, v in self.trainer.callback_metrics.items()
+                    if k in ["test_loss", "test_acc"]})
+
+        data = {
+            "test_count": [self.test_count[i] for i in range(self.num_classes)],
+        }
+        self.test_count.clear()
+
+        try:
+            test_acc = self.test_class_acc.compute().cpu().numpy().tolist()
+            self.log_dict({f"test_acc/{i}": acc for i, acc in
+                           enumerate(test_acc)})
+            self.log("test_acc", np.mean(test_acc))
+            data.update({"test_acc": test_acc})
+        except Exception as e:
+            self.print(e)
+        self.test_class_acc.reset()
 
         df = pd.DataFrame(data)
         self.print(df.to_string(header=True, index=True))

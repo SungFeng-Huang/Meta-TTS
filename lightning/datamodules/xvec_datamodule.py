@@ -45,9 +45,9 @@ class XvecDataModule(pl.LightningDataModule):
         self.num_classes = len(getattr(self.dataset, f"{self.target}_map"))
 
     def setup(self, stage=None):
-        if stage in (None, 'fit'):
-            subsets = self._split(self.dataset)
-            self.train_datasets, self.val_datasets, self.test_datasets = subsets
+        # if stage in (None, 'fit'):
+        subsets = self._split(self.dataset)
+        self.train_datasets, self.val_datasets, self.test_datasets = subsets
 
     def train_dataloader(self):
         """Training dataloader, not modified for multiple dataloaders."""
@@ -94,17 +94,16 @@ class XvecDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         batch_size = self.train_config["optimizer"]["batch_size"]
-        self.test_loaders = [
-            DataLoader(
-                test_dataset,
-                batch_size=batch_size//torch.cuda.device_count(),
-                shuffle=False,
-                drop_last=False,
-                num_workers=4,
-                collate_fn=get_single_collate(False),
-            ) for test_dataset in self.test_datasets
-        ]
-        return self.test_loaders
+        self.test_dataset = ConcatDataset(self.test_datasets)
+        self.test_loader = DataLoader(
+            self.test_dataset,
+            batch_size=batch_size//torch.cuda.device_count(),
+            shuffle=False,
+            drop_last=False,
+            num_workers=4,
+            collate_fn=get_single_collate(False),
+        )
+        return self.test_loader
 
     def _split(self, dataset):
         map_ids = defaultdict(list)
