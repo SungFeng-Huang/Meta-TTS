@@ -2,12 +2,13 @@
 
 import torch
 import pytorch_lightning as pl
-import torchmetrics
 import pandas as pd
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 from collections import Counter
+from typing import Union, Mapping, Optional
+from torchmetrics import Accuracy
 from pytorch_lightning.utilities.cli import instantiate_class
 from lightning.model import XvecTDNN
 
@@ -17,34 +18,56 @@ class XvecFitSystem(pl.LightningModule):
     default_monitor: str = "val_loss"
 
     def __init__(self,
-                 model: XvecTDNN,
-                 num_classes: int,
                  optim_config: dict,
-                 lr_sched_config: dict):
+                 lr_sched_config: dict,
+                 *args,
+                 num_classes: Optional[int] = None,
+                 model: Optional[Union[Mapping, XvecTDNN]] = None,
+                 model_dict: Optional[Mapping] = None,
+                 **kwargs):
         """A system wrapper for fitting XvecTDNN.
 
         Args:
-            model: X-vector model.
-            num_classes: Number of speakers/regions/accents.
+            model (optional): X-vector model. If specified, `model_dict` would
+                be ignored.
+            model_dict (optional): X-vector model config. If 'model' is not
+                specified, would use `model_dict` instead.
             optim_config: Config of optimizer.
             lr_sched_config: Config of learning rate scheduler.
         """
+            # num_classes: Number of speakers/regions/accents.
         super().__init__()
-        self.save_hyperparameters(ignore=['model'])
-        self.num_classes = num_classes
-        self.model = model
+        self.save_hyperparameters()
+
+        if model is None:
+            if model_dict is None:
+                raise TypeError
+            model = model_dict
+
+        if isinstance(model, Mapping):
+            num_classes = model["init_args"].get("num_classes", num_classes)
+            if num_classes is None:
+                raise ValueError
+            model["init_args"]["num_classes"] = num_classes
+            self.model = instantiate_class((), model)
+        elif isinstance(model, XvecTDNN):
+            self.model = model
+        else:
+            raise TypeError
+        self.num_classes = self.model.num_classes
+
         self.optim_config = optim_config
         self.lr_sched_config = lr_sched_config
 
         self.loss_func = torch.nn.CrossEntropyLoss()
-        self.train_acc = torchmetrics.Accuracy(num_classes=num_classes,
-                                               average="macro")
-        self.train_class_acc = torchmetrics.Accuracy(num_classes=num_classes,
-                                                     average=None)
-        self.val_class_acc = torchmetrics.Accuracy(num_classes=num_classes,
-                                                   average=None)
-        self.test_class_acc = torchmetrics.Accuracy(num_classes=num_classes,
-                                                    average=None)
+        self.train_acc = Accuracy(num_classes=self.num_classes,
+                                  average="macro")
+        self.train_class_acc = Accuracy(num_classes=self.num_classes,
+                                        average=None)
+        self.val_class_acc = Accuracy(num_classes=self.num_classes,
+                                      average=None)
+        self.test_class_acc = Accuracy(num_classes=self.num_classes,
+                                       average=None)
 
     def forward(self, *args, **kwargs):
         return self.model(*args, **kwargs)
@@ -66,18 +89,20 @@ class XvecFitSystem(pl.LightningModule):
 
     def on_train_epoch_end(self):
         print('\n')
-    #     pDropMax = 0.2
-    #     stepFrac = 0.5
-    #     current_frac = float(self.current_epoch) / self.trainer.max_epochs
-    #     if current_frac < stepFrac:
-    #         p_drop = pDropMax * current_frac / stepFrac
-    #     elif current_frac < (stepFrac + 1) / 2:
-    #         scale = ((stepFrac + 1) / 2 - current_frac) / ((1 - stepFrac) / 2)
-    #         p_drop = pDropMax * scale   # fast decay to 0
-    #     else:
-    #         p_drop = 0
-    #
-    #     self.model.set_dropout_rate(p_drop)
+
+        # Hard-code dropout scheduler
+        pDropMax = 0.2
+        stepFrac = 0.5
+        current_frac = float(self.current_epoch) / self.trainer.max_epochs
+        if current_frac < stepFrac:
+            p_drop = pDropMax * current_frac / stepFrac
+        elif current_frac < (stepFrac + 1) / 2:
+            scale = ((stepFrac + 1) / 2 - current_frac) / ((1 - stepFrac) / 2)
+            p_drop = pDropMax * scale   # fast decay to 0
+        else:
+            p_drop = 0
+
+        self.model.set_dropout_rate(p_drop)
 
     def on_train_start(self):
         self.train_count = Counter()
@@ -101,12 +126,18 @@ class XvecFitSystem(pl.LightningModule):
         self.print({k: v.item() for k, v in self.trainer.callback_metrics.items()
                     if k in ["train_loss", "train_acc", "val_loss", "val_acc"]})
 
-        data = {
-            "train_count": [self.train_count[i] for i in range(self.num_classes)],
-            "val_count": [self.val_count[i] for i in range(self.num_classes)],
-        }
-        self.train_count.clear()
-        self.val_count.clear()
+        data = {}
+        try:
+            data["train_count"] = [self.train_count[i] for i in range(self.num_classes)]
+            self.train_count.clear()
+        except:
+            pass
+
+        try:
+            data["val_count"] = [self.val_count[i] for i in range(self.num_classes)]
+            self.val_count.clear()
+        except:
+            pass
 
         try:
             train_acc = self.train_class_acc.compute().cpu().numpy().tolist()

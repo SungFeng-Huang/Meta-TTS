@@ -73,6 +73,10 @@ class XvecTDNN(DropoutMixin, pl.LightningModule):
             p_dropout: Dropout rate.
         """
         super().__init__()
+        self.save_hyperparameters()
+
+        self.num_classes = num_classes
+
         self.tdnn1 = nn.Conv1d(in_channels=80, out_channels=512, kernel_size=5, dilation=1)
         self.bn_tdnn1 = nn.BatchNorm1d(512, momentum=0.1, affine=False)
         self.dropout_tdnn1 = nn.Dropout(p=p_dropout)

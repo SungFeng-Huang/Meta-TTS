@@ -36,6 +36,7 @@ class XvecDataModule(pl.LightningDataModule):
                 speaker/region/accent.
         """
         super().__init__()
+        self.save_hyperparameters()
         self.preprocess_config = preprocess_config
         self.train_config = train_config
 

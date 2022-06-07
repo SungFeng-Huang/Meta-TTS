@@ -11,9 +11,9 @@ class MyLightningCLI(LightningCLI):
         # AttributeError: 'NoneType' object has no attribute 'keys'
         # jsonargparse.util.ParserError: Problem in default config file ::
         #    argument of type 'NoneType' is not iterable
-        parser.link_arguments("data.num_classes",
-                              "model.init_args.model.init_args.num_classes",
-                              apply_on="instantiate")
+        # parser.link_arguments("data.num_classes",
+        #                       "model.init_args.model.init_args.num_classes",
+        #                       apply_on="instantiate")
         parser.link_arguments("data.num_classes",
                               "model.init_args.num_classes",
                               apply_on="instantiate")
@@ -22,4 +22,14 @@ class MyLightningCLI(LightningCLI):
 if __name__ == "__main__":
 
     cli = MyLightningCLI(pl.LightningModule, pl.LightningDataModule,
-                        subclass_mode_model=True, subclass_mode_data=True)
+                         parser_kwargs={
+                             "fit": {
+                                "default_config_files":
+                                    ["cli_config/xvec/fit.yaml"],
+                             },
+                             "test": {
+                                "default_config_files":
+                                    ["cli_config/xvec/test.yaml"],
+                             },
+                         },
+                         subclass_mode_model=True, subclass_mode_data=True)
