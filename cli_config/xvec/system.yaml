@@ -1,4 +1,4 @@
-class_path: lightning.systems.XvecFitSystem
+class_path: lightning.systems.XvecSystem
 init_args:
   model:
     class_path: lightning.model.XvecTDNN
