@@ -20,16 +20,17 @@ class MyLightningCLI(LightningCLI):
 
 
 if __name__ == "__main__":
+    from lightning.model import XvecTDNN
+    from lightning.datamodules import XvecDataModule
 
-    cli = MyLightningCLI(pl.LightningModule, pl.LightningDataModule,
-                         parser_kwargs={
-                             "fit": {
-                                "default_config_files":
-                                    ["cli_config/xvec/fit.yaml"],
-                             },
-                             "test": {
-                                "default_config_files":
-                                    ["cli_config/xvec/test.yaml"],
-                             },
-                         },
-                         subclass_mode_model=True, subclass_mode_data=True)
+    cli = MyLightningCLI(
+        XvecTDNN, XvecDataModule,
+        parser_kwargs={
+            "fit": {
+                "default_config_files": ["cli_config/xvec/fit.yaml"],
+            },
+            "test": {
+                "default_config_files": ["cli_config/xvec/test.yaml"],
+            },
+        },
+        subclass_mode_model=True, subclass_mode_data=True)

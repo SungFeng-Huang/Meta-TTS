@@ -3,35 +3,25 @@
 import pandas as pd
 import numpy as np
 from collections import Counter
-from typing import Union, Mapping, Optional
 from torchmetrics import Accuracy
 from lightning.model import XvecTDNN
-from .base import XvecBaseSystem
+from .base import BaseMixin, XvecWrapperMixin
 
 
-class XvecTestSystem(XvecBaseSystem):
+class TestMixin(BaseMixin):
 
     def __init__(self,
                  *args,
-                 num_classes: Optional[int] = None,
-                 model: Optional[Union[Mapping, XvecTDNN]] = None,
-                 model_dict: Optional[Mapping] = None,
                  **kwargs):
-        """A system wrapper for testing XvecTDNN.
+        """A system mixin for testing.
 
         Args:
-            model (optional): X-vector model. If specified, `model_dict` would
-                be ignored.
-            model_dict (optional): X-vector model config. If 'model' is not
-                specified, would use `model_dict` instead.
-            num_classes: Number of speakers/regions/accents.
+            (*args, **kwargs): Arguments for XvecTDNN.
         """
-        super().__init__(num_classes=num_classes,
-                         model=model,
-                         model_dict=model_dict)
+        super().__init__(*args, **kwargs)
 
         self.test_class_acc = Accuracy(num_classes=self.num_classes,
-                                       average=None)
+                                       average=None, ignore_index=11)
 
     def on_test_start(self):
         self.test_count = Counter()
@@ -58,8 +48,11 @@ class XvecTestSystem(XvecBaseSystem):
         try:
             test_acc = self.test_class_acc.compute().cpu().numpy().tolist()
             self.log_dict({f"test_acc/{i}": acc
-                           for i, acc in enumerate(test_acc)})
-            self.log("test_acc", np.mean(test_acc))
+                           for i, acc in enumerate(test_acc)
+                           if not np.isnan(acc)})
+            self.log("test_acc",
+                     np.mean([acc for acc in test_acc
+                              if not np.isnan(acc)]))
             data.update({"test_acc": test_acc})
         except Exception as e:
             self.print(e)
@@ -70,3 +63,16 @@ class XvecTestSystem(XvecBaseSystem):
                     if k in ["test_loss", "test_acc"]})
         self.print(df.to_string(header=True, index=True))
 
+
+class XvecTestSystem(TestMixin, XvecTDNN):
+    def __init__(self, *args, **kwargs):
+        """A test system for XvecTDNN.
+        """
+        super().__init__(*args, **kwargs)
+
+
+class XvecTestWrapper(XvecWrapperMixin, TestMixin):
+    def __init__(self, *args, **kwargs):
+        """A test wrapper for XvecTDNN.
+        """
+        super().__init__(*args, **kwargs)

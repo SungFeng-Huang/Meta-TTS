@@ -1,49 +1,30 @@
-from typing import Union, Optional, Dict, Any
+from os import PathLike
+from typing import Dict, Any, Union
 
 from torch import Tensor
-from pytorch_lightning import LightningModule
-from pytorch_lightning.utilities.cli import instantiate_class
 from torchmetrics import Accuracy
 
 from lightning.model import XvecTDNN
 
 
-class AccentAccuracy(Accuracy, LightningModule):
+class XvecAccentAccuracy(Accuracy):
     def __init__(self,
-                 model: Optional[Union[XvecTDNN, Dict]] = None,
-                 model_dict: Optional[Dict] = None,
-                 num_classes: Optional[int] = None,
+                 ckpt_path: Union[str, bytes, PathLike],
                  **kwargs: Dict[str, Any]):
         """Accent classification accuracy.
 
         Args:
-            model (optional): X-vector model. If specified, `model_dict` would
-                be ignored.
-            model_dict (optional): X-vector model config. If 'model' is not
-                specified, would use `model_dict` instead.
+            ckpt_path: Checkpoint path of pretrained XvecTDNN.
+            kwargs: Accuracy kwargs.
         """
         super().__init__(**kwargs)
 
-        if model is None:
-            if model_dict is None:
-                raise TypeError
-            model = model_dict
-
-        if isinstance(model, Dict):
-            num_classes = model["init_args"].get("num_classes", num_classes)
-            if num_classes is None:
-                raise ValueError
-            model["init_args"]["num_classes"] = num_classes
-            self.model = instantiate_class((), model)
-        elif isinstance(model, XvecTDNN):
-            self.model = model
-        else:
-            raise TypeError
-
+        self.model = XvecTDNN.load_from_checkpoint(ckpt_path)
         self.model.freeze()
 
     def update(self, mel_spec: Tensor, target: Tensor) -> None:  # type: ignore
         """Update state with predictions and targets.
+
         Args:
             mel_spec: Predicted or real Mel-Spectrograms.
             target: Ground truth labels.

@@ -2,49 +2,32 @@
 
 import torch
 import pytorch_lightning as pl
-from typing import Union, Mapping, Optional
-from pytorch_lightning.utilities.cli import instantiate_class
 from lightning.model import XvecTDNN
 
 
-class XvecBaseSystem(pl.LightningModule):
+class BaseMixin(pl.LightningModule):
 
-    def __init__(self,
-                 num_classes: Optional[int] = None,
-                 model: Optional[Union[Mapping, XvecTDNN]] = None,
-                 model_dict: Optional[Mapping] = None):
-        """A system wrapper for fitting XvecTDNN.
+    def __init__(self, *args, **kwargs):
+        """A base system mixin."""
+        super().__init__(*args, **kwargs)
 
-        Args:
-            model (optional): X-vector model. If specified, `model_dict` would
-                be ignored.
-            model_dict (optional): X-vector model config. If 'model' is not
-                specified, would use `model_dict` instead.
-        """
-            # num_classes: Number of speakers/regions/accents.
-        super().__init__()
-        self.save_hyperparameters()
-
-        if model is None:
-            if model_dict is None:
-                raise TypeError
-            model = model_dict
-
-        if isinstance(model, Mapping):
-            num_classes = model["init_args"].get("num_classes", num_classes)
-            if num_classes is None:
-                raise ValueError
-            model["init_args"]["num_classes"] = num_classes
-            self.model = instantiate_class((), model)
-        elif isinstance(model, XvecTDNN):
-            self.model = model
-        else:
-            raise TypeError
-
-        self.num_classes = self.model.num_classes
         self.loss_func = torch.nn.CrossEntropyLoss()
 
-    def forward(self, *args, **kwargs):
-        return self.model(*args, **kwargs)
+
+class XvecWrapperMixin:
+    def __init__(self, *args, **kwargs):
+        self.model = XvecTDNN(*args, **kwargs)
+        self.num_classes = self.model.num_classes
+        super().__init__(*args, **kwargs)
 
 
+class XvecBaseSystem(BaseMixin, XvecTDNN):
+    def __init__(self, *args, **kwargs):
+        """A base system for XvecTDNN."""
+        super().__init__(*args, **kwargs)
+
+
+class XvecBaseWrapper(XvecWrapperMixin, BaseMixin):
+    def __init__(self, *args, **kwargs):
+        """A base system wrapper for XvecTDNN."""
+        super().__init__(*args, **kwargs)

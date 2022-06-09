@@ -1,51 +1,42 @@
 #!/usr/bin/env python3
 
-import math
 import torch
+import torch.nn as nn
 import pandas as pd
 import numpy as np
 from collections import Counter
-from typing import Union, Mapping, Optional
+from typing import Dict
 from torchmetrics import Accuracy
 from pytorch_lightning.utilities.cli import instantiate_class
 from lightning.model import XvecTDNN
-from .validate import XvecValidateSystem
+from .base import XvecWrapperMixin
+from .validate import ValidateMixin
 
 
-class XvecFitSystem(XvecValidateSystem):
+class FitMixin(ValidateMixin):
 
     default_monitor: str = "val_loss"
 
     def __init__(self,
-                 optim_config: dict,
-                 lr_sched_config: dict,
+                 optim_config: Dict,
+                 lr_sched_config: Dict,
                  *args,
-                 num_classes: Optional[int] = None,
-                 model: Optional[Union[Mapping, XvecTDNN]] = None,
-                 model_dict: Optional[Mapping] = None,
                  **kwargs):
         """A system wrapper for fitting XvecTDNN.
 
         Args:
-            model (optional): X-vector model. If specified, `model_dict` would
-                be ignored.
-            model_dict (optional): X-vector model config. If 'model' is not
-                specified, would use `model_dict` instead.
-            num_classes: Number of speakers/regions/accents.
             optim_config: Config of optimizer.
             lr_sched_config: Config of learning rate scheduler.
         """
-        super().__init__(num_classes=num_classes,
-                         model=model,
-                         model_dict=model_dict)
+        super().__init__(*args, **kwargs)
 
         self.optim_config = optim_config
         self.lr_sched_config = lr_sched_config
 
         self.train_acc = Accuracy(num_classes=self.num_classes,
-                                  average="macro")
+                                  average="macro", ignore_index=11)
         self.train_class_acc = Accuracy(num_classes=self.num_classes,
-                                        average=None)
+                                        average=None, ignore_index=11)
 
     def on_train_start(self):
         self.train_count = Counter()
@@ -68,6 +59,7 @@ class XvecFitSystem(XvecValidateSystem):
     def on_train_epoch_end(self):
         print('\n')
 
+    def on_train_epoch_start(self):
         # Hard-code dropout scheduler
         pDropMax = 0.2
         stepFrac = 0.5
@@ -80,7 +72,7 @@ class XvecFitSystem(XvecValidateSystem):
         else:
             p_drop = 0
 
-        self.model.set_dropout_rate(p_drop)
+        self.set_dropout_rate(self, p_drop)
 
     def _get_train_epoch_end_data(self):
         data = {}
@@ -116,7 +108,7 @@ class XvecFitSystem(XvecValidateSystem):
                            for i, acc in enumerate(val_acc)})
             self.log("val_acc",
                      np.mean([acc for acc in val_acc
-                              if not math.isnan(acc)]))
+                              if not np.isnan(acc)]))
 
         df = pd.DataFrame(data)
         self.print({k: v.item() for k, v in self.trainer.callback_metrics.items()
@@ -125,7 +117,7 @@ class XvecFitSystem(XvecValidateSystem):
 
     def configure_optimizers(self):
         """Initialize optimizers, batch-wise and epoch-wise schedulers."""
-        self.optimizer = instantiate_class(self.model.parameters(), self.optim_config)
+        self.optimizer = instantiate_class(self.parameters(), self.optim_config)
 
         if issubclass(eval(self.lr_sched_config["class_path"]),
                       torch.optim.lr_scheduler.OneCycleLR):
@@ -142,3 +134,25 @@ class XvecFitSystem(XvecValidateSystem):
 
         return [self.optimizer], [self.scheduler]
 
+    def set_dropout_rate(self, model, p_drop):
+        for x in model.modules():
+            if isinstance(x, nn.Dropout):
+                x.p = p_drop
+
+
+class XvecFitSystem(FitMixin, XvecTDNN):
+    def __init__(self, *args, **kwargs):
+        """A fit system for XvecTDNN.
+        """
+        super().__init__(*args, **kwargs)
+
+
+class XvecFitWrapper(XvecWrapperMixin, FitMixin):
+    def __init__(self, *args, **kwargs):
+        """A fit wrapper for XvecTDNN.
+
+        Args:
+            optim_config: Config of optimizer.
+            lr_sched_config: Config of learning rate scheduler.
+        """
+        super().__init__(*args, **kwargs)

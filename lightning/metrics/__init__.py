@@ -1,1 +1,1 @@
-from .accent_accuracy import AccentAccuracy
+from .accent_accuracy import XvecAccentAccuracy

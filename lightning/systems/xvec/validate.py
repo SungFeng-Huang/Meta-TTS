@@ -1,38 +1,25 @@
 #!/usr/bin/env python3
 
-import math
 import pandas as pd
 import numpy as np
 from collections import Counter
-from typing import Union, Mapping, Optional
 from torchmetrics import Accuracy
 from lightning.model import XvecTDNN
-from .base import XvecBaseSystem
+from .base import BaseMixin, XvecWrapperMixin
 
 
-class XvecValidateSystem(XvecBaseSystem):
+class ValidateMixin(BaseMixin):
 
-    def __init__(self,
-                 *args,
-                 num_classes: Optional[int] = None,
-                 model: Optional[Union[Mapping, XvecTDNN]] = None,
-                 model_dict: Optional[Mapping] = None,
-                 **kwargs):
-        """A system wrapper for validating XvecTDNN.
+    def __init__(self, *args, **kwargs):
+        """A system mixin for validating.
 
         Args:
-            model (optional): X-vector model. If specified, `model_dict` would
-                be ignored.
-            model_dict (optional): X-vector model config. If 'model' is not
-                specified, would use `model_dict` instead.
-            num_classes: Number of speakers/regions/accents.
+            (*args, **kwargs): Arguments for XvecTDNN.
         """
-        super().__init__(num_classes=num_classes,
-                         model=model,
-                         model_dict=model_dict)
+        super().__init__(*args, **kwargs)
 
         self.val_class_acc = Accuracy(num_classes=self.num_classes,
-                                      average=None)
+                                      average=None, ignore_index=11)
 
     def on_validation_start(self):
         self.val_count = Counter()
@@ -75,12 +62,26 @@ class XvecValidateSystem(XvecBaseSystem):
             val_acc = data["val_acc"]
             self.log_dict({f"val_acc/{i}": acc
                            for i, acc in enumerate(val_acc)
-                           if not math.isnan(acc)})
+                           if not np.isnan(acc)})
             self.log("val_acc",
                      np.mean([acc for acc in val_acc
-                              if not math.isnan(acc)]))
+                              if not np.isnan(acc)]))
 
         df = pd.DataFrame(data)
         self.print({k: v.item() for k, v in self.trainer.callback_metrics.items()
                     if k in ["train_loss", "train_acc", "val_loss", "val_acc"]})
         self.print(df.to_string(header=True, index=True))
+
+
+class XvecValidateSystem(ValidateMixin, XvecTDNN):
+    def __init__(self, *args, **kwargs):
+        """A validation system for XvecTDNN.
+        """
+        super().__init__(*args, **kwargs)
+
+
+class XvecValidateWrapper(XvecWrapperMixin, ValidateMixin):
+    def __init__(self, *args, **kwargs):
+        """A validation wrapper for XvecTDNN.
+        """
+        super().__init__(*args, **kwargs)
