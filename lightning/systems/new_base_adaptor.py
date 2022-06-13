@@ -4,34 +4,55 @@ import os
 import json
 import time
 import torch
+import torch.nn.functional as F
 import numpy as np
 import pandas as pd
-import pytorch_lightning as pl
-import learn2learn as l2l
-
 from tqdm import tqdm
-from resemblyzer import VoiceEncoder
+from argparse import Namespace
+import pytorch_lightning as pl
+from pytorch_lightning.callbacks.progress import ProgressBar
+from pytorch_lightning.callbacks import LearningRateMonitor, GPUStatsMonitor, ModelCheckpoint, RichProgressBar
+import learn2learn as l2l
 # from learn2learn.algorithms import MAML
 from learn2learn.utils import detach_module
+from resemblyzer import VoiceEncoder
+from torchmetrics import Accuracy
 
-from .utils import MAML
-from utils.tools import get_mask_from_lengths
-from lightning.systems.system import System
-from lightning.systems.utils import Task
-from lightning.utils import loss2dict
+# from lightning.systems.system import System
+from lightning.systems.utils import Task, MAML
+from lightning.metrics import XvecAccentAccuracy
+from lightning.model.xvec import XvecTDNN
+from lightning.model import FastSpeech2Loss, FastSpeech2
+# from lightning.callbacks import GlobalProgressBar, Saver
+from lightning.callbacks import Saver
+from lightning.optimizer import get_optimizer
+from lightning.scheduler import get_scheduler
+from lightning.utils import LightningMelGAN, loss2dict
+from utils.tools import expand, plot_mel, get_mask_from_lengths
+
 
 VERBOSE = False
 
-class BaseAdaptorSystem(System):
+class BaseAdaptorSystem(pl.LightningModule):
     """A PyTorch Lightning module for ANIL for FastSpeech2.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, preprocess_config, model_config, train_config, algorithm_config, log_dir, result_dir):
+        super().__init__()
+        self.preprocess_config = preprocess_config
+        self.model_config = model_config
+        self.train_config = train_config
+        self.algorithm_config = algorithm_config
+        self.save_hyperparameters()
+
+        self.model = FastSpeech2(preprocess_config, model_config, algorithm_config)
+        self.loss_func = FastSpeech2Loss(preprocess_config, model_config)
+
+        self.log_dir = log_dir
+        self.result_dir = result_dir
 
         # All of the settings below are for few-shot validation
         adaptation_lr = self.algorithm_config["adapt"]["task"]["lr"]
-        # self.adaptation_class = self.algorithm_config["adapt"]["class"]
         self.learner = MAML(self.model, lr=adaptation_lr)
         # self.learner.inner_freeze()
         # for module in self.algorithm_config["adapt"]["modules"]:
@@ -44,24 +65,31 @@ class BaseAdaptorSystem(System):
         self.d_target = False
         self.reference_prosody = True
 
+    def forward(self, *args, **kwargs):
+        return self.model(*args, **kwargs)
+
+    def common_step(self, batch, batch_idx, train=True):
+        output = self(**batch)
+        loss = self.loss_func(batch, output)
+        return loss, output
+
     def on_train_epoch_start(self):
-        """ LightningModule interface.
-        Called in the training loop at the very beginning of the epoch.
-        """
         self.train_loss_dicts = []
 
     def on_train_batch_start(self, batch, batch_idx):
-        """ LightningModule interface.
-        Called in the training loop before anything happens for that batch.
-        """
         # self.print("start", self.global_step, batch_idx)
         pass
 
-    # def on_train_batch_end(self, outputs, batch, batch_idx):
+    def training_step(self, batch, batch_idx, dataloader_idx=0):
+        """Not used. Don't use."""
+        loss, output = self.common_step(batch, batch_idx, train=True)
+
+        # Log metrics to CometLogger
+        loss_dict = {f"Train/{k}":v for k,v in loss2dict(loss).items()}
+        self.log_dict(loss_dict, sync_dist=True)
+        return {'loss': loss[0], 'losses': loss, 'output': output, '_batch': batch}
+
     def on_train_epoch_end(self):
-        """ LightningModule interface.
-        Called in the training loop after the batch.
-        """
         key_map = {
             "Train/Total Loss": "total_loss",
             "Train/Mel Loss": "mel_loss",
@@ -87,6 +115,33 @@ class BaseAdaptorSystem(System):
                                      f"validate-{self.global_step}.csv")
         if os.path.exists(self.csv_path):
             os.remove(self.csv_path)
+
+        assert "saving_steps" in self.algorithm_config["adapt"]["test"]
+        self.saving_steps = self.algorithm_config["adapt"]["test"]["saving_steps"]
+
+        xvec_ckpt_path = "output/xvec/lightning_logs/version_88/checkpoints/epoch=199-step=164200.ckpt"
+        self.eval_model = XvecTDNN.load_from_checkpoint(xvec_ckpt_path).to(self.device)
+        self.eval_model.freeze()
+        self.eval_model.eval()
+        self.eval_acc = torch.nn.ModuleDict({
+            "recon": XvecAccentAccuracy(xvec_ckpt_path),
+            **{f"step_{ft_step}": XvecAccentAccuracy(xvec_ckpt_path)
+               for ft_step in [0] + self.saving_steps},
+        })
+        # self.eval_acc = torch.nn.ModuleDict({
+        #     "recon": XvecAccentAccuracy(xvec_ckpt_path),
+        #     **{f"step_{ft_step}": XvecAccentAccuracy(xvec_ckpt_path)
+        #        for ft_step in [0] + self.saving_steps},
+        # })
+        # for eval_acc in self.eval_acc.values():
+        #     eval_acc.add_model(self.eval_model)
+        self.eval_acc = torch.nn.ModuleDict({
+            "recon": Accuracy(),
+            **{f"step_{ft_step}": Accuracy()
+               for ft_step in [0] + self.saving_steps},
+        })
+        for eval_acc in self.eval_acc.values():
+            eval_acc.to(self.device)
 
     def on_validation_batch_start(self, batch, batch_idx, dataloader_idx=0):
         """ LightningModule interface.
@@ -117,7 +172,28 @@ class BaseAdaptorSystem(System):
         if self.trainer.state.fn == "fit":
             return self._on_val_end_for_fit()
         elif self.trainer.state.fn == "validate":
-            pass
+            for eval_acc in self.eval_acc.values():
+                # eval_acc.reset()
+                pass
+
+    def on_test_start(self):
+        if self.algorithm_config["adapt"]["speaker_emb"] == "table":
+            if self.local_rank == 0:
+                print("Testing speaker emb")
+                print("Before:")
+                print(self.model.speaker_emb.model.weight[-39:])
+
+            if (self.preprocess_config["dataset"] == "LibriTTS"
+                    and self.algorithm_config["adapt"]["test"].get("avg_train_spk_emb", False)):
+
+                with torch.no_grad():
+                    self.model.speaker_emb.model.weight[-39:] = \
+                        self.model.speaker_emb.model.weight[:247].mean(dim=0)
+
+            if self.local_rank == 0:
+                print("After:")
+                print(self.model.speaker_emb.model.weight[-39:])
+                print()
 
     def on_test_batch_start(self, batch, batch_idx, dataloader_idx):
         """ LightningModule interface.
@@ -141,17 +217,143 @@ class BaseAdaptorSystem(System):
 
         return all_outputs
 
+    def configure_callbacks(self):
+        # Checkpoint saver
+        save_step = self.train_config["step"]["save_step"]
+        checkpoint = ModelCheckpoint(
+            monitor="Train/Total Loss", mode="min", # monitor not used
+            every_n_train_steps=save_step, save_top_k=-1, save_last=True,
+        )
+
+        # Progress bars (step/epoch)
+        # outer_bar = GlobalProgressBar(process_position=1)
+        # inner_bar = ProgressBar(process_position=1) # would * 2
+        # inner_bar = RichProgressBar()
+
+        # Monitor learning rate / gpu stats
+        lr_monitor = LearningRateMonitor()
+        # gpu_monitor = GPUStatsMonitor(
+        #     memory_utilization=True, gpu_utilization=True, intra_step_time=True, inter_step_time=True
+        # )
+
+        # Save figures/audios/csvs
+        saver = Saver(self.preprocess_config, self.log_dir, self.result_dir)
+        self.saver = saver
+
+        # callbacks = [checkpoint, outer_bar, lr_monitor, gpu_monitor, saver]
+        # callbacks = [checkpoint, lr_monitor, gpu_monitor, saver]
+        callbacks = [checkpoint, lr_monitor, saver]
+        # callbacks = []
+        return callbacks
+
+    def configure_optimizers(self):
+        """Initialize optimizers, batch-wise and epoch-wise schedulers."""
+        self.optimizer = get_optimizer(self.model, self.model_config, self.train_config)
+
+        self.scheduler = {
+            "scheduler": get_scheduler(self.optimizer, self.train_config),
+            'interval': 'step', # "epoch" or "step"
+            'frequency': 1,
+            'monitor': self.default_monitor,
+        }
+
+        return [self.optimizer], [self.scheduler]
+
+    def on_save_checkpoint(self, checkpoint):
+        """Overwrite if you want to save more things in the checkpoint."""
+        return checkpoint
+
+    def on_load_checkpoint(self, checkpoint: dict) -> None:
+        self.test_global_step = checkpoint["global_step"]
+        state_dict = checkpoint["state_dict"]
+        model_state_dict = self.state_dict()
+        is_changed = False
+        changes = {"skip": [], "drop": [], "replace": [], "miss": []}
+
+        if 'model.speaker_emb.weight' in state_dict:
+            # Compatiable with old version
+            assert "model.speaker_emb.model.weight" in model_state_dict
+            assert "model.speaker_emb.model.weight" not in state_dict
+            state_dict["model.speaker_emb.model.weight"] = state_dict.pop("model.speaker_emb.weight")
+            changes["replace"].append(["model.speaker_emb.weight", "model.speaker_emb.model.weight"])
+            is_changed = True
+
+        for k in state_dict:
+            if k in model_state_dict:
+                if state_dict[k].shape != model_state_dict[k].shape:
+                    if k == "model.speaker_emb.model.weight":
+                        # train-clean-100: 247 (spk_id 0 ~ 246)
+                        # train-clean-360: 904 (spk_id 247 ~ 1150)
+                        # train-other-500: 1160 (spk_id 1151 ~ 2310)
+                        # dev-clean: 40 (spk_id 2311 ~ 2350)
+                        # test-clean: 39 (spk_id 2351 ~ 2389)
+                        if self.preprocess_config["dataset"] == "LibriTTS":
+                            # LibriTTS: testing emb already in ckpt
+                            # Shape mismatch: version problem
+                            # (train-clean-100 vs train-all)
+                            assert self.algorithm_config["adapt"]["speaker_emb"] == "table"
+                            assert (state_dict[k].shape[0] == 326
+                                    and model_state_dict[k].shape[0] == 2390), \
+                                f"state_dict: {state_dict[k].shape}, model: {model_state_dict[k].shape}"
+                            model_state_dict[k][:247] = state_dict[k][:247]
+                            model_state_dict[k][-79:] = state_dict[k][-79:]
+                        else:
+                            # Corpus mismatch
+                            assert state_dict[k].shape[0] in [326, 2390]
+                            assert self.algorithm_config["adapt"]["speaker_emb"] == "table"
+                            if self.algorithm_config["adapt"]["test"].get(
+                                    "avg_train_spk_emb", False
+                            ):
+                                model_state_dict[k][:] = state_dict[k][:247].mean(dim=0)
+                                if self.local_rank == 0:
+                                    print("Average training speaker emb as testing emb")
+                    # Other testing corpus with different # of spks: re-initialize
+                    changes["skip"].append([
+                        k, model_state_dict[k].shape, state_dict[k].shape
+                    ])
+                    state_dict[k] = model_state_dict[k]
+                    is_changed = True
+            else:
+                changes["drop"].append(k)
+                is_changed = True
+
+        for k in model_state_dict:
+            if k not in state_dict:
+                changes["miss"].append(k)
+                is_changed = True
+
+        if self.local_rank == 0:
+            print()
+            for replaced in changes["replace"]:
+                before, after = replaced
+                print(f"Replace: {before}\n\t-> {after}")
+            for skipped in changes["skip"]:
+                k, required_shape, loaded_shape = skipped
+                print(f"Skip parameter: {k}, \n" \
+                           + f"\trequired shape: {required_shape}, " \
+                           + f"loaded shape: {loaded_shape}")
+            for dropped in changes["drop"]:
+                del state_dict[dropped]
+            for dropped in set(['.'.join(k.split('.')[:2]) for k in changes["drop"]]):
+                print(f"Dropping parameter: {dropped}")
+            for missed in set(['.'.join(k.split('.')[:2]) for k in changes["miss"]]):
+                print(f"Missing parameter: {missed}")
+            print()
+
+        if is_changed:
+            checkpoint.pop("optimizer_states", None)
+
     def _on_meta_batch_start(self, batch):
         """ Check meta-batch data """
         assert len(batch) == 1, "meta_batch_per_gpu"
         assert len(batch[0]) == 2, "sup + qry"
         assert len(batch[0][0]) == 1, "n_batch == 1"
-        assert len(batch[0][0][0]) == 12, "data with 12 elements"
+        # assert len(batch[0][0][0]) == 12, "data with 12 elements"
 
     def clone_learner(self, inference=False):
         learner = self.learner.clone()
         # if inference:
-            # detach_module(learner, keep_requires_grad=True)
+            # detach_module(learner.module, keep_requires_grad=True)
         learner.inner_freeze()
         for module in self.algorithm_config["adapt"]["modules"]:
             learner.inner_unfreeze(module)
@@ -172,10 +374,13 @@ class BaseAdaptorSystem(System):
 
         # Adapt the classifier
         sup_batch = batch[0][0][0]
-        ref_psd = sup_batch[9].unsqueeze(2) if self.reference_prosody else None
+        # ref_psd = sup_batch[9].unsqueeze(2) if self.reference_prosody else None
+        ref_psd = (sup_batch["p_targets"].unsqueeze(2)
+                   if self.reference_prosody else None)
         first_order = not train
         for step in range(adapt_steps):
-            preds = learner(*sup_batch[2:], reference_prosody=ref_psd)
+            # preds = learner(*sup_batch[2:], reference_prosody=ref_psd)
+            preds = learner(**sup_batch, reference_prosody=ref_psd)
             train_error = self.loss_func(sup_batch, preds)
             learner.adapt_(
                 train_error[0],
@@ -191,33 +396,70 @@ class BaseAdaptorSystem(System):
             adapt_steps = min(self.adaptation_steps, self.test_adaptation_steps)
         with torch.set_grad_enabled(train):
             learner = self.adapt(batch, adapt_steps, learner=learner, train=train)
+            if not train:
+                detach_module(learner.module, keep_requires_grad=True)
         learner.eval()
 
         sup_batch = batch[0][0][0]
         qry_batch = batch[0][1][0]
-        ref_psd = qry_batch[9].unsqueeze(2) if self.reference_prosody else None
+        # ref_psd = qry_batch[9].unsqueeze(2) if self.reference_prosody else None
+        ref_psd = (qry_batch["p_targets"].unsqueeze(2)
+                   if self.reference_prosody else None)
 
         # Evaluating the adapted model with ground_truth d,p,e (recon_preds)
         # Use speaker embedding of support set
         with torch.set_grad_enabled(train):
             predictions = learner(
-                sup_batch[2], *qry_batch[3:],
+                # sup_batch[2], *qry_batch[3:],
+                speaker_args=sup_batch["speaker_args"],
+                texts=qry_batch["texts"],
+                src_lens=qry_batch["src_lens"],
+                max_src_len=qry_batch["max_src_len"],
+                mels=qry_batch["mels"],
+                mel_lens=qry_batch["mel_lens"],
+                max_mel_len=qry_batch["max_mel_len"],
+                p_targets=qry_batch["p_targets"],
+                e_targets=qry_batch["e_targets"],
+                d_targets=qry_batch["d_targets"],
                 average_spk_emb=True, reference_prosody=ref_psd
             )
             valid_error = self.loss_func(qry_batch, predictions)
+            if not train:
+                for element in predictions:
+                    try:
+                        element.detach_()
+                    except:
+                        pass
 
         if synth:
             with torch.no_grad():
                 if self.d_target:
                     synth_predictions = learner(
-                        sup_batch[2], *qry_batch[3:9], d_targets=qry_batch[11],
+                        # sup_batch[2], *qry_batch[3:9], d_targets=qry_batch[11],
+                        speaker_args=sup_batch["speaker_args"],
+                        texts=qry_batch["texts"],
+                        src_lens=qry_batch["src_lens"],
+                        max_src_len=qry_batch["max_src_len"],
+                        mels=qry_batch["mels"],
+                        mel_lens=qry_batch["mel_lens"],
+                        max_mel_len=qry_batch["max_mel_len"],
+                        d_targets=qry_batch["d_targets"],
                         average_spk_emb=True, reference_prosody=ref_psd
                     )
                 else:
                     synth_predictions = learner(
-                        sup_batch[2], *qry_batch[3:6],
+                        # sup_batch[2], *qry_batch[3:6],
+                        speaker_args=sup_batch["speaker_args"],
+                        texts=qry_batch["texts"],
+                        src_lens=qry_batch["src_lens"],
+                        max_src_len=qry_batch["max_src_len"],
                         average_spk_emb=True, reference_prosody=ref_psd
                     )
+                for element in synth_predictions:
+                    try:
+                        element.detach_()
+                    except:
+                        pass
             if recon:
                 return learner, valid_error, predictions, synth_predictions
 
@@ -262,20 +504,45 @@ class BaseAdaptorSystem(System):
 
     def _val_step_for_validate(self, batch, batch_idx, dataloader_idx):
         outputs = self._test_step(batch, batch_idx, dataloader_idx)
-        saving_steps = self.algorithm_config["adapt"]["test"]["saving_steps"]
+
+        self.saver._on_val_batch_end_for_validate(
+            self.trainer, self, outputs, batch, batch_idx, dataloader_idx)
+
         st = time.time()
-        for ft_step in [0] + saving_steps:
+        if "accents" in outputs["_batch"]:
+            with torch.no_grad():
+                recon_acc = self.eval_model(
+                    outputs["step_0"]["recon"]["output"][1].transpose(1, 2))
+            recon_acc_prob = F.softmax(recon_acc, dim=-1)[
+                torch.arange(recon_acc.shape[0]).to(self.device),
+                outputs["_batch"]["accents"]]
+            self.log("recon_acc_prob", recon_acc_prob)
+            self.eval_acc["recon"](recon_acc, outputs["_batch"]["accents"])
+            self.log("recon_acc", self.eval_acc["recon"])
+        for ft_step in [0] + self.saving_steps:
             step = f"step_{ft_step}"
             loss_dict = loss2dict(outputs[f"step_{ft_step}"]["recon"]["losses"])
-            df = pd.DataFrame([{
+            data = {
                 "global_step": self.global_step,
                 "ft_step": ft_step,
                 "task_id": outputs["task_id"],
                 "dset_name": outputs["task_id"].rsplit('/', 1)[0],
                 "dataloader_idx": dataloader_idx,
                 "batch_idx": batch_idx,
+                "accent_acc": 0,
                 **loss_dict
-            }])
+            }
+            if "accents" in outputs["_batch"]:
+                step_acc = self.eval_model(
+                    outputs[step]["synth"]["output"][1].transpose(1, 2))
+                step_acc_prob = F.softmax(step_acc, dim=-1)[
+                    torch.arange(step_acc.shape[0]).to(self.device),
+                    outputs["_batch"]["accents"]]
+                self.log(f"{step}_acc_prob", step_acc_prob)
+                self.eval_acc[step](step_acc, outputs["_batch"]["accents"])
+                self.log(f"{step}_acc", self.eval_acc[step])
+                data["accent_acc"] = step_acc_prob.detach().cpu().numpy().tolist()[0]
+            df = pd.DataFrame([data])
             df.to_csv(self.csv_path, index=False, mode='a', header=not
                       os.path.exists(self.csv_path))
             # loss_dict = {f"{outputs['task_id']}/step_{ft_step}/{k}": v for k, v in
@@ -287,15 +554,15 @@ class BaseAdaptorSystem(System):
         st = time.time()
         torch.cuda.empty_cache()
         self._print_mem_diff(st, "Empty cache")
-        return outputs
+        # return outputs
 
     def _test_step(self, batch, batch_idx, dataloader_idx):
-        assert "saving_steps" in self.algorithm_config["adapt"]["test"]
-        saving_steps = self.algorithm_config["adapt"]["test"]["saving_steps"]
         adapt_steps = [step_ - _step for _step, step_ in
-                       zip([0] + saving_steps, saving_steps)]
-        sup_ids = batch[0][0][0][0]
-        qry_ids = batch[0][1][0][0]
+                       zip([0] + self.saving_steps, self.saving_steps)]
+        # sup_ids = batch[0][0][0][0]
+        # qry_ids = batch[0][1][0][0]
+        sup_ids = batch[0][0][0]["ids"]
+        qry_ids = batch[0][1][0]["ids"]
         SQids = f"{'-'.join(sup_ids)}.{'-'.join(qry_ids)}"
         task_id = self.trainer.datamodule.val_SQids2Tid[SQids]
 
@@ -322,7 +589,7 @@ class BaseAdaptorSystem(System):
         self._print_mem_diff(st, "Empty cache")
 
         # Adapt
-        for ft_step, adapt_step in zip(saving_steps, adapt_steps):
+        for ft_step, adapt_step in zip(self.saving_steps, adapt_steps):
             st = time.time()
             learner, val_loss, predictions = self.meta_learn(
                 batch, adapt_step, learner=learner, train=False,

@@ -47,6 +47,7 @@ class FastSpeech2(pl.LightningModule):
         p_control=1.0,
         e_control=1.0,
         d_control=1.0,
+        **kwargs,
     ):
 
         src_masks = get_mask_from_lengths(src_lens, max_src_len)
@@ -337,6 +338,7 @@ class AdaptiveFastSpeech2(FastSpeech2):
         d_control=1.0,
         average_spk_emb=False,
         reference_prosody=None,
+        **kwargs,
     ):
         spk_emb = None
         if hasattr(self, "speaker_emb"):

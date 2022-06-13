@@ -17,14 +17,20 @@ class FastSpeech2Loss(nn.Module):
         self.mae_loss = nn.L1Loss()
 
     def forward(self, inputs, predictions):
-        (
-            mel_targets,
-            _,
-            _,
-            pitch_targets,
-            energy_targets,
-            duration_targets,
-        ) = inputs[6:]
+        if isinstance(inputs, list) or isinstance(inputs, tuple):
+            (
+                mel_targets,
+                _,
+                _,
+                pitch_targets,
+                energy_targets,
+                duration_targets,
+            ) = inputs[6:]
+        elif isinstance(inputs, dict):
+            mel_targets = inputs["mels"]
+            pitch_targets = inputs["p_targets"]
+            energy_targets = inputs["e_targets"]
+            duration_targets = inputs["d_targets"]
         (
             mel_predictions,
             postnet_mel_predictions,

@@ -42,17 +42,17 @@ class FitMixin(ValidateMixin):
         self.train_count = Counter()
 
     def training_step(self, batch, batch_idx, dataloader_idx=0):
-        output = self(batch[4].transpose(1, 2))
+        output = self(batch["mels"].transpose(1, 2))
 
-        loss = self.loss_func(output, batch[2])
+        loss = self.loss_func(output, batch["accent"])
         self.log("train_loss", loss.item(), sync_dist=True)
 
-        self.train_acc(output, batch[2])
+        self.train_acc(output, batch["accent"])
         self.log("train_acc", self.train_acc, sync_dist=True, prog_bar=True)
 
         # forward -> compute -> DDP sync
-        self.train_class_acc.update(output, batch[2])
-        self.train_count.update(batch[2].cpu().numpy().tolist())
+        self.train_class_acc.update(output, batch["accent"])
+        self.train_count.update(batch["accent"].cpu().numpy().tolist())
 
         return {'loss': loss}
 

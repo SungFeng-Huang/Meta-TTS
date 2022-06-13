@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.dataset import ConcatDataset
 import pytorch_lightning as pl
 
-from dataset import MonolingualTTSDataset as Dataset
+from lightning.dataset import MonolingualTTSDataset as Dataset
 from lightning.collate import get_single_collate
 
 

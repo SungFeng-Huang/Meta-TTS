@@ -53,7 +53,8 @@ class Saver(Callback):
 
         # Synthesis one sample and log to CometLogger
         if pl_module.global_step % pl_module.train_config["step"]["synth_step"] == 0 and pl_module.local_rank == 0:
-            metadata = {'sup_ids': batch[0][0][0][0]}
+            # metadata = {'sup_ids': batch[0][0][0][0]}
+            metadata = {'sup_ids': batch[0][0][0]["ids"]}
             fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
                 _batch, output, self.vocoder, self.preprocess_config
             )
@@ -87,8 +88,10 @@ class Saver(Callback):
         self.vocoder.to(pl_module.device)
 
         # Log loss for each sample to csv files
-        sup_ids = batch[0][0][0][0]
-        qry_ids = batch[0][1][0][0]
+        # sup_ids = batch[0][0][0][0]
+        # qry_ids = batch[0][1][0][0]
+        sup_ids = batch[0][0][0]["ids"]
+        qry_ids = batch[0][1][0]["ids"]
         SQids = f"{'-'.join(sup_ids)}.{'-'.join(qry_ids)}"
         task_id = trainer.datamodule.val_SQids2Tid[SQids]
         self.log_csv("Validation", pl_module.global_step, task_id, loss2dict(loss))
@@ -110,8 +113,10 @@ class Saver(Callback):
         global_step = getattr(pl_module, 'test_global_step', pl_module.global_step)
         adaptation_steps = pl_module.adaptation_steps           # log/save period
         test_adaptation_steps = pl_module.test_adaptation_steps # total fine-tune steps
-        sup_ids = batch[0][0][0][0]
-        qry_ids = batch[0][1][0][0]
+        # sup_ids = batch[0][0][0][0]
+        # qry_ids = batch[0][1][0][0]
+        sup_ids = batch[0][0][0]["ids"]
+        qry_ids = batch[0][1][0]["ids"]
         SQids = f"{'-'.join(sup_ids)}.{'-'.join(qry_ids)}"
         task_id = trainer.datamodule.val_SQids2Tid[SQids]
         x = []
@@ -147,8 +152,10 @@ class Saver(Callback):
         test_adaptation_steps = pl_module.test_adaptation_steps # total fine-tune steps
         self.vocoder.to(pl_module.device)
 
-        sup_ids = batch[0][0][0][0]
-        qry_ids = batch[0][1][0][0]
+        # sup_ids = batch[0][0][0][0]
+        # qry_ids = batch[0][1][0][0]
+        sup_ids = batch[0][0][0]["ids"]
+        qry_ids = batch[0][1][0]["ids"]
         SQids = f"{'-'.join(sup_ids)}.{'-'.join(qry_ids)}"
         _task_id = trainer.datamodule.test_SQids2Tid[SQids]
 

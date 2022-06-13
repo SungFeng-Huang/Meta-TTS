@@ -144,7 +144,9 @@ class Task:
     """
     def __init__(self, sup_data, batch_size=None, shuffle=True):
         self.sup_data = sup_data
-        sampler = RandomSampler(range(len(sup_data[0]))) if shuffle else range(len(sup_data[0]))
+        # sampler = RandomSampler(range(len(sup_data[0]))) if shuffle else range(len(sup_data[0]))
+        sampler = (RandomSampler(range(len(sup_data["ids"]))) if shuffle
+                   else range(len(sup_data["ids"])))
         self.sup_sampler = BatchSampler(sampler,
                                         batch_size=batch_size,
                                         drop_last=True)

@@ -108,7 +108,8 @@ def get_SQids2Tid(tasks, tag):
     SQids = []
     SQids2Tid = {}
     for i, task in enumerate(tasks):
-        sup_ids, qry_ids = task[0][0][0], task[1][0][0]
+        # sup_ids, qry_ids = task[0][0][0], task[1][0][0]
+        sup_ids, qry_ids = task[0][0]["ids"], task[1][0]["ids"]
         SQids.append({'sup_id': sup_ids, 'qry_id': qry_ids})
         SQids2Tid[f"{'-'.join(sup_ids)}.{'-'.join(qry_ids)}"] = f"{tag}_{i:03d}"
     return SQids, SQids2Tid

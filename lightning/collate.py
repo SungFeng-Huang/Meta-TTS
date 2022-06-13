@@ -44,37 +44,76 @@ def reprocess(data, idxs):
     else:
         speaker_args = torch.from_numpy(speakers).long()
 
-    return (
-        ids,
-        raw_texts,
-        speaker_args,
-        torch.from_numpy(texts).long(),
-        torch.from_numpy(text_lens),
-        max(text_lens),
-        torch.from_numpy(mels).float(),
-        torch.from_numpy(mel_lens),
-        max(mel_lens),
-        torch.from_numpy(pitches).float(),
-        torch.from_numpy(energies),
-        torch.from_numpy(durations).long(),
-    )
+    # return (
+    #     ids,
+    #     raw_texts,
+    #     speaker_args,
+    #     torch.from_numpy(texts).long(),
+    #     torch.from_numpy(text_lens),
+    #     max(text_lens),
+    #     torch.from_numpy(mels).float(),
+    #     torch.from_numpy(mel_lens),
+    #     max(mel_lens),
+    #     torch.from_numpy(pitches).float(),
+    #     torch.from_numpy(energies),
+    #     torch.from_numpy(durations).long(),
+    # )
+    batch = {
+        "ids": ids,
+        "raw_texts": raw_texts,
+        "speaker_args": speaker_args,
+        "texts": torch.from_numpy(texts).long(),
+        "src_lens": torch.from_numpy(text_lens),
+        "max_src_len": max(text_lens),
+        "mels": torch.from_numpy(mels).float(),
+        "mel_lens": torch.from_numpy(mel_lens),
+        "max_mel_len": max(mel_lens),
+        "p_targets": torch.from_numpy(pitches).float(),
+        "e_targets": torch.from_numpy(energies),
+        "d_targets": torch.from_numpy(durations).long(),
+    }
+
+    if "accent" in data[0]:
+        #TODO
+        accents = [data[idx]["accent"] for idx in idxs]
+        regions = [data[idx]["region"] for idx in idxs]
+        accents = np.array(accents)
+        regions = np.array(regions)
+        batch.update({
+            "accents": torch.from_numpy(accents).long(),
+            "regions": torch.from_numpy(regions).long(),
+        })
+
+    return batch
 
 
 def split_reprocess(batch, idxs):
-    (
-        ids,
-        raw_texts,
-        speaker_args,
-        texts,
-        text_lens,
-        max_text_lens,
-        mels,
-        mel_lens,
-        max_mel_lens,
-        pitches,
-        energies,
-        durations,
-    ) = batch
+    # (
+    #     ids,
+    #     raw_texts,
+    #     speaker_args,
+    #     texts,
+    #     text_lens,
+    #     max_text_lens,
+    #     mels,
+    #     mel_lens,
+    #     max_mel_lens,
+    #     pitches,
+    #     energies,
+    #     durations,
+    # ) = batch
+    ids = batch["ids"]
+    raw_texts = batch["raw_texts"]
+    speaker_args = batch["speaker_args"]
+    texts = batch["texts"]
+    text_lens = batch["src_lens"]
+    max_text_lens = batch["max_src_len"]
+    mels = batch["mels"]
+    mel_lens = batch["mel_lens"]
+    max_mel_lens = batch["max_mel_len"]
+    pitches = batch["p_targets"]
+    energies = batch["e_targets"]
+    durations = batch["d_targets"]
 
     if isinstance(idxs, list):
         idxs = np.array(idxs)
@@ -110,20 +149,46 @@ def split_reprocess(batch, idxs):
         sub_energies = energies[idxs][:, :sub_max_mel_lens]
     sub_durations = durations[idxs][:, :sub_max_text_lens]
 
-    return (
-        sub_ids,
-        sub_raw_texts,
-        sub_speaker_args,
-        sub_texts,
-        sub_text_lens,
-        sub_max_text_lens,
-        sub_mels,
-        sub_mel_lens,
-        sub_max_mel_lens,
-        sub_pitches,
-        sub_energies,
-        sub_durations,
-    )
+    # return (
+    #     sub_ids,
+    #     sub_raw_texts,
+    #     sub_speaker_args,
+    #     sub_texts,
+    #     sub_text_lens,
+    #     sub_max_text_lens,
+    #     sub_mels,
+    #     sub_mel_lens,
+    #     sub_max_mel_lens,
+    #     sub_pitches,
+    #     sub_energies,
+    #     sub_durations,
+    # )
+    sub_batch = {
+        "ids": sub_ids,
+        "raw_texts": sub_raw_texts,
+        "speaker_args": sub_speaker_args,
+        "texts": sub_texts,
+        "src_lens": sub_text_lens,
+        "max_src_len": sub_max_text_lens,
+        "mels": sub_mels,
+        "mel_lens": sub_mel_lens,
+        "max_mel_len": sub_max_mel_lens,
+        "p_targets": sub_pitches,
+        "e_targets": sub_energies,
+        "d_targets": sub_durations,
+    }
+
+    if "accent" in batch:
+        accents = batch["accents"]
+        regions = batch["regions"]
+        sub_accents = accents[idxs]
+        sub_regions = regions[idxs]
+        sub_batch.update({
+            "accents": accents,
+            "regions": regions,
+        })
+
+    return sub_batch
 
 
 def get_single_collate(sort=True):

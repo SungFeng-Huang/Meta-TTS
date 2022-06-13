@@ -27,13 +27,13 @@ class TestMixin(BaseMixin):
         self.test_count = Counter()
 
     def test_step(self, batch, batch_idx, dataloader_idx=0):
-        output = self(batch[4].transpose(1, 2))
+        output = self(batch["mels"].transpose(1, 2))
 
-        loss = self.loss_func(output, batch[2])
+        loss = self.loss_func(output, batch["accent"])
         self.log("test_loss", loss.item(), sync_dist=True)
 
-        self.test_class_acc.update(output, batch[2])
-        self.test_count.update(batch[2].cpu().numpy().tolist())
+        self.test_class_acc.update(output, batch["accent"])
+        self.test_count.update(batch["accent"].cpu().numpy().tolist())
 
         return {'loss': loss}
 

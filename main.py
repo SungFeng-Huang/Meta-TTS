@@ -45,7 +45,7 @@ TRAINER_CONFIG = {
     "strategy": "ddp" if torch.cuda.is_available() else None,
     "auto_select_gpus": True,
     "limit_train_batches": 1.0,  # Useful for fast experiment
-    "deterministic": True,
+    # "deterministic": True,
     "process_position": 1,
     "profiler": "simple",
 }

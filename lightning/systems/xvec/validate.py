@@ -25,13 +25,13 @@ class ValidateMixin(BaseMixin):
         self.val_count = Counter()
 
     def validation_step(self, batch, batch_idx, dataloader_idx=0):
-        output = self(batch[4].transpose(1, 2))
+        output = self(batch["mels"].transpose(1, 2))
 
-        loss = self.loss_func(output, batch[2])
+        loss = self.loss_func(output, batch["accent"])
         self.log("val_loss", loss.item(), sync_dist=True)
 
-        self.val_class_acc.update(output, batch[2])
-        self.val_count.update(batch[2].cpu().numpy().tolist())
+        self.val_class_acc.update(output, batch["accent"])
+        self.val_count.update(batch["accent"].cpu().numpy().tolist())
 
         return {'loss': loss}
 

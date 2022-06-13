@@ -9,7 +9,7 @@ from math import ceil
 from typing import Literal
 
 from .utils import DistributedProxySampler
-from dataset import XvecDataset as Dataset
+from lightning.dataset import XvecDataset as Dataset
 from utils.tools import pad_2D
 
 
@@ -76,7 +76,7 @@ class XvecDataModule(pl.LightningDataModule):
             sampler=DistributedProxySampler(sampler),
             drop_last=True,
             num_workers=4,
-            collate_fn=get_single_collate(False),
+            collate_fn=dict_collate,
         )
         return self.train_loader
 
@@ -89,7 +89,7 @@ class XvecDataModule(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=4,
-            collate_fn=get_single_collate(False),
+            collate_fn=dict_collate,
         )
         return self.val_loader
 
@@ -102,7 +102,7 @@ class XvecDataModule(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=4,
-            collate_fn=get_single_collate(False),
+            collate_fn=dict_collate,
         )
         return self.test_loader
 
@@ -127,39 +127,22 @@ class XvecDataModule(pl.LightningDataModule):
         return train_sets, val_sets, test_sets
 
 
-def get_single_collate(sort=True):
-    """Used with BaselineDataModule"""
-    def reprocess(data, idxs):
-        ids = [data[idx]["id"] for idx in idxs]
-        speakers = [data[idx]["speaker"] for idx in idxs]
-        accents = [data[idx]["accent"] for idx in idxs]
-        regions = [data[idx]["region"] for idx in idxs]
-        mels = [data[idx]["mel"] for idx in idxs]
+def dict_collate(batch):
+    ids = [data["id"] for data in batch]
+    speakers = [data["speaker"] for data in batch]
+    accents = [data["accent"] for data in batch]
+    regions = [data["region"] for data in batch]
+    mels = [data["mel"] for data in batch]
 
-        speakers = np.array(speakers)
-        accents = np.array(accents)
-        regions = np.array(regions)
-        mels = pad_2D(mels)
+    speakers = np.array(speakers)
+    accents = np.array(accents)
+    regions = np.array(regions)
+    mels = pad_2D(mels)
 
-        return (
-            ids,
-            torch.from_numpy(speakers).long(),
-            torch.from_numpy(accents).long(),
-            torch.from_numpy(regions).long(),
-            torch.from_numpy(mels).float(),
-        )
-
-    def collate_fn(data):
-        data_size = len(data)
-
-        if sort:
-            len_arr = np.array([d["text"].shape[0] for d in data])
-            idx_arr = np.argsort(-len_arr)
-        else:
-            idx_arr = np.arange(data_size)
-
-        output = reprocess(data, idx_arr)
-
-        return output
-
-    return collate_fn
+    return {
+        "id": ids,
+        "speaker": torch.from_numpy(speakers).long(),
+        "accent": torch.from_numpy(accents).long(),
+        "region": torch.from_numpy(regions).long(),
+        "mels": torch.from_numpy(mels).float(),
+    }
