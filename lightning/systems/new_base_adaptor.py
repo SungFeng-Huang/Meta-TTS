@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
 
 import os
-import json
 import time
 import torch
 import torch.nn.functional as F
-import numpy as np
 import pandas as pd
-from tqdm import tqdm
-from argparse import Namespace
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.progress import ProgressBar
 from pytorch_lightning.callbacks import LearningRateMonitor, GPUStatsMonitor, ModelCheckpoint, RichProgressBar
-import learn2learn as l2l
 # from learn2learn.algorithms import MAML
 from learn2learn.utils import detach_module
-from resemblyzer import VoiceEncoder
 from torchmetrics import Accuracy
 
 # from lightning.systems.system import System
@@ -23,12 +17,10 @@ from lightning.systems.utils import Task, MAML
 from lightning.metrics import XvecAccentAccuracy
 from lightning.model.xvec import XvecTDNN
 from lightning.model import FastSpeech2Loss, FastSpeech2
-# from lightning.callbacks import GlobalProgressBar, Saver
-from lightning.callbacks import Saver
+from lightning.callbacks import GlobalProgressBar, Saver
 from lightning.optimizer import get_optimizer
 from lightning.scheduler import get_scheduler
-from lightning.utils import LightningMelGAN, loss2dict
-from utils.tools import expand, plot_mel, get_mask_from_lengths
+from lightning.utils import loss2dict
 
 
 VERBOSE = False
@@ -352,8 +344,8 @@ class BaseAdaptorSystem(pl.LightningModule):
 
     def clone_learner(self, inference=False):
         learner = self.learner.clone()
-        # if inference:
-            # detach_module(learner.module, keep_requires_grad=True)
+        if inference:
+            detach_module(learner.module, keep_requires_grad=True)
         learner.inner_freeze()
         for module in self.algorithm_config["adapt"]["modules"]:
             learner.inner_unfreeze(module)
@@ -378,7 +370,7 @@ class BaseAdaptorSystem(pl.LightningModule):
         ref_psd = (sup_batch["p_targets"].unsqueeze(2)
                    if self.reference_prosody else None)
         first_order = not train
-        for step in range(adapt_steps):
+        for _ in range(adapt_steps):
             # preds = learner(*sup_batch[2:], reference_prosody=ref_psd)
             preds = learner(**sup_batch, reference_prosody=ref_psd)
             train_error = self.loss_func(sup_batch, preds)
@@ -530,7 +522,8 @@ class BaseAdaptorSystem(pl.LightningModule):
                 "dataloader_idx": dataloader_idx,
                 "batch_idx": batch_idx,
                 "accent_acc": 0,
-                **loss_dict
+                "accent_prob": 0,
+                **loss_dict,
             }
             if "accents" in outputs["_batch"]:
                 step_acc = self.eval_model(
@@ -539,9 +532,10 @@ class BaseAdaptorSystem(pl.LightningModule):
                     torch.arange(step_acc.shape[0]).to(self.device),
                     outputs["_batch"]["accents"]]
                 self.log(f"{step}_acc_prob", step_acc_prob)
-                self.eval_acc[step](step_acc, outputs["_batch"]["accents"])
+                accent_acc = self.eval_acc[step](step_acc, outputs["_batch"]["accents"])
                 self.log(f"{step}_acc", self.eval_acc[step])
-                data["accent_acc"] = step_acc_prob.detach().cpu().numpy().tolist()[0]
+                data["accent_acc"] = accent_acc.item()
+                data["accent_prob"] = step_acc_prob.item()
             df = pd.DataFrame([data])
             df.to_csv(self.csv_path, index=False, mode='a', header=not
                       os.path.exists(self.csv_path))
