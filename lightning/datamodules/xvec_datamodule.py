@@ -42,7 +42,7 @@ class XvecDataModule(pl.LightningDataModule):
 
         # Discriminate train/transfer
         self.target = target
-        self.dataset = Dataset("all", self.preprocess_config)
+        self.dataset = Dataset("total", self.preprocess_config)
         self.num_classes = len(getattr(self.dataset, f"{self.target}_map"))
 
     def setup(self, stage=None):
@@ -76,7 +76,7 @@ class XvecDataModule(pl.LightningDataModule):
             sampler=DistributedProxySampler(sampler),
             drop_last=True,
             num_workers=4,
-            collate_fn=dict_collate,
+            collate_fn=self.dict_collate,
         )
         return self.train_loader
 
@@ -89,7 +89,7 @@ class XvecDataModule(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=4,
-            collate_fn=dict_collate,
+            collate_fn=self.dict_collate,
         )
         return self.val_loader
 
@@ -102,7 +102,7 @@ class XvecDataModule(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=4,
-            collate_fn=dict_collate,
+            collate_fn=self.dict_collate,
         )
         return self.test_loader
 
@@ -116,7 +116,8 @@ class XvecDataModule(pl.LightningDataModule):
             total_len = len(map_ids[tgt])
             val_len, test_len = ceil(total_len * 0.3), ceil(total_len * 0.1)
             split_len = [total_len - val_len - test_len, val_len, test_len]
-            assert split_len[0] > 0
+            if not split_len[0] > 0:
+                continue
             train_subset, val_subset, test_subset = random_split(
                 Subset(dataset, map_ids[tgt]), split_len,
                 generator=torch.Generator().manual_seed(42)
@@ -127,22 +128,26 @@ class XvecDataModule(pl.LightningDataModule):
         return train_sets, val_sets, test_sets
 
 
-def dict_collate(batch):
-    ids = [data["id"] for data in batch]
-    speakers = [data["speaker"] for data in batch]
-    accents = [data["accent"] for data in batch]
-    regions = [data["region"] for data in batch]
-    mels = [data["mel"] for data in batch]
+    def dict_collate(self, batch):
+        ids = [data["id"] for data in batch]
+        speakers = [data["speaker"] for data in batch]
+        accents = [data["accent"] for data in batch]
+        regions = [data["region"] for data in batch]
+        mels = [data["mel"] for data in batch]
 
-    speakers = np.array(speakers)
-    accents = np.array(accents)
-    regions = np.array(regions)
-    mels = pad_2D(mels)
+        speakers = np.array(speakers)
+        accents = np.array(accents)
+        regions = np.array(regions)
+        mels = pad_2D(mels)
 
-    return {
-        "id": ids,
-        "speaker": torch.from_numpy(speakers).long(),
-        "accent": torch.from_numpy(accents).long(),
-        "region": torch.from_numpy(regions).long(),
-        "mels": torch.from_numpy(mels).float(),
-    }
+        samples = {
+            "speaker": torch.from_numpy(speakers).long(),
+            "accent": torch.from_numpy(accents).long(),
+            "region": torch.from_numpy(regions).long(),
+        }
+
+        return {
+            "id": ids,
+            "target": samples[self.target],
+            "mels": torch.from_numpy(mels).float(),
+        }

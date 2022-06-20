@@ -5,9 +5,6 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
 
-from text import text_to_sequence
-from utils.tools import pad_1D, prosody_averaging, merge_stats, merge_speaker_map
-
 
 class XvecDataset(Dataset):
 
@@ -21,13 +18,6 @@ class XvecDataset(Dataset):
             data["pID"]: (data["ACCENTS"], data["REGION"])
             for _, data in self.df.iterrows()
         }
-        self.accent_map = {
-            k: i for i, k in enumerate(self.df.groupby(["ACCENTS"]).groups)
-        }
-        self.region_map = {
-            k: i for i, k in
-            enumerate(self.df.groupby(["ACCENTS", "REGION"]).groups)
-        }
 
         self.preprocessed_path = preprocess_config["path"]["preprocessed_path"]
 
@@ -36,8 +26,19 @@ class XvecDataset(Dataset):
         )
         with open(os.path.join(self.preprocessed_path, "speakers.json")) as f:
             self.speaker_map = json.load(f)
-        self.accent = [self.speaker_accent_map[spk] for spk in self.speaker]
-        self.region = [self.speaker_region_map[spk] for spk in self.speaker]
+        self.accent = [self.speaker_accent_map.get(spk, None)
+                       for spk in self.speaker]
+        self.region = [self.speaker_region_map.get(spk, None)
+                       for spk in self.speaker]
+        self.accent_map = {
+            None: -100,
+            **{k: i for i, k in enumerate(self.df.groupby(["ACCENTS"]).groups)}
+        }
+        self.region_map = {
+            None: -100,
+            **{k: i for i, k in
+               enumerate(self.df.groupby(["ACCENTS", "REGION"]).groups)}
+        }
 
         print(f"\nLength of dataset: {len(self.speaker)}")
 

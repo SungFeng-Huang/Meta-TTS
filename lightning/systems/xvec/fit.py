@@ -34,9 +34,9 @@ class FitMixin(ValidateMixin):
         self.lr_sched_config = lr_sched_config
 
         self.train_acc = Accuracy(num_classes=self.num_classes,
-                                  average="macro", ignore_index=11)
+                                  average="macro", ignore_index=-100)
         self.train_class_acc = Accuracy(num_classes=self.num_classes,
-                                        average=None, ignore_index=11)
+                                        average=None, ignore_index=-100)
 
     def on_train_start(self):
         self.train_count = Counter()
@@ -44,15 +44,15 @@ class FitMixin(ValidateMixin):
     def training_step(self, batch, batch_idx, dataloader_idx=0):
         output = self(batch["mels"].transpose(1, 2))
 
-        loss = self.loss_func(output, batch["accent"])
+        loss = self.loss_func(output, batch["target"])
         self.log("train_loss", loss.item(), sync_dist=True)
 
-        self.train_acc(output, batch["accent"])
+        self.train_acc(output, batch["target"])
         self.log("train_acc", self.train_acc, sync_dist=True, prog_bar=True)
 
         # forward -> compute -> DDP sync
-        self.train_class_acc.update(output, batch["accent"])
-        self.train_count.update(batch["accent"].cpu().numpy().tolist())
+        self.train_class_acc.update(output, batch["target"])
+        self.train_count.update(batch["target"].cpu().numpy().tolist())
 
         return {'loss': loss}
 
@@ -113,7 +113,15 @@ class FitMixin(ValidateMixin):
         df = pd.DataFrame(data)
         self.print({k: v.item() for k, v in self.trainer.callback_metrics.items()
                     if k in ["train_loss", "train_acc", "val_loss", "val_acc"]})
-        self.print(df.to_string(header=True, index=True))
+        if self.num_classes < 20:
+            self.print(df.to_string(header=True, index=True))
+        else:
+            self.print("Top 10 val_acc:")
+            self.print(df.nlargest(n=10, columns=["val_acc"], keep='all')
+                       .to_string(header=True, index=True))
+            self.print("Last 10 val_acc:")
+            self.print(df.nsmallest(n=10, columns=["val_acc"], keep='all')
+                       .to_string(header=True, index=True))
 
     def configure_optimizers(self):
         """Initialize optimizers, batch-wise and epoch-wise schedulers."""

@@ -30,23 +30,30 @@ class MonolingualTTSDataset(TTSDataset):
             data["pID"]: (data["ACCENTS"], data["REGION"])
             for _, data in self.df.iterrows()
         }
-        self.accent_map = {
-            k: i for i, k in enumerate(self.df.groupby(["ACCENTS"]).groups)
-        }
-        self.region_map = {
-            k: i for i, k in
-            enumerate(self.df.groupby(["ACCENTS", "REGION"]).groups)
-        }
         self.accent = [self.speaker_accent_map.get(spk, None)
                        for spk in self.speaker]
         self.region = [self.speaker_region_map.get(spk, None)
                        for spk in self.speaker]
+        self.accent_map = {
+            None: -100,
+            **{k: i for i, k in enumerate(self.df.groupby(["ACCENTS"]).groups)}
+        }
+        self.region_map = {
+            None: -100,
+            **{k: i for i, k in
+               enumerate(self.df.groupby(["ACCENTS", "REGION"]).groups)}
+        }
 
     def __getitem__(self, idx):
         sample = super().__getitem__(idx)
 
         basename = self.basename[idx]
         speaker = self.speaker[idx]
+
+        accent = self.accent[idx]
+        region = self.region[idx]
+        accent_id = self.accent_map[accent]
+        region_id = self.region_map[region]
 
         representation_path = os.path.join(
             self.preprocessed_path,
@@ -61,17 +68,8 @@ class MonolingualTTSDataset(TTSDataset):
         sample.update({
             "language": self.lang_id,
             "representation": representation,
+            "accent": accent_id,
+            "region": region_id,
         })
-
-        accent = self.accent[idx]
-        region = self.region[idx]
-
-        if accent is not None and region is not None:
-            accent_id = self.accent_map[accent]
-            region_id = self.region_map[region]
-            sample.update({
-                "accent": accent_id,
-                "region": region_id,
-            })
 
         return sample

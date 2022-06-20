@@ -27,11 +27,11 @@ class ValidateMixin(BaseMixin):
     def validation_step(self, batch, batch_idx, dataloader_idx=0):
         output = self(batch["mels"].transpose(1, 2))
 
-        loss = self.loss_func(output, batch["accent"])
+        loss = self.loss_func(output, batch["target"])
         self.log("val_loss", loss.item(), sync_dist=True)
 
-        self.val_class_acc.update(output, batch["accent"])
-        self.val_count.update(batch["accent"].cpu().numpy().tolist())
+        self.val_class_acc.update(output, batch["target"])
+        self.val_count.update(batch["target"].cpu().numpy().tolist())
 
         return {'loss': loss}
 
@@ -70,7 +70,15 @@ class ValidateMixin(BaseMixin):
         df = pd.DataFrame(data)
         self.print({k: v.item() for k, v in self.trainer.callback_metrics.items()
                     if k in ["train_loss", "train_acc", "val_loss", "val_acc"]})
-        self.print(df.to_string(header=True, index=True))
+        if self.num_classes < 20:
+            self.print(df.to_string(header=True, index=True))
+        else:
+            self.print("Top 10 val_acc:")
+            self.print(df.nlargest(n=10, columns=["val_acc"], keep='all')
+                       .to_string(header=True, index=True))
+            self.print("Last 10 val_acc:")
+            self.print(df.nsmallest(n=10, columns=["val_acc"], keep='all')
+                       .to_string(header=True, index=True))
 
 
 class XvecValidateSystem(ValidateMixin, XvecTDNN):
