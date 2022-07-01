@@ -110,7 +110,6 @@ def split_reprocess(batch, idxs):
     max_text_lens = batch["max_src_len"]
     mels = batch["mels"]
     mel_lens = batch["mel_lens"]
-    max_mel_lens = batch["max_mel_len"]
     pitches = batch["p_targets"]
     energies = batch["e_targets"]
     durations = batch["d_targets"]
@@ -184,8 +183,8 @@ def split_reprocess(batch, idxs):
         sub_accents = accents[idxs]
         sub_regions = regions[idxs]
         sub_batch.update({
-            "accents": accents,
-            "regions": regions,
+            "accents": sub_accents,
+            "regions": sub_regions,
         })
 
     return sub_batch
@@ -284,8 +283,8 @@ class LanguageTaskCollate:
         """ multi-speaker with multi-task inner-loop training:
                 random split, use global speaker_id
         """
-        import time
-        st = time.time()
+        # import time
+        # st = time.time()
         batch_size = shots + queries
         data_size = len(data)
         # assert data_size % batch_size == 0, "Assume batch_size = 1 way * (shots + queries)"
