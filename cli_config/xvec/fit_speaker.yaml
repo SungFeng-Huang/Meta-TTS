@@ -30,14 +30,14 @@ data:
         preprocessed_path: "./preprocessed_data/LibriTTS_VCTK"
     train_config:
       optimizer:
-        batch_size: 32
+        batch_size: 64
     target: speaker
 
 trainer:
   ### Train settings
-  max_epochs: 20
+  max_epochs: 50
   gradient_clip_val: 1.0
-  accumulate_grad_batches: 2
+  accumulate_grad_batches: 1
 
   ### Logging and saving settings
   enable_checkpointing: True
@@ -45,7 +45,7 @@ trainer:
 
   ### GPU-related settings
   accelerator: gpu
-  devices: [1]
+  devices: [0]
   strategy: ddp
   auto_select_gpus: True
 
