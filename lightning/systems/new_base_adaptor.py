@@ -115,21 +115,14 @@ class BaseAdaptorSystem(pl.LightningModule):
         self.eval_model = XvecTDNN.load_from_checkpoint(xvec_ckpt_path).to(self.device)
         self.eval_model.freeze()
         self.eval_model.eval()
-        self.eval_acc = torch.nn.ModuleDict({
-            "recon": XvecAccentAccuracy(xvec_ckpt_path),
-            **{f"step_{ft_step}": XvecAccentAccuracy(xvec_ckpt_path)
-               for ft_step in [0] + self.saving_steps},
-        })
         # self.eval_acc = torch.nn.ModuleDict({
         #     "recon": XvecAccentAccuracy(xvec_ckpt_path),
         #     **{f"step_{ft_step}": XvecAccentAccuracy(xvec_ckpt_path)
         #        for ft_step in [0] + self.saving_steps},
         # })
-        # for eval_acc in self.eval_acc.values():
-        #     eval_acc.add_model(self.eval_model)
         self.eval_acc = torch.nn.ModuleDict({
-            "recon": Accuracy(),
-            **{f"step_{ft_step}": Accuracy()
+            "recon": Accuracy(ignore_index=-100),
+            **{f"step_{ft_step}": Accuracy(ignore_index=-100)
                for ft_step in [0] + self.saving_steps},
         })
         for eval_acc in self.eval_acc.values():
@@ -246,7 +239,7 @@ class BaseAdaptorSystem(pl.LightningModule):
             "scheduler": get_scheduler(self.optimizer, self.train_config),
             'interval': 'step', # "epoch" or "step"
             'frequency': 1,
-            'monitor': self.default_monitor,
+            # 'monitor': self.default_monitor,
         }
 
         return [self.optimizer], [self.scheduler]
@@ -497,9 +490,6 @@ class BaseAdaptorSystem(pl.LightningModule):
     def _val_step_for_validate(self, batch, batch_idx, dataloader_idx):
         outputs = self._test_step(batch, batch_idx, dataloader_idx)
 
-        self.saver._on_val_batch_end_for_validate(
-            self.trainer, self, outputs, batch, batch_idx, dataloader_idx)
-
         st = time.time()
         if "accents" in outputs["_batch"]:
             with torch.no_grad():
@@ -548,7 +538,7 @@ class BaseAdaptorSystem(pl.LightningModule):
         st = time.time()
         torch.cuda.empty_cache()
         self._print_mem_diff(st, "Empty cache")
-        # return outputs
+        return outputs
 
     def _test_step(self, batch, batch_idx, dataloader_idx):
         adapt_steps = [step_ - _step for _step, step_ in
