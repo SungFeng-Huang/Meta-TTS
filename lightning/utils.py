@@ -15,7 +15,7 @@ class LightningMelGAN(pl.LightningModule):
 
     def inverse(self, mel):
         with torch.no_grad():
-            return self.mel2wav(mel).squeeze(1)
+            return self.mel2wav(mel).squeeze(1).detach()
 
     def infer(self, mels, max_wav_value, lengths=None):
         """preprocess_config["preprocessing"]["audio"]["max_wav_value"]
