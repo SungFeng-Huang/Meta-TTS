@@ -1,13 +1,10 @@
 import os
 import json
-import copy
-import math
 from collections import OrderedDict
 
 import torch
 import torch.nn as nn
 import numpy as np
-import torch.nn.functional as F
 
 from utils.tools import get_mask_from_lengths, pad
 
@@ -282,7 +279,6 @@ class Conv(nn.Module):
         padding=0,
         dilation=1,
         bias=True,
-        w_init="linear",
     ):
         """
         :param in_channels: dimension of input
@@ -292,7 +288,6 @@ class Conv(nn.Module):
         :param padding: size of padding
         :param dilation: dilation rate
         :param bias: boolean. if True, bias is included.
-        :param w_init: str. weight inits with xavier initialization.
         """
         super(Conv, self).__init__()
 

@@ -1,10 +1,7 @@
-import os
-import json
 from collections import defaultdict
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import pytorch_lightning as pl
 
 from transformer import Encoder, Decoder, PostNet
@@ -19,7 +16,7 @@ from utils.tools import get_mask_from_lengths
 class FastSpeech2(pl.LightningModule):
     """ FastSpeech2 """
 
-    def __init__(self, preprocess_config, model_config):
+    def __init__(self, preprocess_config, model_config, *args, **kwargs):
         super(FastSpeech2, self).__init__()
         self.model_config = model_config
 
@@ -206,26 +203,29 @@ class AdaptiveFastSpeech2(FastSpeech2):
                            .expand(batch_size, max_src_len, -1)),
                         *input[1:]
                     )
-                    
+
                 self.forward_pre_hooks["variance_adaptor"].append(
                     self.variance_adaptor.register_forward_pre_hook(VA_pre_hook)
                 )
 
             if "decoder" in additive_config["speaker_modules"]:
                 if max_mel_len is None:
-                    def get_max_mel_len(module, input, output):
-                        self.register_buffer("max_mel_len", output[5], persistent=False)
-
-                    self.forward_hooks["variance_adaptor"].append(
-                        self.variance_adaptor.register_forward_hook(get_max_mel_len)
-                    )
+                    # def get_max_mel_len(module, input, output):
+                    #     # self.register_buffer("max_mel_len", output[5], persistent=False)
+                    #     self.register_buffer("max_mel_len", output[0].shape[1],
+                    #                          persistent=False)
+                    #
+                    # self.forward_hooks["variance_adaptor"].append(
+                    #     self.variance_adaptor.register_forward_hook(get_max_mel_len)
+                    # )
 
                     def decoder_pre_hook(module, input):
                         batch_size = input[0].shape[0]
+                        _max_mel_len = input[0].shape[1]
                         return (
                             input[0]
                             + (spk_emb.unsqueeze(1)
-                               .expand(batch_size, self.max_mel_len, -1)),
+                               .expand(batch_size, _max_mel_len, -1)),
                             *input[1:]
                         )
 
@@ -381,5 +381,7 @@ class AdaptiveFastSpeech2(FastSpeech2):
         # if self.algorithm_config["adapt"].get("AdaLN", None) is not None:
             # for k, h in handles.items():
                 # h.remove()
+        self.forward_hooks = defaultdict(list)
+        self.forward_pre_hooks = defaultdict(list)
 
         return outputs
