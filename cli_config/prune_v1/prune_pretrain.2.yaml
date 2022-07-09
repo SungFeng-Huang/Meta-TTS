@@ -214,18 +214,18 @@ trainer:
 
   ### Callbacks
   callbacks:
-    - class_path: pytorch_lightning.callbacks.ModelPruning
-      init_args:
-        pruning_fn: l1_unstructured
-        parameters_to_prune: null
-        use_global_unstructured: True
-        amount: 0.1
-        apply_pruning: True
-        # make_pruning_permanent: False
-        use_lottery_ticket_hypothesis: True
-        resample_parameters: False
-        verbose: 2
-        prune_on_train_epoch_end: True
+    # - class_path: pytorch_lightning.callbacks.ModelPruning
+    #   init_args:
+    #     pruning_fn: l1_unstructured
+    #     parameters_to_prune: null
+    #     use_global_unstructured: True
+    #     amount: *amount # no bit use. still need to override on_fit_start
+    #     apply_pruning: True
+    #     # make_pruning_permanent: False
+    #     use_lottery_ticket_hypothesis: True
+    #     resample_parameters: False
+    #     verbose: 2
+    #     prune_on_train_epoch_end: True
     # - class_path: pytorch_lightning.callbacks.EarlyStopping
     #   init_args:
     #     monitor: accent_acc/val
@@ -253,3 +253,5 @@ trainer:
   ### Depreciated settings
   # deterministic: True
 
+model_pruning_callback:
+  amount: 0.1

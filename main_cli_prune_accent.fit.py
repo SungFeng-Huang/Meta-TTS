@@ -1,3 +1,4 @@
+from pytorch_lightning.callbacks.pruning import ModelPruning
 from pytorch_lightning.utilities.cli import LightningCLI
 from pytorch_lightning.loops.epoch.training_epoch_loop import \
     TrainingEpochLoop, _OUTPUTS_TYPE
@@ -16,12 +17,27 @@ class MyEpochLoop(TrainingEpochLoop):
     #     outputs, self._outputs = self._outputs, []
     #     return outputs
 
+class MyLightningCLI(LightningCLI):
+    def add_arguments_to_parser(self, parser):
+        parser.add_lightning_class_args(ModelPruning, "model_pruning_callback")
+        parser.set_defaults({
+            "model_pruning_callback.pruning_fn": "l1_unstructured",
+            "model_pruning_callback.parameters_to_prune": None,
+            "model_pruning_callback.use_global_unstructured": True,
+            "model_pruning_callback.amount": 0.1,
+            "model_pruning_callback.apply_pruning": True,
+            "model_pruning_callback.use_lottery_ticket_hypothesis": True,
+            "model_pruning_callback.resample_parameters": False,
+            "model_pruning_callback.verbose": 2,
+            "model_pruning_callback.prune_on_train_epoch_end": True,
+        })
+
 
 if __name__ == "__main__":
     from lightning.systems.base_adapt.prune_accent import PruneAccentSystem
     from lightning.datamodules.prune_accent_datamodule import PruneAccentDataModule
 
-    cli = LightningCLI(
+    cli = MyLightningCLI(
         PruneAccentSystem, PruneAccentDataModule,
         subclass_mode_model=True, subclass_mode_data=True,
         run=False,

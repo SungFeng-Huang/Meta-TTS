@@ -10,10 +10,12 @@ while IFS="," read -r pid accents
 do
   for i in $(seq 1 5)
   do
-    python main_cli_prune_accent.fit.py \
-      -c cli_config/prune_v1/prune_pretrain.2.yaml \
-      --data.init_args.key $pid \
-      --trainer.default_root_dir output/prune_accent/$accents/$pid/prune=$prune
+    source scripts/prune_accent.sh $accents $pid $prune
+    # python main_cli_prune_accent.fit.py \
+    #   -c cli_config/prune_v1/prune_pretrain.2.yaml \
+    #   --data.init_args.key $pid \
+    #   --trainer.default_root_dir output/prune_accent/$accents/$pid/prune=$prune \
+    #   --model_pruning_callback.amount $prune
   done
 done < <(cut -d "," -f${loc_col_a},${loc_col_b} $INPUT | tail -n +2)
 
