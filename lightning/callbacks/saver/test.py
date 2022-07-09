@@ -40,11 +40,11 @@ class TestSaver(BaseSaver):
             self.result_dir, trainer.state.stage, "figure", f"step_{global_step}")
         self.test_audio_dir = os.path.join(
             self.result_dir, trainer.state.stage, "audio", f"step_{global_step}")
-        self.test_log_dir = os.path.join(
+        self.test_csv_dir = os.path.join(
             self.result_dir, trainer.state.stage, "csv", f"step_{global_step}")
         os.makedirs(self.test_figure_dir, exist_ok=True)
         os.makedirs(self.test_audio_dir, exist_ok=True)
-        os.makedirs(self.test_log_dir, exist_ok=True)
+        os.makedirs(self.test_csv_dir, exist_ok=True)
 
     def on_test_batch_end(self,
                           trainer: Trainer,
@@ -71,7 +71,7 @@ class TestSaver(BaseSaver):
 
             figure_dir = os.path.join(self.test_figure_dir, task_id)
             audio_dir = os.path.join(self.test_audio_dir, task_id)
-            csv_file_path = os.path.join(self.test_log_dir, f"{task_id}.csv")
+            csv_file_path = os.path.join(self.test_csv_dir, f"{task_id}.csv")
             os.makedirs(figure_dir, exist_ok=True)
             os.makedirs(audio_dir, exist_ok=True)
             os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)

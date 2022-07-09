@@ -1,0 +1,255 @@
+# log_dir: output/log/pretrain_LibriTTS.2
+# result_dir: output/result/dev.2
+
+seed_everything: 42
+model:
+  class_path: lightning.systems.base_adapt.prune_accent.PruneAccentSystem
+  init_args:
+    ckpt_path: output/ckpt/LibriTTS/meta-tts-accent-dev/1d34914e07244f87ad10c580ab85656c/checkpoints/epoch=39-step=39999.ckpt
+    qry_patience: 200
+    preprocess_config: &preprocess_config
+      dataset: LibriTTS_VCTK
+      lang_id: 0
+      path:
+        child_path: LibriTTS_VCTK
+        corpus_path: /home/r06942045/myData
+        lexicon_path: lexicon/librispeech-lexicon.txt
+        preprocessed_path: ./preprocessed_data/LibriTTS_VCTK
+        raw_path: ./raw_data
+      preprocessing:
+        audio:
+          max_wav_value: 32768.0
+          sampling_rate: 22050
+        energy:
+          feature: phoneme_level
+          log: False
+          normalization: True
+          word: False
+        mel:
+          mel_fmax: null
+          mel_fmin: 0
+          n_mel_channels: 80
+        pitch:
+          feature: phoneme_level
+          log: True
+          normalization: False
+          word: False
+        stft:
+          filter_length: 1024
+          hop_length: 256
+          win_length: 1024
+        text:
+          language: en
+          text_cleaners:
+          - english_cleaners
+        val_size: 512
+      root:
+        corpus_path: /home/r06942045/myData
+        lexicon_path: lexicon/librispeech-lexicon.txt
+        preprocessed_path: ./preprocessed_data
+        raw_path: ./raw_data
+      subsets:
+        test:
+        - LibriTTS/test-clean
+        - VCTK/AustralianEnglish
+        - VCTK/NorthernIrish
+        - VCTK/Welsh
+        train:
+        - LibriTTS/train-all
+        transfer:
+        - VCTK/American
+        - VCTK/Canadian
+        - VCTK/English
+        - VCTK/Irish
+        - VCTK/Scottish
+        - VCTK/SouthAfrican
+        val:
+        - VCTK/Indian
+        - VCTK/British
+        - VCTK/NewZealand
+        - LibriTTS/dev-clean
+    model_config: &model_config
+      max_seq_len: 1000
+      multi_lingual: True
+      multi_speaker: True
+      transformer:
+        conv_filter_size: 1024
+        conv_kernel_size:
+        - 9
+        - 1
+        decoder_dropout: 0.2
+        decoder_head: 2
+        decoder_hidden: 256
+        decoder_layer: 6
+        encoder_dropout: 0.2
+        encoder_head: 2
+        encoder_hidden: 256
+        encoder_layer: 4
+      variance_embedding:
+        energy_quantization: linear
+        n_bins: 256
+        pitch_quantization: linear
+      variance_predictor:
+        dropout: 0.5
+        filter_size: 256
+        kernel_size: 3
+      vocoder:
+        model: MelGAN
+        speaker: universal
+    algorithm_config: &algorithm_config
+      adapt:
+        additive:
+          speaker: True
+          speaker_modules:
+          - variance_adaptor
+          - decoder
+        class: MAML
+        imaml:
+          K: 5
+          batch_size: 5
+          reg_param: 1
+          stochastic: True
+        modules:
+        - speaker_emb
+        - encoder
+        - variance_adaptor
+        - decoder
+        - mel_linear
+        - postnet
+        phoneme_emb:
+          refresh: False
+          type: embedding
+        speaker_emb: table
+        task:
+          lr: 0.001
+          queries: 5
+          shots: 5
+          ways: 1
+        test:
+          lr: 0.001
+          queries: 1
+          saving_steps:
+          - 5
+          - 10
+          - 20
+          - 50
+          - 100
+          - 200
+          - 400
+          - 600
+          - 800
+          - 1000
+          shots: 5
+          steps: 1000
+          ways: 1
+        train:
+          lr: 0.001
+          meta_batch_size: 8
+          queries: 5
+          shots: 5
+          steps: 5
+          ways: 1
+        type: spk
+      name: pretrain_LibriTTS.2
+      parser_args:
+        ckpt_file: last.ckpt
+        exp_key: null
+        model_config: config/model/base.yaml
+        preprocess_config:
+        - config/preprocess/LibriTTS_VCTK.yaml
+        stage: train
+        train_config:
+        - config/train/LibriTTS.yaml
+        - config/train/base.yaml
+      type: baseline
+data:
+  class_path: lightning.datamodules.prune_accent_datamodule.PruneAccentDataModule
+  init_args:
+    steps_per_epoch: 100
+    k: 5
+    q: 8
+    key: p225
+    preprocess_config: *preprocess_config
+    train_config: &train_config
+      optimizer:
+        anneal_rate: 0.3
+        anneal_steps:
+        - 300000
+        - 400000
+        - 500000
+        batch_size: 80
+        betas:
+        - 0.9
+        - 0.98
+        eps: 1.0e-09
+        grad_acc_step: 1
+        grad_clip_thresh: 1.0
+        warm_up_step: 4000
+        weight_decay: 0.0
+      path:
+        ckpt_path: ./output/ckpt/LibriTTS
+        log_path: ./output/log/LibriTTS
+        result_path: ./output/result/LibriTTS
+      step:
+        log_step: 100
+        save_step: 10000  # synth & save?
+        synth_step: 1000  # Not used?
+        total_step: 100000
+        val_step: 1000
+trainer:
+  ### Train settings
+  max_epochs: 10
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+
+  ### Logging and saving settings
+  enable_checkpointing: True
+  default_root_dir: output/prune_accent/p225
+
+  ### GPU-related settings
+  accelerator: gpu
+  devices: [0]
+  strategy: ddp
+  auto_select_gpus: True
+
+  ### Callbacks
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.ModelPruning
+      init_args:
+        pruning_fn: l1_unstructured
+        parameters_to_prune: null
+        use_global_unstructured: True
+        amount: 0.1
+        apply_pruning: True
+        # make_pruning_permanent: False
+        use_lottery_ticket_hypothesis: True
+        resample_parameters: False
+        verbose: 2
+        prune_on_train_epoch_end: True
+    # - class_path: pytorch_lightning.callbacks.EarlyStopping
+    #   init_args:
+    #     monitor: accent_acc/val
+    #     mode: max
+    #     verbose: 1
+    - class_path: lightning.callbacks.saver.prune_accent.PruneAccentSaver
+      init_args:
+        preprocess_config: *preprocess_config
+    - class_path: pytorch_lightning.callbacks.DeviceStatsMonitor
+      init_args: {}
+    - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+      init_args:
+        filename: 'epoch={epoch}-step={step}-vacc={accent_acc-val/val_end:.2f}-vprob={accent_prob-val/val_end:.2f}'
+        monitor: accent_acc-val/val_end
+        mode: max
+        save_top_k: -1
+        auto_insert_metric_name: False
+    - class_path: pytorch_lightning.callbacks.LearningRateMonitor
+      init_args:
+        log_momentum: True
+
+  ### Malicious settings
+  profiler: simple
+
+  ### Depreciated settings
+  # deterministic: True
+

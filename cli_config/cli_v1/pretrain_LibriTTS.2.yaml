@@ -1,0 +1,184 @@
+algorithm_config:
+  adapt:
+    additive:
+      speaker: true
+      speaker_modules:
+      - variance_adaptor
+      - decoder
+    class: MAML
+    imaml:
+      K: 5
+      batch_size: 5
+      reg_param: 1
+      stochastic: true
+    modules:
+    - speaker_emb
+    - encoder
+    - variance_adaptor
+    - decoder
+    - mel_linear
+    - postnet
+    phoneme_emb:
+      refresh: false
+      type: embedding
+    speaker_emb: table
+    task:
+      lr: 0.001
+      queries: 5
+      shots: 5
+      ways: 1
+    test:
+      lr: 0.001
+      queries: 1
+      saving_steps:
+      - 5
+      - 10
+      - 20
+      - 50
+      - 100
+      - 200
+      - 400
+      - 600
+      - 800
+      - 1000
+      shots: 5
+      steps: 1000
+      ways: 1
+    train:
+      lr: 0.001
+      meta_batch_size: 8
+      queries: 5
+      shots: 5
+      steps: 5
+      ways: 1
+    type: spk
+  name: pretrain_LibriTTS.2
+  parser_args:
+    ckpt_file: last.ckpt
+    exp_key: null
+    model_config: config/model/base.yaml
+    preprocess_config:
+    - config/preprocess/LibriTTS_VCTK.yaml
+    stage: train
+    train_config:
+    - config/train/LibriTTS.yaml
+    - config/train/base.yaml
+  type: baseline
+log_dir: output/log/pretrain_LibriTTS.2
+model_config:
+  max_seq_len: 1000
+  multi_lingual: true
+  multi_speaker: true
+  transformer:
+    conv_filter_size: 1024
+    conv_kernel_size:
+    - 9
+    - 1
+    decoder_dropout: 0.2
+    decoder_head: 2
+    decoder_hidden: 256
+    decoder_layer: 6
+    encoder_dropout: 0.2
+    encoder_head: 2
+    encoder_hidden: 256
+    encoder_layer: 4
+  variance_embedding:
+    energy_quantization: linear
+    n_bins: 256
+    pitch_quantization: linear
+  variance_predictor:
+    dropout: 0.5
+    filter_size: 256
+    kernel_size: 3
+  vocoder:
+    model: MelGAN
+    speaker: universal
+preprocess_config:
+  dataset: LibriTTS_VCTK
+  lang_id: 0
+  path:
+    child_path: LibriTTS_VCTK
+    corpus_path: /home/r06942045/myData
+    lexicon_path: lexicon/librispeech-lexicon.txt
+    preprocessed_path: ./preprocessed_data/LibriTTS_VCTK
+    raw_path: ./raw_data
+  preprocessing:
+    audio:
+      max_wav_value: 32768.0
+      sampling_rate: 22050
+    energy:
+      feature: phoneme_level
+      log: false
+      normalization: true
+      word: false
+    mel:
+      mel_fmax: null
+      mel_fmin: 0
+      n_mel_channels: 80
+    pitch:
+      feature: phoneme_level
+      log: true
+      normalization: false
+      word: false
+    stft:
+      filter_length: 1024
+      hop_length: 256
+      win_length: 1024
+    text:
+      language: en
+      text_cleaners:
+      - english_cleaners
+    val_size: 512
+  root:
+    corpus_path: /home/r06942045/myData
+    lexicon_path: lexicon/librispeech-lexicon.txt
+    preprocessed_path: ./preprocessed_data
+    raw_path: ./raw_data
+  subsets:
+    test:
+    - LibriTTS/test-clean
+    - VCTK/AustralianEnglish
+    - VCTK/NorthernIrish
+    - VCTK/Welsh
+    train:
+    - LibriTTS/train-all
+    transfer:
+    - VCTK/American
+    - VCTK/Canadian
+    - VCTK/English
+    - VCTK/Irish
+    - VCTK/Scottish
+    - VCTK/SouthAfrican
+    val:
+    - VCTK/Indian
+    - VCTK/British
+    - VCTK/NewZealand
+    - LibriTTS/dev-clean
+result_dir: output/result/dev.2
+train_config:
+  optimizer:
+    anneal_rate: 0.3
+    anneal_steps:
+    - 300000
+    - 400000
+    - 500000
+    batch_size: 80
+    betas:
+    - 0.9
+    - 0.98
+    eps: 1.0e-09
+    grad_acc_step: 1
+    grad_clip_thresh: 1.0
+    warm_up_step: 4000
+    weight_decay: 0.0
+  path:
+    ckpt_path: ./output/ckpt/LibriTTS
+    log_path: ./output/log/LibriTTS
+    result_path: ./output/result/LibriTTS
+  step:
+    log_step: 100
+    save_step: 10000  # synth & save?
+    synth_step: 1000  # Not used?
+    total_step: 100000
+    val_step: 1000
+

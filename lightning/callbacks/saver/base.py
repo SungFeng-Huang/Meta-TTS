@@ -42,26 +42,12 @@ class BaseSaver(Callback):
             audio (numpy): Audio waveform.
         """
         sample_rate = self.preprocess_config["preprocessing"]["audio"]["sampling_rate"]
-        # save_dir = os.path.join(self.log_dir, "audio", stage)
         save_dir = os.path.join(self.log_dir, stage, "audio")
         filename = f"step_{step}_{basename}_{tag}.wav"
         wav_file_path = os.path.join(save_dir, filename)
 
         os.makedirs(os.path.dirname(wav_file_path), exist_ok=True)
         wavfile.write(wav_file_path, sample_rate, audio)
-
-    def log_csv(self, stage, step, basename, loss_dict):
-        # if stage in ("Training", "Validation"):
-            # log_dir = os.path.join(self.log_dir, "csv", stage)
-        # else:
-        #     # log_dir = os.path.join(self.result_dir, "csv", stage)
-        #     log_dir = os.path.join(self.result_dir, stage, "csv")
-        log_dir = os.path.join(self.log_dir, stage, "csv")
-        csv_file_path = os.path.join(log_dir, f"{basename}.csv")
-        os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
-
-        df = pd.DataFrame(loss_dict, columns=CSV_COLUMNS, index=[step])
-        df.to_csv(csv_file_path, mode='a', header=not os.path.exists(csv_file_path), index=True, index_label="Step")
 
     def log_figure(self, logger, figure_name, figure, step):
         """
@@ -98,7 +84,8 @@ class BaseSaver(Callback):
         else:
             _log_figure(logger)
 
-    def log_audio(self, logger, stage, step, basename, tag, audio, metadata=None):
+    def log_audio(self, logger, stage, step, basename, tag, audio,
+                  metadata=None, save=False):
         """
         Args:
             logger (LightningLoggerBase): {pl.loggers.CometLogger, pl.loggers.TensorBoardLogger}.
@@ -109,7 +96,8 @@ class BaseSaver(Callback):
             audio (numpy): Audio waveform.
         """
         sample_rate = self.preprocess_config["preprocessing"]["audio"]["sampling_rate"]
-        self.save_audio(stage, step, basename, tag, audio)
+        if save:
+            self.save_audio(stage, step, basename, tag, audio)
         if metadata is None:
             metadata = {}
         metadata.update({'stage': stage})
@@ -138,3 +126,26 @@ class BaseSaver(Callback):
                 _log_audio(_logger)
         else:
             _log_audio(logger)
+
+    def _log_audio(self, logger, file_name, audio, step, sample_rate, *args, **kwargs):
+        if isinstance(logger, LoggerCollection):
+            for _logger in logger:
+                self._log_audio(_logger, *args, **kwargs)
+            return
+
+        if isinstance(logger, pl.loggers.CometLogger):
+            logger.experiment.log_audio(
+                file_name=file_name,
+                audio_data=audio / max(abs(audio)),
+                sample_rate=sample_rate,
+                step=step,
+                *args, **kwargs)
+        elif isinstance(logger, pl.loggers.TensorBoardLogger):
+            logger.experiment.add_audio(
+                tag=file_name,
+                snd_tensor=audio / max(abs(audio)),
+                sample_rate=sample_rate,
+                global_step=step,
+                *args, **kwargs)
+        else:
+            raise TypeError("Failed to log audio: not finding correct logger type")

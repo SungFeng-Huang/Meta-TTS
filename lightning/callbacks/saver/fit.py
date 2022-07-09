@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 import os
 import json
 import numpy as np
+import pandas as pd
 
 from typing import Any, Union, List, Tuple, Mapping
 from pytorch_lightning import Trainer, LightningModule
@@ -12,7 +13,7 @@ from pytorch_lightning import Trainer, LightningModule
 from utils.tools import expand, plot_mel
 from lightning.utils import loss2dict
 # from lightning.callbacks.utils import synth_one_sample_with_target
-from .base import BaseSaver
+from .base import BaseSaver, CSV_COLUMNS
 
 
 class FitSaver(BaseSaver):
@@ -28,6 +29,18 @@ class FitSaver(BaseSaver):
         self.log_dir = os.path.join(trainer.log_dir, trainer.state.fn)
         os.makedirs(self.log_dir, exist_ok=True)
         print("Log directory:", self.log_dir)
+        self.csv_dir_dict = {
+            stage: os.path.join(self.log_dir, stage, "csv")
+            for stage in {
+                "train", "sanity_check", "validate", "test", "predict", "tune"
+            }
+        }
+        self.audio_dir_dict = {
+            stage: os.path.join(self.log_dir, stage, "audio")
+            for stage in {
+                "train", "sanity_check", "validate", "test", "predict", "tune"
+            }
+        }
 
     def on_train_batch_end(self,
                            trainer: Trainer,
@@ -52,8 +65,6 @@ class FitSaver(BaseSaver):
             )
             figure_name = f"{trainer.state.stage}/{basename}"
             self.log_figure(logger, figure_name, fig, pl_module.global_step)
-            # self.log_audio(logger, "Training", pl_module.global_step, basename, "reconstructed", wav_reconstruction, metadata)
-            # self.log_audio(logger, "Training", pl_module.global_step, basename, "synthesized", wav_prediction, metadata)
             self.log_audio(logger, trainer.state.stage, pl_module.global_step,
                            basename, "reconstructed", wav_reconstruction, metadata)
             self.log_audio(logger, trainer.state.stage, pl_module.global_step,
@@ -75,13 +86,18 @@ class FitSaver(BaseSaver):
             _batch = batch[0][1][0]
         else:   # batch, probably never used
             _batch = batch
-
-        # Log loss for each sample to csv files
         SQids = '.'.join(['-'.join(batch[0][0][0]["ids"]),
                           '-'.join(batch[0][1][0]["ids"])])
         task_id = trainer.datamodule.val_SQids2Tid[SQids]
-        # self.log_csv("Validation", pl_module.global_step, task_id, loss2dict(loss))
-        self.log_csv(trainer.state.stage, pl_module.global_step, task_id, loss2dict(loss))
+
+        # Log loss for each sample to csv files
+        csv_file_path = os.path.join(self.csv_dir_dict[trainer.state.stage],
+                                     f"{task_id}.csv")
+        os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
+        df = pd.DataFrame(loss2dict(loss), columns=CSV_COLUMNS,
+                          index=[pl_module.global_step])
+        df.to_csv(csv_file_path, mode='a', index=True, index_label="Step",
+                  header=not os.path.exists(csv_file_path))
 
         # Log figure/audio to logger + save audio
         if batch_idx == 0 and pl_module.local_rank == 0:
@@ -92,8 +108,6 @@ class FitSaver(BaseSaver):
             )
             figure_name = f"{trainer.state.stage}/{basename}"
             self.log_figure(logger, figure_name, fig, pl_module.global_step)
-            # self.log_audio(logger, "Validation", pl_module.global_step, basename, "reconstructed", wav_reconstruction, metadata)
-            # self.log_audio(logger, "Validation", pl_module.global_step, basename, "synthesized", wav_prediction, metadata)
             self.log_audio(logger, trainer.state.stage, pl_module.global_step,
                            basename, "reconstructed", wav_reconstruction, metadata)
             self.log_audio(logger, trainer.state.stage, pl_module.global_step,
@@ -102,19 +116,16 @@ class FitSaver(BaseSaver):
 
 
 def synth_one_sample_with_target(targets, predictions, vocoder, preprocess_config):
+    fig, basename = plot_one_spec(targets, predictions, preprocess_config)
+    wav_reconstruction, wav_prediction = synth_one_waveform_with_target(
+        targets, predictions, vocoder, preprocess_config)
+    return fig, wav_reconstruction, wav_prediction, basename
+
+def plot_one_spec(targets, predictions, preprocess_config):
     """Synthesize the first sample of the batch given target pitch/duration/energy."""
-    (
-        output,
-        postnet_output,
-        p_predictions,
-        e_predictions,
-        log_d_predictions,
-        d_rounded,
-        src_masks,
-        mel_masks,
-        src_lens,
-        mel_lens,
-    ) = predictions
+    postnet_output = predictions[1]
+    src_lens = predictions[8]
+    mel_lens = predictions[9]
 
     basename = targets["ids"][0]
     src_len = src_lens[0].item()
@@ -156,7 +167,15 @@ def synth_one_sample_with_target(targets, predictions, vocoder, preprocess_confi
         stats,
         ["Synthetized Spectrogram", "Ground-Truth Spectrogram"],
     )
+    return fig, basename
 
+def synth_one_waveform_with_target(targets, predictions, vocoder, preprocess_config):
+    postnet_output = predictions[1]
+    mel_lens = predictions[9]
+
+    mel_len = mel_lens[0].item()
+    mel_target = targets["mels"][0, :mel_len].detach().transpose(0, 1)
+    mel_prediction  = postnet_output[0, :mel_len].detach().transpose(0, 1)
     if vocoder.mel2wav is not None:
         max_wav_value = preprocess_config["preprocessing"]["audio"]["max_wav_value"]
 
@@ -164,5 +183,4 @@ def synth_one_sample_with_target(targets, predictions, vocoder, preprocess_confi
         wav_prediction = vocoder.infer(mel_prediction.unsqueeze(0), max_wav_value)[0]
     else:
         wav_reconstruction = wav_prediction = None
-
-    return fig, wav_reconstruction, wav_prediction, basename
+    return wav_reconstruction, wav_prediction

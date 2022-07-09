@@ -7,14 +7,16 @@ from utils.tools import pad_1D, pad_2D
 
 
 def reprocess(data, idxs):
-    ids = [data[idx]["id"] for idx in idxs]
-    speakers = [data[idx]["speaker"] for idx in idxs]
-    texts = [data[idx]["text"] for idx in idxs]
-    raw_texts = [data[idx]["raw_text"] for idx in idxs]
-    mels = [data[idx]["mel"] for idx in idxs]
-    pitches = [data[idx]["pitch"] for idx in idxs]
-    energies = [data[idx]["energy"] for idx in idxs]
-    durations = [data[idx]["duration"] for idx in idxs]
+    datas = [data[idx] for idx in idxs]
+
+    ids = [data_i["id"] for data_i in datas]
+    speakers = [data_i["speaker"] for data_i in datas]
+    texts = [data_i["text"] for data_i in datas]
+    raw_texts = [data_i["raw_text"] for data_i in datas]
+    mels = [data_i["mel"] for data_i in datas]
+    pitches = [data_i["pitch"] for data_i in datas]
+    energies = [data_i["energy"] for data_i in datas]
+    durations = [data_i["duration"] for data_i in datas]
 
     text_lens = np.array([text.shape[0] for text in texts])
     mel_lens = np.array([mel.shape[0] for mel in mels])
@@ -26,8 +28,8 @@ def reprocess(data, idxs):
     energies = pad_1D(energies)
     durations = pad_1D(durations)
 
-    if "spk_ref_mel_slices" in data[0]:
-        spk_ref_mels = [data[idx]["spk_ref_mel_slices"] for idx in idxs]
+    if "spk_ref_mel_slices" in datas[0]:
+        spk_ref_mels = [data_i["spk_ref_mel_slices"] for data_i in datas]
         # spk_ref_mel_lens = np.array([len(spk_ref_mel) for spk_ref_mel in spk_ref_mels])
         start = 0
         spk_ref_slices = []
@@ -71,12 +73,13 @@ def reprocess(data, idxs):
         "p_targets": torch.from_numpy(pitches).float(),
         "e_targets": torch.from_numpy(energies),
         "d_targets": torch.from_numpy(durations).long(),
+        "speakers": torch.from_numpy(speakers).long(),
     }
 
-    if "accent" in data[0]:
+    if "accent" in datas[0]:
         #TODO
-        accents = [data[idx]["accent"] for idx in idxs]
-        regions = [data[idx]["region"] for idx in idxs]
+        accents = [data_i["accent"] for data_i in datas]
+        regions = [data_i["region"] for data_i in datas]
         accents = np.array(accents)
         regions = np.array(regions)
         batch.update({
@@ -113,6 +116,7 @@ def split_reprocess(batch, idxs):
     pitches = batch["p_targets"]
     energies = batch["e_targets"]
     durations = batch["d_targets"]
+    speakers = batch["speakers"]
 
     if isinstance(idxs, list):
         idxs = np.array(idxs)
@@ -175,6 +179,7 @@ def split_reprocess(batch, idxs):
         "p_targets": sub_pitches,
         "e_targets": sub_energies,
         "d_targets": sub_durations,
+        "speakers": speakers[idxs],
     }
 
     if "accent" in batch:

@@ -19,8 +19,12 @@ class BaseAdaptorSystem(pl.LightningModule):
     """A PyTorch Lightning module for ANIL for FastSpeech2.
     """
 
-    def __init__(self, preprocess_config, model_config, train_config,
-                 algorithm_config, log_dir=None, result_dir=None):
+    def __init__(self,
+                 preprocess_config: dict,
+                 model_config: dict,
+                 train_config: dict,
+                 algorithm_config: dict,
+                 log_dir=None, result_dir=None):
         super().__init__()
         self.preprocess_config = preprocess_config
         self.model_config = model_config

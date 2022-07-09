@@ -55,6 +55,17 @@ class BaseAdaptorValidateSystem(BaseAdaptorSystem):
                for ft_step in [0] + self.saving_steps},
         }).to(self.device)
 
+    def eval_accent(self, outputs, step, tag, eval_acc):
+        mask = outputs["_batch"]["accents"] >= 0
+        with torch.no_grad():
+            _acc_logits = self.eval_model(
+                outputs[step][tag]["output"][1].transpose(1, 2))
+        _acc_prob = F.softmax(_acc_logits, dim=-1)[
+            torch.arange(_acc_logits.shape[0]).to(self.device)[mask],
+            outputs["_batch"]["accents"][mask]]
+        accent_acc = eval_acc(_acc_logits, outputs["_batch"]["accents"])
+        return _acc_prob, accent_acc
+
     def validation_step(self, batch, batch_idx, dataloader_idx=0):
         """ LightningModule interface.
         Operates on a single batch of data from the validation set.
@@ -65,15 +76,9 @@ class BaseAdaptorValidateSystem(BaseAdaptorSystem):
 
         st = time.time()
         if torch.count_nonzero(outputs["_batch"]["accents"] >= 0) > 0:
-            mask = outputs["_batch"]["accents"] >= 0
-            with torch.no_grad():
-                recon_acc = self.eval_model(
-                    outputs["step_0"]["recon"]["output"][1].transpose(1, 2))
-            recon_acc_prob = F.softmax(recon_acc, dim=-1)[
-                torch.arange(recon_acc.shape[0]).to(self.device)[mask],
-                outputs["_batch"]["accents"][mask]]
+            recon_acc_prob, _ = self.eval_accent(
+                outputs, "step_0", "recon", self.eval_acc["recon"])
             self.log("recon_acc_prob", recon_acc_prob)
-            self.eval_acc["recon"](recon_acc, outputs["_batch"]["accents"])
             self.log("recon_acc", self.eval_acc["recon"])
         for ft_step in [0] + self.saving_steps:
             step = f"step_{ft_step}"
@@ -90,14 +95,9 @@ class BaseAdaptorValidateSystem(BaseAdaptorSystem):
                 **loss_dict,
             }
             if torch.count_nonzero(outputs["_batch"]["accents"] >= 0) > 0:
-                mask = outputs["_batch"]["accents"] >= 0
-                step_acc = self.eval_model(
-                    outputs[step]["synth"]["output"][1].transpose(1, 2))
-                step_acc_prob = F.softmax(step_acc, dim=-1)[
-                    torch.arange(step_acc.shape[0]).to(self.device)[mask],
-                    outputs["_batch"]["accents"][mask]]
+                step_acc_prob, accent_acc = self.eval_accent(
+                    outputs, step, "synth", self.eval_acc[step])
                 self.log(f"{step}_acc_prob", step_acc_prob)
-                accent_acc = self.eval_acc[step](step_acc, outputs["_batch"]["accents"])
                 self.log(f"{step}_acc", self.eval_acc[step])
                 data["accent_acc"] = accent_acc.item()
                 data["accent_prob"] = step_acc_prob.item()
