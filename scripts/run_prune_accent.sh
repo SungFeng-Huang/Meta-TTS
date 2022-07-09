@@ -1,7 +1,7 @@
 INPUT=preprocessed_data/VCTK-speaker-info.csv
 [ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
 
-prune=0.1
+prune=$1
 col_a="pID"
 col_b="ACCENTS"
 loc_col_a=$(head -1 $INPUT | tr ',' '\n' | nl |grep -w "$col_a" | tr -d " " | awk -F " " '{print $1}')
