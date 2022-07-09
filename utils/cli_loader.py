@@ -1,5 +1,31 @@
 """
 Code from: https://github.com/omni-us/jsonargparse/issues/117
+keyword:
+    value
+    - effect
+__base__:
+    str or list[str],(each str should be a relative path from cur cofig file)
+    - Merge every config one by one, current last.
+__delete__:
+    True or str|int or list[str|int],True for delete all keys from other config,
+    str|int only delete the specific key (for dict) or index (for list)
+    - Delete some part of config from other.
+__import__:
+    Any
+    - Just delete this, for convenience of reference in yaml
+change_item:
+    list[[index, item]],used only when merge list
+    - Add ability of merg list, change the list[index] from other to item
+insert_item:
+    list[[index, item, (extend)]],used only when merge list
+    - Add ability of merg list, insert iterm to the list at index, extend=True if insert a list of items
+pre_item:
+    Anyor list[Any],used only when merge list
+    - Add ability of merg list, add the value in the start of the list from other to item
+post_item:
+    Anyor list[Any],used only when merge list
+    - Add ability of merg list, add the value in the end of the list from other to item
+
 """
 import os
 import re

@@ -203,7 +203,7 @@ trainer:
   accumulate_grad_batches: 1
 
   ### Logging and saving settings
-  enable_checkpointing: True
+  enable_checkpointing: False
   default_root_dir: output/prune_accent/p225
 
   ### GPU-related settings
@@ -236,13 +236,13 @@ trainer:
         preprocess_config: *preprocess_config
     - class_path: pytorch_lightning.callbacks.DeviceStatsMonitor
       init_args: {}
-    - class_path: pytorch_lightning.callbacks.ModelCheckpoint
-      init_args:
-        filename: 'epoch={epoch}-step={step}-vacc={accent_acc-val/val_end:.2f}-vprob={accent_prob-val/val_end:.2f}'
-        monitor: accent_acc-val/val_end
-        mode: max
-        save_top_k: -1
-        auto_insert_metric_name: False
+    # - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+    #   init_args:
+    #     filename: 'epoch={epoch}-step={step}-vacc={accent_acc-val/val_end:.2f}-vprob={accent_prob-val/val_end:.2f}'
+    #     monitor: accent_acc-val/val_end
+    #     mode: max
+    #     save_top_k: -1
+    #     auto_insert_metric_name: False
     - class_path: pytorch_lightning.callbacks.LearningRateMonitor
       init_args:
         log_momentum: True

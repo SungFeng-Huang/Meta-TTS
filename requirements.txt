@@ -1,4 +1,4 @@
-pytorch-lightning
+pytorch-lightning[extra]
 learn2learn
 comet-ml
 resemblyzer
