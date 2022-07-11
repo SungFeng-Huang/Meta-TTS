@@ -34,6 +34,8 @@ class MyLightningCLI(LightningCLI):
 
 
 if __name__ == "__main__":
+    import os
+    import traceback
     from lightning.systems.base_adapt.prune_accent import PruneAccentSystem
     from lightning.datamodules.prune_accent_datamodule import PruneAccentDataModule
 
@@ -51,5 +53,13 @@ if __name__ == "__main__":
                        cli.trainer.fit_loop.epoch_loop.val_loop)
 # Instantiate and connect the loop.
     cli.trainer.fit_loop.connect(epoch_loop=epoch_loop)
-    cli.trainer.fit(cli.model, datamodule=cli.datamodule)
+    try:
+        cli.trainer.fit(cli.model, datamodule=cli.datamodule)
+    except:
+        traceback.print_exc(
+            file=open(
+                os.path.join(cli.trainer.log_dir, "fit", "traceback.log"),
+                'w'
+            )
+        )
 
