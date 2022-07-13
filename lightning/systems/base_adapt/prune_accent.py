@@ -56,7 +56,7 @@ class PruneAccentSystem(BaseAdaptorSystem):
 
     def configure_optimizers(self):
         """Initialize optimizers, batch-wise and epoch-wise schedulers."""
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=3e-4)
         # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1)
         self.opt_init_state = self.optimizer.state_dict
 
@@ -117,10 +117,8 @@ class PruneAccentSystem(BaseAdaptorSystem):
         self.optimizer.__setstate__({'state': defaultdict(dict)})
 
     def _check_epoch_done(self, batch_idx):
-        if batch_idx > self.qry_stats[-1].get("batch_idx", 0) + self.qry_patience:
-            # early stop
-            return True
-        if (self.qry_stats[-1].get("qry_accent_acc", 0) == 1
+        if (batch_idx > self.qry_stats[-1].get("batch_idx", 0) + self.qry_patience
+                and self.qry_stats[-1].get("qry_accent_acc", 0) == 1
                 and self.qry_stats[-1].get("qry_accent_prob", 0) > 0.99
                 and self.qry_stats[-1].get("qry_speaker_acc", 0) == 1
                 and self.qry_stats[-1].get("qry_speaker_prob", 0) > 0.99):
@@ -159,11 +157,13 @@ class PruneAccentSystem(BaseAdaptorSystem):
             "qry_total_loss": qry_loss[0].item(),
         }
         if ("batch_idx" not in self.qry_stats[-1]
-                or qry_accent_acc > self.qry_stats[-1]["qry_accent_acc"]
-                or qry_accent_prob.mean() > self.qry_stats[-1]["qry_accent_prob"]
-                or qry_speaker_acc > self.qry_stats[-1]["qry_speaker_acc"]
-                or qry_speaker_prob.mean() > self.qry_stats[-1]["qry_speaker_prob"]
-                ):
+                or (
+                    qry_accent_acc >= self.qry_stats[-1]["qry_accent_acc"]
+                    and qry_accent_prob.mean() > self.qry_stats[-1]["qry_accent_prob"]
+                ) or (
+                    qry_speaker_acc >= self.qry_stats[-1]["qry_speaker_acc"]
+                    and qry_speaker_prob.mean() > self.qry_stats[-1]["qry_speaker_prob"]
+                )):
             self.qry_stats[-1].update({"batch_idx": batch_idx, **qry_results})
         if self.log_metrics_per_step:
             self.log("prev_update",

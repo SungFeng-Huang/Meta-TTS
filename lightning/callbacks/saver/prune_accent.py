@@ -225,10 +225,10 @@ class PruneAccentSaver(BaseSaver):
 
         epoch_start = outputs["epoch_start"]
         tag = "start" if epoch_start else "end"
-        if batch_idx == 0:
-            preds = outputs["preds"]
-            self.save_val_wavs(trainer, pl_module, batch, preds, epoch_start)
+        preds = outputs["preds"]
+        self.save_val_wavs(trainer, pl_module, batch, preds, epoch_start)
 
+        if batch_idx == 0:
             print(trainer.state.stage)
             print(pl_module.model.mel_linear.weight)
             print((pl_module.model.mel_linear.weight == 0).sum().item())
