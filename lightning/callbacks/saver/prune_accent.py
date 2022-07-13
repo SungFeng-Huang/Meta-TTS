@@ -117,6 +117,16 @@ class PruneAccentSaver(BaseSaver):
         return self.save_wavs(
             "query", trainer, pl_module, qry_batch, qry_preds, batch_idx)
 
+    def on_train_batch_start(self,
+                           trainer: Trainer,
+                           pl_module: LightningModule,
+                           batch: Any,
+                           batch_idx: int):
+        if batch_idx == 0:
+            print(trainer.state.stage)
+            print(pl_module.model.mel_linear.weight)
+            print((pl_module.model.mel_linear.weight == 0).sum().item())
+
     def on_train_batch_end(self,
                            trainer: Trainer,
                            pl_module: LightningModule,
@@ -144,6 +154,9 @@ class PruneAccentSaver(BaseSaver):
             if (trainer.is_last_batch
                     or pl_module._check_epoch_done(batch_idx+1)):
                 self.batch_idx = batch_idx
+            #
+            # print(pl_module.model.mel_linear.weight)
+            # print((pl_module.model.mel_linear.weight == 0).sum().item())
 
         #TODO: save metrics to csv file?
         epoch = trainer.current_epoch
@@ -215,6 +228,10 @@ class PruneAccentSaver(BaseSaver):
         if batch_idx == 0:
             preds = outputs["preds"]
             self.save_val_wavs(trainer, pl_module, batch, preds, epoch_start)
+
+            print(trainer.state.stage)
+            print(pl_module.model.mel_linear.weight)
+            print((pl_module.model.mel_linear.weight == 0).sum().item())
 
         # csv
         val_ids = batch["ids"]

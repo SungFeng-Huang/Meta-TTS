@@ -1,0 +1,1800 @@
+output/prune_accent/Irish/p245/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Irish/p245/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p245/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Irish/p245/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Irish/p245/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Irish/p313/prune=0.5/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Irish/p313/prune=0.5/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Irish/p313/prune=0.5/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Irish/p313/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Irish/p313/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p313/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p313/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p313/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p266/prune=0.2/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Irish/p266/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p266/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p266/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p266/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p266/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p288/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p288/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p288/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p288/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p288/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p295/prune=0.5/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Irish/p295/prune=0.5/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Irish/p295/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p295/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p295/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p295/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p295/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p340/prune=0.5/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Irish/p340/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p340/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p340/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p340/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p340/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p283/prune=0.5/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Irish/p283/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p283/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p283/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p283/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p283/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p298/prune=0.5/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Irish/p298/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p298/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p298/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p298/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p298/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p364/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Irish/p364/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p364/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Irish/p364/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Irish/p364/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Welsh/p253/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Welsh/p253/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Welsh/p253/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Welsh/p253/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Welsh/p253/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/AustralianEnglish/p326/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/AustralianEnglish/p326/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/AustralianEnglish/p326/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/AustralianEnglish/p326/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/AustralianEnglish/p326/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/AustralianEnglish/p374/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/AustralianEnglish/p374/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/AustralianEnglish/p374/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/AustralianEnglish/p374/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/AustralianEnglish/p374/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p311/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p311/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p311/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p311/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p311/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p294/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p294/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p294/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p294/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p294/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p360/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p360/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p360/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p360/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p360/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p361/prune=0.5/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/American/p361/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p361/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p361/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p361/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p361/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p345/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p345/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p345/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p345/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p345/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p333/prune=0.5/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/American/p333/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p333/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p333/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p333/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p333/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p308/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p308/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p308/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p308/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p308/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p334/prune=0.5/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/American/p334/prune=0.5/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/American/p334/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p334/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p334/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p334/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p334/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p341/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p341/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p341/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p341/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p341/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p299/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p299/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p299/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p299/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p299/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p318/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p318/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p318/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p318/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p318/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p330/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p330/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p330/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p330/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p330/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p305/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p305/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p305/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p305/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p305/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p306/prune=0.5/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p306/prune=0.1/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p306/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p306/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p306/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p306/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p306/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p329/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p329/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p329/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p329/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p329/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p300/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p300/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p300/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p300/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p300/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p362/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p362/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p362/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p362/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p362/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p301/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p301/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p301/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p301/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p301/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p297/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p297/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p297/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p297/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p297/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/American/p339/prune=0.5/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/American/p339/prune=0.5/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/American/p339/prune=0.5/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/American/p339/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p339/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p339/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p339/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p339/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p310/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+651
+output/prune_accent/American/p310/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p310/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/American/p310/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+651
+output/prune_accent/American/p310/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/British/s5/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/British/s5/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/British/s5/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/British/s5/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/British/s5/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p312/prune=0.5/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Canadian/p312/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Canadian/p312/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p312/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p312/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p312/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p307/prune=0.5/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Canadian/p307/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Canadian/p307/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p307/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p307/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p307/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p343/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Canadian/p343/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p343/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Canadian/p343/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Canadian/p343/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Canadian/p303/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p303/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p303/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p303/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Canadian/p303/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Canadian/p316/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p316/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p316/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p316/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p316/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p363/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p363/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p363/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p363/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p363/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p302/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p302/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p302/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p302/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p302/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p317/prune=0.5/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Canadian/p317/prune=0.1/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Canadian/p317/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p317/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p317/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p317/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Canadian/p317/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p292/prune=0.5/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/NorthernIrish/p292/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p292/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p292/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p292/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p292/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p351/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p351/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p351/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p351/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p351/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p293/prune=0.1/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1736
+output/prune_accent/NorthernIrish/p293/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p293/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p293/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p293/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p293/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p261/prune=0.5/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/NorthernIrish/p261/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p261/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p261/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p261/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p261/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p238/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/NorthernIrish/p238/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p238/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/NorthernIrish/p238/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/NorthernIrish/p238/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p304/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p304/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p304/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p304/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NorthernIrish/p304/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p267/prune=0.5/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p267/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p267/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p267/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p267/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p267/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p268/prune=0.1/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p268/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p268/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p268/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p268/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p268/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p254/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p254/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p254/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p254/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p254/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p269/prune=0.5/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p269/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p269/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p269/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p269/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p269/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p229/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p229/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p229/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p229/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p229/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p240/prune=0.5/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p240/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p240/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p240/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p240/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p240/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p277/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p277/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p277/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p277/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p277/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p278/prune=0.5/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p278/prune=0.5/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p278/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p278/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p278/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p278/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p278/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p279/prune=0.5/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p279/prune=0.5/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p279/prune=0.5/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p279/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p279/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p279/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p279/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p279/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p239/prune=0.5/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p239/prune=0.5/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p239/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p239/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p239/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p239/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p239/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p250/prune=0.5/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p250/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p250/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p250/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p250/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p250/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p225/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p225/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p225/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p225/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p225/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p226/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p226/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p226/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p226/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p226/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p273/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p273/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p273/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p273/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p273/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p227/prune=0.5/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p227/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p227/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p227/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p227/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p227/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p274/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p274/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p274/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p274/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p274/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p228/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p228/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p228/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p228/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p228/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p276/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p276/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p276/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p276/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p276/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p236/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p236/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p236/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p236/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p236/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p270/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p270/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p270/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p270/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p270/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p231/prune=0.5/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p231/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p231/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p231/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p231/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p231/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p286/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p286/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p286/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p286/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p286/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p232/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p232/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p232/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p232/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p232/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p287/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p287/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p287/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p287/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p287/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p233/prune=0.5/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p233/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p233/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p233/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+217
+output/prune_accent/English/p233/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p233/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p256/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p256/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p256/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p256/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p256/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p282/prune=0.5/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p282/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p282/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p282/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p282/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p282/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p257/prune=0.5/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p257/prune=0.5/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p257/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p257/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p257/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p257/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p257/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p243/prune=0.5/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p243/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p243/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p243/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p243/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p243/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p258/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p258/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p258/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p258/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p258/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p244/prune=0.5/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p244/prune=0.5/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/English/p244/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p244/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p244/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p244/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p244/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p259/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p259/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p259/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p259/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p259/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p230/prune=0.5/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p230/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p230/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/English/p230/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p230/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/English/p230/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p252/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p252/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p252/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p252/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p252/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p255/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p255/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p255/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p255/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p255/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p241/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p241/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p241/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p241/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p241/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p263/prune=0.5/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Scottish/p263/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p263/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p263/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p263/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p263/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p264/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p264/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p264/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p264/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p264/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p265/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p265/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p265/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p265/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p265/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p260/prune=0.5/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Scottish/p260/prune=0.5/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Scottish/p260/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p260/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p260/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p260/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p260/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p275/prune=0.5/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Scottish/p275/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p275/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p275/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p275/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p275/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p262/prune=0.5/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Scottish/p262/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p262/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p262/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p262/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p262/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p237/prune=0.5/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Scottish/p237/prune=0.5/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+434
+output/prune_accent/Scottish/p237/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p237/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p237/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p237/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p237/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p284/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p284/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p284/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p284/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p284/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p285/prune=0.5/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Scottish/p285/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p285/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p285/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p285/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p285/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p271/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p271/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p271/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p271/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p271/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p246/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p246/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p246/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p246/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p246/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p272/prune=0.5/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Scottish/p272/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p272/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p272/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p272/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p272/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p247/prune=0.5/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+434
+output/prune_accent/Scottish/p247/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p247/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p247/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p247/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p247/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p234/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p234/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p234/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p234/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p234/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p281/prune=0.5/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/Scottish/p281/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+651
+output/prune_accent/Scottish/p281/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p281/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p281/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p281/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p249/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p249/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p249/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Scottish/p249/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Scottish/p249/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p376/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p376/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p376/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p376/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p376/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p251/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p251/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p251/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p251/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p251/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p248/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Indian/p248/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/Indian/p248/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p248/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/Indian/p248/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/SouthAfrican/p336/prune=0.5/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/SouthAfrican/p336/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p336/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p336/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p336/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p336/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p323/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/SouthAfrican/p323/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/SouthAfrican/p323/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/SouthAfrican/p323/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/SouthAfrican/p323/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/SouthAfrican/p347/prune=0.2/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1953
+output/prune_accent/SouthAfrican/p347/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p347/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p347/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/SouthAfrican/p347/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p347/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p314/prune=0.75/lightning_logs/version_2/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p314/prune=0.75/lightning_logs/version_3/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p314/prune=0.75/lightning_logs/version_4/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p314/prune=0.75/lightning_logs/version_0/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/SouthAfrican/p314/prune=0.75/lightning_logs/version_1/fit/
+['train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NewZealand/p335/prune=0.75/lightning_logs/version_2/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NewZealand/p335/prune=0.75/lightning_logs/version_3/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/NewZealand/p335/prune=0.75/lightning_logs/version_4/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1085
+output/prune_accent/NewZealand/p335/prune=0.75/lightning_logs/version_0/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302
+output/prune_accent/NewZealand/p335/prune=0.75/lightning_logs/version_1/fit/
+['traceback.log', 'train', 'validate', 'sanity_check', 'pruning.log']
+1302

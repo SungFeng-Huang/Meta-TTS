@@ -56,8 +56,8 @@ class PruneAccentSystem(BaseAdaptorSystem):
 
     def configure_optimizers(self):
         """Initialize optimizers, batch-wise and epoch-wise schedulers."""
-        # self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
+        # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1)
         self.opt_init_state = self.optimizer.state_dict
 
         return self.optimizer
