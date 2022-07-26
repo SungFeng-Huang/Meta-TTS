@@ -14,8 +14,7 @@ from pytorch_lightning.callbacks.pruning import ModelPruning, _MODULE_CONTAINERS
 
 from utils.tools import expand, plot_mel
 from lightning.utils import loss2dict
-# from lightning.callbacks.utils import recon_samples, synth_samples
-from .base import BaseSaver, CSV_COLUMNS
+from .base import BaseSaver
 
 
 class PruneAccentSaver(BaseSaver):
@@ -60,7 +59,8 @@ class PruneAccentSaver(BaseSaver):
                   pl_module: LightningModule,
                   _batch: Any,
                   _preds: Any,
-                  batch_idx: int) -> None:
+                  batch_idx: int,
+                  check_recon: bool = True) -> None:
 
         stage = trainer.state.stage
         epoch = trainer.current_epoch
@@ -70,29 +70,30 @@ class PruneAccentSaver(BaseSaver):
             global_step = 0
         logger = trainer.logger
 
-        save_recon = {
-            "support": global_step == 0,
-            "query": global_step == 0,
-            "validate": global_step == 0,
-        }[type]
+        # save_recon = {
+        #     "support": global_step == 0,
+        #     "query": global_step == 0,
+        #     "validate": global_step == 0,
+        #     "mask": epoch == 0,
+        # }[type]
 
         _audio_dir = os.path.join(self.audio_dir_dict[stage], type)
 
-        if save_recon:
-            # reconstruct from target mel-spectrogram
-            _wav_recons, _ids, sampling_rate = recon_wavs(
-                _batch, None, self.vocoder, self.preprocess_config, _audio_dir,
-                postfix=".recon", save=True)
-            # for wav, _id in zip(_wav_recons, _ids):
-            #     file_name=f"{type}-{_id}/recon"
-            #     self._log_audio(
-            #         logger, file_name=file_name, audio=wav, step=global_step,
-            #         sample_rate=sampling_rate)
+        # if save_recon:
+        #     # reconstruct from target mel-spectrogram
+        #     _wav_recons, _ids, sampling_rate = recon_wavs(
+        #         _batch, None, self.vocoder, self.preprocess_config, _audio_dir,
+        #         postfix=".recon", save=True)
+        #     # for wav, _id in zip(_wav_recons, _ids):
+        #     #     file_name=f"{type}-{_id}/recon"
+        #     #     self._log_audio(
+        #     #         logger, file_name=file_name, audio=wav, step=global_step,
+        #     #         sample_rate=sampling_rate)
 
         _postfix = f"-epoch={epoch}-batch_idx={batch_idx}"
         _wav_preds, _ids, sampling_rate = synth_wavs(
             _batch, _preds, self.vocoder, self.preprocess_config, _audio_dir,
-            postfix=_postfix, save=True)
+            postfix=_postfix, save=True, check_recon=check_recon)
         # for wav, _id in zip(_wav_preds, _ids):
         #     file_name=f"{type}-{_id}/epoch={epoch}/batch_idx={batch_idx}"
         #     self._log_audio(
@@ -154,11 +155,8 @@ class PruneAccentSaver(BaseSaver):
             if (trainer.is_last_batch
                     or pl_module._check_epoch_done(batch_idx+1)):
                 self.batch_idx = batch_idx
-            #
-            # print(pl_module.model.mel_linear.weight)
-            # print((pl_module.model.mel_linear.weight == 0).sum().item())
 
-        #TODO: save metrics to csv file?
+        # save metrics to csv file
         epoch = trainer.current_epoch
         stage = trainer.state.stage
 
@@ -398,6 +396,7 @@ def recon_wavs(targets, predictions, vocoder, preprocess_config, audio_dir,
     # mel_lens = predictions[9]
     # predictions[9] should be the same as targets["mel_lens"]
     mel_lens = targets["mel_lens"]
+    postfix = postfix if postfix is not None else ".recon"
 
     mel_targets = targets["mels"].transpose(1, 2)
     lengths = mel_lens * preprocess_config["preprocessing"]["stft"]["hop_length"]
@@ -407,11 +406,7 @@ def recon_wavs(targets, predictions, vocoder, preprocess_config, audio_dir,
     sampling_rate = preprocess_config["preprocessing"]["audio"]["sampling_rate"]
     if save:
         for wav, basename in zip(wav_targets, targets["ids"]):
-            if postfix is not None:
-                basename += postfix
-            else:
-                basename += ".recon"
-            wav_file_path = os.path.join(audio_dir, f"{basename}.wav")
+            wav_file_path = os.path.join(audio_dir, f"{basename}/{basename}{postfix}.wav")
             os.makedirs(os.path.dirname(wav_file_path), exist_ok=True)
             wavfile.write(wav_file_path, sampling_rate, wav)
     return wav_targets, targets["ids"], sampling_rate
@@ -473,9 +468,10 @@ def plot_predict_specs(targets, predictions, preprocess_config, figure_dir, name
         plt.close()
 
 def synth_wavs(targets, predictions, vocoder, preprocess_config, audio_dir,
-               name=None, postfix=None, save=True):
+               name=None, postfix=None, save=True, check_recon=True):
     postnet_output = predictions[1]
     mel_lens = predictions[9]
+    postfix = postfix if postfix is not None else f".{name}.synth"
 
     mel_predictions = postnet_output.transpose(1, 2)
     lengths = mel_lens * preprocess_config["preprocessing"]["stft"]["hop_length"]
@@ -484,12 +480,18 @@ def synth_wavs(targets, predictions, vocoder, preprocess_config, audio_dir,
 
     sampling_rate = preprocess_config["preprocessing"]["audio"]["sampling_rate"]
     if save:
+        if check_recon:
+            recon = False
+            for wav, basename in zip(wav_predictions, targets["ids"]):
+                wav_file_path = os.path.join(
+                    audio_dir, f"{basename}/{basename}.recon.wav")
+                if not os.path.exists(wav_file_path):
+                    recon = True
+                    break
+            if recon:
+                recon_wavs(targets, predictions, vocoder, preprocess_config, audio_dir)
         for wav, basename in zip(wav_predictions, targets["ids"]):
-            if postfix is not None:
-                basename += postfix
-            else:
-                basename += f".{name}.synth"
-            wav_file_path = os.path.join(audio_dir, f"{basename}.wav")
+            wav_file_path = os.path.join(audio_dir, f"{basename}/{basename}{postfix}.wav")
             os.makedirs(os.path.dirname(wav_file_path), exist_ok=True)
             wavfile.write(wav_file_path, sampling_rate, wav)
     return wav_predictions, targets["ids"], sampling_rate

@@ -3,10 +3,10 @@
 
 seed_everything: 42
 model:
-  class_path: lightning.systems.prune.prune_accent.PruneAccentSystem
+  class_path: lightning.systems.prune.learnable_prune.LearnablePruneSystem
   init_args:
     ckpt_path: output/ckpt/LibriTTS/meta-tts-accent-dev/1d34914e07244f87ad10c580ab85656c/checkpoints/epoch=39-step=39999.ckpt
-    qry_patience: 200
+    qry_patience: 0
     preprocess_config: &preprocess_config
       dataset: LibriTTS_VCTK
       lang_id: 0
@@ -163,12 +163,13 @@ model:
         - config/train/base.yaml
       type: baseline
 data:
-  class_path: lightning.datamodules.prune_accent_datamodule.PruneAccentDataModule
+  class_path: lightning.datamodules.learnable_prune_datamodule.LearnablePruneDataModule
   init_args:
-    steps_per_epoch: 100
+    steps_per_epoch: 400
+    m: 16
     k: 5
     q: 8
-    key: p225
+    key: p251
     preprocess_config: *preprocess_config
     train_config: &train_config
       optimizer:
@@ -199,12 +200,12 @@ data:
 trainer:
   ### Train settings
   max_epochs: 10
-  gradient_clip_val: 1.0
+  # gradient_clip_val: 1.0
   accumulate_grad_batches: 1
 
   ### Logging and saving settings
   enable_checkpointing: False
-  default_root_dir: output/prune_accent/p225
+  default_root_dir: output/prune_accent/p251
 
   ### GPU-related settings
   accelerator: gpu
@@ -231,7 +232,7 @@ trainer:
     #     monitor: accent_acc/val
     #     mode: max
     #     verbose: 1
-    - class_path: lightning.callbacks.saver.prune_accent.PruneAccentSaver
+    - class_path: lightning.callbacks.saver.learnable_prune.LearnablePruneSaver
       init_args:
         preprocess_config: *preprocess_config
     - class_path: pytorch_lightning.callbacks.DeviceStatsMonitor
@@ -252,6 +253,3 @@ trainer:
 
   ### Depreciated settings
   # deterministic: True
-
-model_pruning_callback:
-  amount: 0.1

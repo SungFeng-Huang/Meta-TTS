@@ -36,7 +36,7 @@ class MyLightningCLI(LightningCLI):
 if __name__ == "__main__":
     import os
     import traceback
-    from lightning.systems.base_adapt.prune_accent import PruneAccentSystem
+    from lightning.systems.prune.prune_accent import PruneAccentSystem
     from lightning.datamodules.prune_accent_datamodule import PruneAccentDataModule
 
     cli = MyLightningCLI(

@@ -158,26 +158,24 @@ def get_prune_df(accent, speaker, prune):
         return df
     return None
 
-def plot_train_batch_num(df, accents, _type=None, col="accent"):
+def plot_train_batch_num(df, accents, _type="support", col="accent"):
     if _type is not None:
         df = df[df["_type"].values == _type]
     with sns.axes_style("whitegrid"):
-        for col_order in (accents[:4], accents[4:-4], accents[-4:]):
-            g = sns.relplot(
-                kind="line",
-                data=df,
-                x="epoch",
-                y="batch_idx",
-                # hue="metric_name",
-                style="prune_rate",
-                legend="full",
-                err_style="bars",
-                err_kws={"capsize": 3.},
-                ci="sd",
-                row="_type",
-                col=col,
-                col_order=col_order,
-            )
+        g = sns.relplot(
+            kind="line",
+            data=df,
+            x="epoch",
+            y="batch_idx",
+            # hue="metric_name",
+            style="prune_rate",
+            legend="full",
+            err_style="bars",
+            err_kws={"capsize": 3.},
+            ci="sd",
+            col=col,
+            col_wrap=4,
+        )
 
 def plot_val(df, accents, _type=None, col="accent"):
     if _type is not None:
@@ -209,22 +207,20 @@ def plot_prune(df, accents, _type=None, col="accent"):
     if _type is not None:
         df = df[df["module"].values == _type]
     with sns.axes_style("whitegrid"):
-        for col_order in (accents[:4], accents[4:-4], accents[-4:]):
-            sns.relplot(
-                kind="line",
-                data=df,
-                x="epoch",
-                y="prev_prune_rate",
-                hue="module",
-                style="prune_rate",
-                legend="full",
-                err_style="bars",
-                err_kws={"capsize": 3.},
-                ci="sd",
-                # row="_time",
-                col=col,
-                col_wrap=3,
-            )
+        sns.relplot(
+            kind="line",
+            data=df,
+            x="epoch",
+            y="prev_prune_rate",
+            hue="module",
+            style="prune_rate",
+            legend="full",
+            err_style="bars",
+            err_kws={"capsize": 3.},
+            ci="sd",
+            col=col,
+            col_wrap=4,
+        )
 
 def plot_all_prune(prunes=None):
     vctk_df = pd.read_csv("preprocessed_data/VCTK-speaker-info.csv")
