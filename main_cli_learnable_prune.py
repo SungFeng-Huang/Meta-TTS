@@ -12,10 +12,20 @@ class MyLightningCLI(LightningCLI):
                               apply_on="instantiate")
 
 if __name__ == "__main__":
+    import os
+    import traceback
     from lightning.systems.prune.prune_accent import PruneAccentSystem
     from lightning.datamodules.prune_accent_datamodule import PruneAccentDataModule
 
-    cli = MyLightningCLI(
-        PruneAccentSystem, PruneAccentDataModule,
-        subclass_mode_model=True, subclass_mode_data=True)
+    try:
+        cli = MyLightningCLI(
+            PruneAccentSystem, PruneAccentDataModule,
+            subclass_mode_model=True, subclass_mode_data=True)
+    except:
+        traceback.print_exc(
+            file=open(
+                os.path.join(cli.trainer.log_dir, "fit", "traceback.log"),
+                'w'
+            )
+        )
 
