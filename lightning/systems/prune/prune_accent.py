@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import os
+import yaml
+from typing import Dict, Any, Optional, Union, List
 import pandas as pd
 from collections import defaultdict
 import torch
@@ -14,14 +16,29 @@ from lightning.utils import loss2dict
 from lightning.model.xvec import XvecTDNN
 
 
+def load_yaml(yaml_in: str) -> Dict[str, Any]:
+    return yaml.load(open(yaml_in, 'r'), Loader=yaml.FullLoader)
+
+
 class PruneAccentSystem(BaseAdaptorSystem):
     """
     Inherit from BaseAdaptorSystem for `on_load_checkpoint`.
+
+    This class mainly covers:
+    - Support/Query set forward step
+    - Validation forward step
+    - Evaluate and save the following metrics:
+        - speaker/accent accuracy
+        - number of fine-tuning steps
+
+    This class itself does not cover the pruning algorithm. To train with
+    Lottery Ticket Hypothesis, use together with
+    `pytorch_lightning.callbacks.pruning.ModelPruning`.
     """
     def __init__(self,
-                 preprocess_config: dict,
-                 model_config: dict,
-                 algorithm_config: dict,
+                 preprocess_config: Union[dict, str],
+                 model_config: Union[dict, str],
+                 algorithm_config: Union[dict, str],
                  ckpt_path: str,
                  qry_patience: int,
                  log_dir: str = None,
@@ -29,6 +46,14 @@ class PruneAccentSystem(BaseAdaptorSystem):
                  accent_ckpt: str = "output/xvec/lightning_logs/version_88/checkpoints/epoch=199-step=164200.ckpt",
                  speaker_ckpt: str= "output/xvec/lightning_logs/version_99/checkpoints/epoch=49-step=377950.ckpt"):
         pl.LightningModule.__init__(self)
+
+        if isinstance(preprocess_config, str):
+            preprocess_config = load_yaml(preprocess_config)
+        if isinstance(model_config, str):
+            model_config = load_yaml(model_config)
+        if isinstance(algorithm_config, str):
+            algorithm_config = load_yaml(algorithm_config)
+
         self.preprocess_config = preprocess_config
         self.model_config = model_config
         self.algorithm_config = algorithm_config
@@ -82,13 +107,11 @@ class PruneAccentSystem(BaseAdaptorSystem):
 
         self.qry_stats = []
 
-        # initialize eval_accent_model here to avoid checkpoint loading error
+        # initialize eval_model.accent here to avoid checkpoint loading error
         self.eval_model = torch.nn.ModuleDict({
             "accent": XvecTDNN.load_from_checkpoint(self.accent_ckpt),
             "speaker": XvecTDNN.load_from_checkpoint(self.speaker_ckpt),
         }).to(self.device).requires_grad_(False).eval()
-        self.eval_accent_model = self.eval_model.accent
-        self.eval_speaker_model = self.eval_model.speaker
 
         self.eval_acc = torch.nn.ModuleDict({
             "accent": torch.nn.ModuleDict({
@@ -104,8 +127,6 @@ class PruneAccentSystem(BaseAdaptorSystem):
                 "val_end": Accuracy(ignore_index=-100),
             }),
         }).to(self.device)
-        self.eval_accent_acc = self.eval_acc.accent
-        self.eval_speaker_acc = self.eval_acc.speaker
 
     def on_save_checkpoint(self, checkpoint):
         keys = sorted(checkpoint["state_dict"].keys())
@@ -113,7 +134,7 @@ class PruneAccentSystem(BaseAdaptorSystem):
             if key.startswith("eval_"):
                 del checkpoint["state_dict"][key]
 
-    def on_train_epoch_start(self,):
+    def on_train_epoch_start(self) -> None:
         self.qry_stats.append({
             "epoch": self.trainer.current_epoch,
             "start_step": self.global_step,
@@ -127,8 +148,8 @@ class PruneAccentSystem(BaseAdaptorSystem):
         if (batch_idx > self.qry_stats[-1].get("batch_idx", 0) + self.qry_patience
                 and self.qry_stats[-1].get("accent_acc", 0) > 0.99
                 and self.qry_stats[-1].get("accent_prob", 0) > 0.99
-                and self.qry_stats[-1].get("speaker_acc", 0) > 0.99
-                and self.qry_stats[-1].get("speaker_prob", 0) > 0.99):
+                and self.qry_stats[-1].get("speaker_acc", 0) > 0.95
+                and self.qry_stats[-1].get("speaker_prob", 0) > 0.95):
             return True
         return False
 
@@ -185,11 +206,11 @@ class PruneAccentSystem(BaseAdaptorSystem):
 
     @torch.no_grad()
     def eval_accent(self, targets, mels, eval_accent_acc):
-        self.eval_accent_model.freeze()
-        self.eval_accent_model.eval()
+        self.eval_model.accent.freeze()
+        self.eval_model.accent.eval()
         mask = targets >= 0
         with torch.no_grad():
-            _acc_logits = self.eval_accent_model(mels.transpose(1, 2))
+            _acc_logits = self.eval_model.accent(mels.transpose(1, 2))
             _acc_prob = F.softmax(_acc_logits, dim=-1)[
                 torch.arange(_acc_logits.shape[0]).to(self.device)[mask],
                 targets[mask]]
@@ -198,11 +219,11 @@ class PruneAccentSystem(BaseAdaptorSystem):
 
     @torch.no_grad()
     def eval_speaker(self, targets, mels, eval_speaker_acc):
-        self.eval_speaker_model.freeze()
-        self.eval_speaker_model.eval()
+        self.eval_model.speaker.freeze()
+        self.eval_model.speaker.eval()
         mask = targets >= 0
         with torch.no_grad():
-            _spk_logits = self.eval_speaker_model(mels.transpose(1, 2))
+            _spk_logits = self.eval_model.speaker(mels.transpose(1, 2))
             _spk_prob = F.softmax(_spk_logits, dim=-1)[
                 torch.arange(_spk_logits.shape[0]).to(self.device)[mask],
                 targets[mask]]
@@ -230,7 +251,39 @@ class PruneAccentSystem(BaseAdaptorSystem):
             **val_output,
         }
 
-    def subset_step(self, batch, subset_name, synth=False, _model=None):
+    def distill_step(self, batch, teacher=None, student=None):
+        r"""
+        Args:
+            _model: Use copied model instead of self.
+        """
+        with torch.no_grad():
+            t_preds = teacher(
+                **batch,
+                average_spk_emb=True,
+                reference_prosody=(batch["p_targets"].unsqueeze(2)
+                                if self.reference_prosody else None),
+            )
+            duration_target = torch.clamp(
+                (torch.round(torch.exp(t_preds[4]) - 1)),
+                min=0,
+            )
+        s_preds = student(
+            **batch,
+            average_spk_emb=True,
+            reference_prosody=(batch["p_targets"].unsqueeze(2)
+                               if self.reference_prosody else None),
+        )
+        gt = {
+            "mels": t_preds[1], # postnet_mel_predictions
+            "p_targets": t_preds[2],
+            "e_targets": t_preds[3],
+            "d_targets": duration_target,
+        }
+        loss = self.loss_func(gt, s_preds)
+        return loss, t_preds, s_preds
+
+    def subset_step(self, batch, subset_name, synth=False, _model=None,
+                    eval=True):
         r"""
         Args:
             _model: Use copied model instead of self.
@@ -243,6 +296,7 @@ class PruneAccentSystem(BaseAdaptorSystem):
                                if self.reference_prosody else None),
         )
         loss = self.loss_func(batch, preds)
+        loss_dict = loss2dict(loss)
         if synth:
             # synth w/o ground-truth prosody
             preds = model(
@@ -251,64 +305,60 @@ class PruneAccentSystem(BaseAdaptorSystem):
                 reference_prosody=(batch["p_targets"].unsqueeze(2)
                                 if self.reference_prosody else None),
             )
-        accent_logits, accent_prob, accent_acc = self.eval_accent(
-            batch["accents"], preds[1], self.eval_accent_acc[subset_name])
-        speaker_logits, speaker_prob, speaker_acc = self.eval_speaker(
-            batch["speakers"], preds[1],
-            self.eval_speaker_acc[subset_name])
+        output = {
+            "losses": [l.detach() for l in loss],
+            "preds": [o.detach() for o in preds],
+        }
 
-        # Support set logging
-        loss_dict = loss2dict(loss)
-        loss_dict.update({
-            "accent_prob": accent_prob.mean(),
-            "accent_acc": self.eval_accent_acc[subset_name],
-            "speaker_prob": speaker_prob.mean(),
-            "speaker_acc": self.eval_speaker_acc[subset_name],
-        })
-        if subset_name[:3] == "val":
-            # sample-wise accent accuracy
-            _accent_acc = torch.argmax(accent_logits, dim=-1) == batch["accents"]
-            # sample-wise speaker accuracy
-            _speaker_acc = torch.argmax(speaker_logits, dim=-1) == batch["speakers"]
-            if self.log_metrics_per_step:
-                self.log_dict(
-                    {f"{k}-val/epoch={self.current_epoch}": v
-                    for k, v in loss_dict.items()},
-                    sync_dist=True, batch_size=len(batch["ids"]))
-            return loss, {
-                # "losses": [l.detach() for l in loss],
-                "preds": [o.detach() for o in preds],
-                "accent_prob": accent_prob,
-                "accent_acc": accent_acc,
-                "_accent_acc": _accent_acc,
-                "speaker_prob": speaker_prob,
-                "speaker_acc": speaker_acc,
-                "_speaker_acc": _speaker_acc,
-            }
-        elif _model is not None:
-            # fine-tuning w/ copied model for learnable_prune
-            # not self.log
-            return loss, {
-                "losses": [l.detach() for l in loss],
-                "preds": [o.detach() for o in preds],
-                "accent_prob": accent_prob.mean().item(),
-                "accent_acc": accent_acc.item(),
-                "speaker_prob": speaker_prob.mean().item(),
-                "speaker_acc": speaker_acc.item(),
-            }
-        else:
-            # train_sup / train_qry
-            if self.log_metrics_per_step:
-                self.log_dict(
-                    {f"{k}-{subset_name}/epoch={self.current_epoch}": v
-                    for k, v in loss_dict.items()},
-                    sync_dist=True, batch_size=len(batch["ids"]))
-            return loss, {
-                "losses": [l.detach() for l in loss],
-                "preds": [o.detach() for o in preds],
-                "accent_prob": accent_prob.mean().item(),
-                "accent_acc": accent_acc.item(),
-                "speaker_prob": speaker_prob.mean().item(),
-                "speaker_acc": speaker_acc.item(),
-            }
+        if eval:
+            accent_logits, accent_prob, accent_acc = self.eval_accent(
+                batch["accents"], preds[1], self.eval_acc.accent[subset_name])
+            speaker_logits, speaker_prob, speaker_acc = self.eval_speaker(
+                batch["speakers"], preds[1],
+                self.eval_acc.speaker[subset_name])
+            loss_dict.update({
+                "accent_prob": accent_prob.mean(),
+                "accent_acc": self.eval_acc.accent[subset_name],
+                "speaker_prob": speaker_prob.mean(),
+                "speaker_acc": self.eval_acc.speaker[subset_name],
+            })
+
+            # Support set logging
+            if subset_name[:3] == "val":
+                # sample-wise accent accuracy
+                _accent_acc = torch.argmax(accent_logits, dim=-1) == batch["accents"]
+                # sample-wise speaker accuracy
+                _speaker_acc = torch.argmax(speaker_logits, dim=-1) == batch["speakers"]
+                if self.log_metrics_per_step:
+                    self.log_dict(
+                        {f"{k}-val/epoch={self.current_epoch}": v
+                        for k, v in loss_dict.items()},
+                        sync_dist=True, batch_size=len(batch["ids"]))
+                output.update({
+                    # "losses": [l.detach() for l in loss],
+                    # "preds": [o.detach() for o in preds],
+                    "accent_prob": accent_prob,
+                    "accent_acc": accent_acc,
+                    "_accent_acc": _accent_acc,
+                    "speaker_prob": speaker_prob,
+                    "speaker_acc": speaker_acc,
+                    "_speaker_acc": _speaker_acc,
+                })
+            else:
+                # train_sup / train_qry
+                if _model is None and self.log_metrics_per_step:
+                    self.log_dict(
+                        {f"{k}-{subset_name}/epoch={self.current_epoch}": v
+                        for k, v in loss_dict.items()},
+                        sync_dist=True, batch_size=len(batch["ids"]))
+                output.update({
+                    # "losses": [l.detach() for l in loss],
+                    # "preds": [o.detach() for o in preds],
+                    "accent_prob": accent_prob.mean().item(),
+                    "accent_acc": accent_acc.item(),
+                    "speaker_prob": speaker_prob.mean().item(),
+                    "speaker_acc": speaker_acc.item(),
+                })
+
+        return loss, output
 

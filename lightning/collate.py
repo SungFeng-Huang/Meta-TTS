@@ -87,6 +87,16 @@ def reprocess(data, idxs):
             "regions": torch.from_numpy(regions).long(),
         })
 
+    if "wav" in datas[0]:
+        wavs = [data_i["wav"] for data_i in datas]
+        wav_lens = np.array([wav.shape[0] for wav in wavs])
+        wavs = pad_1D(wavs)
+        batch.update({
+            "wavs": torch.from_numpy(wavs).float(),
+            "wav_lens": torch.from_numpy(wav_lens),
+            "max_wav_len": max(wav_lens),
+        })
+
     return batch
 
 
@@ -182,7 +192,7 @@ def split_reprocess(batch, idxs):
         "speakers": speakers[idxs],
     }
 
-    if "accent" in batch:
+    if "accents" in batch:
         accents = batch["accents"]
         regions = batch["regions"]
         sub_accents = accents[idxs]
@@ -190,6 +200,18 @@ def split_reprocess(batch, idxs):
         sub_batch.update({
             "accents": sub_accents,
             "regions": sub_regions,
+        })
+
+    if "wavs" in batch:
+        wavs = batch["wavs"]
+        wav_lens = batch["wav_lens"]
+        sub_wav_lens = wav_lens[idxs]
+        sub_max_wav_lens = sub_wav_lens.max()
+        sub_wavs = wavs[idxs][:, :sub_max_wav_lens]
+        sub_batch.update({
+            "wavs": sub_wavs,
+            "wav_lens": sub_wav_lens,
+            "max_wav_len": sub_max_wav_lens,
         })
 
     return sub_batch

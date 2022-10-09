@@ -1,5 +1,7 @@
 import json
 import os
+from glob import glob
+import librosa
 
 import numpy as np
 import pandas as pd
@@ -17,6 +19,7 @@ class MonolingualTTSDataset(TTSDataset):
     ):
         super().__init__(dset, preprocess_config, train_config, spk_refer_wav)
         self.lang_id = preprocess_config["lang_id"]
+        self.raw_path = preprocess_config["path"]["raw_path"]
 
         if "df_path" in preprocess_config["path"]:
             df_path = preprocess_config["path"]["df_path"]
@@ -44,11 +47,23 @@ class MonolingualTTSDataset(TTSDataset):
                enumerate(self.df.groupby(["ACCENTS", "REGION"]).groups)}
         }
 
+        self.raw_wav = False
+
     def __getitem__(self, idx):
         sample = super().__getitem__(idx)
 
         basename = self.basename[idx]
         speaker = self.speaker[idx]
+
+        if self.raw_wav:
+            if speaker.isnumeric(): #LibriTTS
+                raw_path = glob(
+                    f"{self.raw_path}/LibriTTS/*/{speaker}/{basename}.wav"
+                )[0]
+                wav, _ = librosa.load(raw_path)
+                sample.update({
+                    "wav": wav,
+                })
 
         accent = self.accent[idx]
         region = self.region[idx]

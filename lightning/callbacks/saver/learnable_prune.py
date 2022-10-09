@@ -32,20 +32,35 @@ class LearnablePruneSaver(PruneAccentSaver):
                            pl_module: LightningModule,
                            batch: Any,
                            batch_idx: int):
-        if batch_idx == 0:
-            print(trainer.state.stage)
-            # print(pl_module.model.mel_linear.weight)
-            # print((pl_module.model.mel_linear.weight == 0).sum().item())
-            try:
-                print(pl_module.model.mel_linear.weight)
-                print((pl_module.model.mel_linear.weight == 0).sum().item())
-                print(pl_module.copied.mel_linear.weight)
-                print((pl_module.copied.mel_linear.weight == 0).sum().item())
-            except:
-                print(pl_module.model.mel_linear.weight_mask)
-                print((pl_module.model.mel_linear.weight_mask == 0).sum().item())
-                print(pl_module.copied.mel_linear.weight_mask)
-                print((pl_module.copied.mel_linear.weight_mask == 0).sum().item())
+        pass
+        # if batch_idx == 0:
+        #     pl_module.print(trainer.state.stage, "train_mask")
+        #     # print(pl_module.model.mel_linear.weight)
+        #     # print((pl_module.model.mel_linear.weight == 0).sum().item())
+        #     try:
+        #         pl_module.print(pl_module.model.mel_linear.weight)
+        #         pl_module.print((pl_module.model.mel_linear.weight == 0).sum().item())
+        #         pl_module.print(pl_module.copied.mel_linear.weight)
+        #         pl_module.print((pl_module.copied.mel_linear.weight == 0).sum().item())
+        #     except:
+        #         pl_module.print(pl_module.model.mel_linear.weight_mask)
+        #         pl_module.print((pl_module.model.mel_linear.weight_mask == 0).sum().item())
+        #         pl_module.print(pl_module.copied.mel_linear.weight_mask)
+        #         pl_module.print((pl_module.copied.mel_linear.weight_mask == 0).sum().item())
+        # if batch_idx == pl_module.mask_steps_per_epoch:
+        #     pl_module.print(trainer.state.stage, "train")
+        #     # print(pl_module.model.mel_linear.weight)
+        #     # print((pl_module.model.mel_linear.weight == 0).sum().item())
+        #     try:
+        #         pl_module.print(pl_module.model.mel_linear.weight)
+        #         pl_module.print((pl_module.model.mel_linear.weight == 0).sum().item())
+        #         pl_module.print(pl_module.copied.mel_linear.weight)
+        #         pl_module.print((pl_module.copied.mel_linear.weight == 0).sum().item())
+        #     except:
+        #         pl_module.print(pl_module.model.mel_linear.weight_mask)
+        #         pl_module.print((pl_module.model.mel_linear.weight_mask == 0).sum().item())
+        #         pl_module.print(pl_module.copied.mel_linear.weight_mask)
+        #         pl_module.print((pl_module.copied.mel_linear.weight_mask == 0).sum().item())
 
     def on_train_batch_end(self,
                            trainer: Trainer,
@@ -66,7 +81,7 @@ class LearnablePruneSaver(PruneAccentSaver):
             mask_batch = batch[0]["mask"]
             mask_preds = outputs["mask"]["preds"]
 
-            if batch_idx == 199:
+            if batch_idx == pl_module.mask_steps_per_epoch:
                 # mask_preds
                 self.save_mask_wavs(trainer, pl_module, mask_batch, mask_preds, batch_idx)
 
@@ -87,7 +102,7 @@ class LearnablePruneSaver(PruneAccentSaver):
                     header=not os.path.exists(csv_file_path))
 
         else:
-            _batch_idx = batch_idx - 200
+            _batch_idx = batch_idx - pl_module.mask_steps_per_epoch
             sup_batch, qry_batch = batch[0]["sup"], batch[0]["qry"]
             sup_preds = outputs["sup"]["preds"]
             qry_preds = outputs["qry"]["preds"]

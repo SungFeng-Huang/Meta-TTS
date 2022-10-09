@@ -15,8 +15,6 @@ path:
   preprocessed_path: "./preprocessed_data/LibriTTS_VCTK"
 
 subsets:
-  #train: "train-all"
-  #train: "train-clean"
   train:
     - LibriTTS/train-all
   transfer:

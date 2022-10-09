@@ -54,7 +54,7 @@ class PruneAccentSaver(BaseSaver):
         logger.addHandler(logging.FileHandler(pruning_log_file))
 
     def save_wavs(self,
-                  type: Literal["support", "query", "validate"],
+                  type: str,
                   trainer: Trainer,
                   pl_module: LightningModule,
                   _batch: Any,
@@ -70,6 +70,7 @@ class PruneAccentSaver(BaseSaver):
             global_step = 0
         logger = trainer.logger
 
+                  # type: Literal["support", "query", "validate"],
         # save_recon = {
         #     "support": global_step == 0,
         #     "query": global_step == 0,

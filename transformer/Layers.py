@@ -80,6 +80,9 @@ class PostNet(nn.Module):
         super(PostNet, self).__init__()
         self.convolutions = nn.ModuleList()
 
+        self.n_mel_channels = n_mel_channels
+        self.d_embedding = postnet_embedding_dim
+
         self.convolutions.append(
             nn.Sequential(
                 ConvNorm(

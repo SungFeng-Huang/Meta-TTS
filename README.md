@@ -1,6 +1,6 @@
 # Meta-TTS: Meta-Learning for Few-shot SpeakerAdaptive Text-to-Speech
 
-This repository is the official implementation of ["Meta-TTS: Meta-Learning for Few-shot SpeakerAdaptive Text-to-Speech"](https://doi.org/10.1109/TASLP.2022.3167258).
+This repository is the official implementation of ["Meta-TTS: Meta-Learning for Few-shot Speaker Adaptive Text-to-Speech"](https://doi.org/10.1109/TASLP.2022.3167258).
 
 <!--📋  Optional: include a graphic explaining your approach/main result, bibtex entry, link to demos, blog posts and tutorials-->
 
@@ -14,7 +14,7 @@ This repository is the official implementation of ["Meta-TTS: Meta-Learning for 
 
 ## Requirements
 
-This is how I build my environment, which is not exactly needed to be the same:
+This is how I build my environment, which is not needed to be exactly the same:
 - Sign up for [Comet.ml](https://www.comet.ml/), find out your workspace and API key via [www.comet.ml/api/my/settings](www.comet.ml/api/my/settings) and fill them in `config/comet.py`. Comet logger is used throughout train/val/test stages.
   - Check my training logs [here](https://www.comet.ml/b02901071/meta-tts/view/Zvh3Lz3Wvy2AiWcinD06TaS0G).
 - [Optional] Install [pyenv](https://github.com/pyenv/pyenv.git) for Python version
@@ -35,7 +35,7 @@ pyenv activate meta-tts
 pip install -r requirements.txt
 ```
 
-## Proprocessing
+## Preprocessing
 First, download [LibriTTS](https://www.openslr.org/60/) and [VCTK](https://datashare.ed.ac.uk/handle/10283/3443), then change the paths in `config/preprocess/LibriTTS.yaml` and `config/preprocess/VCTK.yaml`, then run
 ```bash
 python3 prepare_align.py config/preprocess/LibriTTS.yaml

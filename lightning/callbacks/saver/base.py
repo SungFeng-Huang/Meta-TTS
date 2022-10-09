@@ -13,12 +13,20 @@ CSV_COLUMNS = ["Total Loss", "Mel Loss", "Mel-Postnet Loss", "Pitch Loss", "Ener
 COL_SPACE = [len(col) for col in ["200000", "Validation"]+CSV_COLUMNS]  # max step: 200000, longest stage: validation
 
 
+import yaml
+from typing import Literal, Dict, Any, Union, List
+def load_yaml(yaml_in: str) -> Dict[str, Any]:
+    return yaml.load(open(yaml_in), Loader=yaml.FullLoader)
+
+
 class BaseSaver(Callback):
     """
     """
 
     def __init__(self, preprocess_config, log_dir=None, result_dir=None):
         super().__init__()
+        if isinstance(preprocess_config, str):
+            preprocess_config = load_yaml(preprocess_config)
         self.preprocess_config = preprocess_config
 
         # self.log_dir = log_dir

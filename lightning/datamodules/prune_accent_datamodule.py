@@ -1,7 +1,8 @@
+import yaml
 import torch
 import pytorch_lightning as pl
 from collections import defaultdict
-from typing import Literal
+from typing import Literal, Dict, Any, Union, List
 
 from torch.utils.data import Dataset, DataLoader, random_split, Subset
 from torch.utils.data.dataset import ConcatDataset
@@ -9,6 +10,10 @@ from torch.utils.data.dataset import ConcatDataset
 from lightning.dataset import MonolingualTTSDataset
 from lightning.collate import get_single_collate, reprocess
 from lightning.utils import EpisodicInfiniteWrapper
+
+
+def load_yaml(yaml_in: str) -> Dict[str, Any]:
+    return yaml.load(open(yaml_in), Loader=yaml.FullLoader)
 
 
 class PruneAccentDataModule(pl.LightningDataModule):
@@ -19,14 +24,18 @@ class PruneAccentDataModule(pl.LightningDataModule):
     """
 
     def __init__(self,
-                 preprocess_config: dict,
-                 train_config: dict,
+                 preprocess_config: Union[dict, str],
+                 train_config: Union[dict, str, List[str]],
                  steps_per_epoch: int,
                  *args,
                  target: Literal["speaker", "region", "accent"] = "speaker",
+                 mask_steps_per_epoch: int = 0,
+                 m: int = 0,
                  k: int = 5,
                  q: int = 5,
                  key: str = None,
+                 batch_size: int = None,
+                 libri_mask: bool = False,
                  **kwargs):
         """Initialize PruneAccentDataModule.
 
@@ -39,9 +48,23 @@ class PruneAccentDataModule(pl.LightningDataModule):
                 speaker/region/accent.
         """
         super().__init__()
-        self.save_hyperparameters()
+
+        if isinstance(preprocess_config, str):
+            preprocess_config = load_yaml(preprocess_config)
+        if isinstance(train_config, str):
+            train_config = load_yaml(train_config)
+        elif isinstance(train_config, List):
+            _configs = [load_yaml(_config) for _config in train_config]
+            train_config = _configs[0]
+            for _config in _configs[1:]:
+                train_config.update(_config)
+
+        if batch_size is not None:
+            train_config['optimizer']['batch_size'] = batch_size
+
         self.preprocess_config = preprocess_config
         self.train_config = train_config
+        # self.save_hyperparameters()
 
         self.target = target
         if self.target != "speaker":
@@ -53,6 +76,7 @@ class PruneAccentDataModule(pl.LightningDataModule):
                                              self.train_config)
         self.num_classes = len(getattr(self.dataset, f"{self.target}_map"))
         self.steps_per_epoch = steps_per_epoch
+        self.mask_steps_per_epoch = mask_steps_per_epoch
 
         self.map_ids = defaultdict(list)
         for idx, tgt in enumerate(getattr(self.dataset, self.target)):
@@ -60,30 +84,40 @@ class PruneAccentDataModule(pl.LightningDataModule):
                 continue
             self.map_ids[tgt].append(idx)
 
+        self.libri_mask = libri_mask
+        if libri_mask:
+            self.libri_dataset = MonolingualTTSDataset(
+                "train", self.preprocess_config, self.train_config)
+
         # Few-shot settings: n-ways-k-shots-q-queries
+        self.m = m  # data for training mask
         self.k = k
         self.q = q
-        self.key = key
         keys = sorted(self.map_ids.keys())
         for _key in keys:
-            if len(self.map_ids[_key]) < self.k + self.q:
+            if len(self.map_ids[_key]) < self.m + self.k + self.q:
                 del self.map_ids[_key]
 
-        if self.key is None:
+        if key is None:
             # generator = torch.Generator()
             # # generator.manual_seed(42)
             # generator.seed()
             # for i in torch.randperm(len(self.map_ids), generator=generator):
             for i in torch.randperm(len(self.map_ids)):
                 self.key = sorted(self.map_ids.keys())[i]
-        elif self.key not in self.map_ids:
+        elif key not in self.map_ids:
             raise ValueError
+        else:
+            self.key = key
 
     def setup(self, stage=None):
         if stage in (None, 'fit', 'validate', 'test'):
-            key, train_sup_ids, train_qry_ids, val_ids = self._sample()
+            key, train_mask_ids, train_sup_ids, train_qry_ids, val_ids = self._sample()
             print("Speaker", key)
-            print("k-shot-q-query", list(train_sup_ids), list(train_qry_ids))
+            print("m-mask", list(train_mask_ids))
+            print("k-shot", list(train_sup_ids))
+            print("q-query", list(train_qry_ids))
+            self.train_mask = reprocess(self.dataset, train_mask_ids) # dict of batch
             self.train_sup = reprocess(self.dataset, train_sup_ids) # dict of batch
             self.train_qry = reprocess(self.dataset, train_qry_ids) # dict of batch
             self.val_dataset = Subset(self.dataset, val_ids)
@@ -100,21 +134,87 @@ class PruneAccentDataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         """Training dataloader, not modified for multiple dataloaders."""
-        self.train_dataset = [{
-            "sup": self.train_sup,
-            "qry": self.train_qry,
-        }]
-        self.train_dataset = EpisodicInfiniteWrapper(
-            self.train_dataset, self.steps_per_epoch)
-        self.train_loader = DataLoader(
-            self.train_dataset,
-            batch_size=1,
-            shuffle=False,
-            drop_last=True,
-            num_workers=4,
-            collate_fn=lambda batch: batch,
-        )
-        return self.train_loader
+        # self.train_dataset = [{
+        #     "sup": self.train_sup,
+        #     "qry": self.train_qry,
+        # }]
+        # self.train_dataset = EpisodicInfiniteWrapper(
+        #     self.train_dataset, self.steps_per_epoch)
+        if not self.libri_mask:
+            if not hasattr(self, "pipeline_stage"):
+                self.train_dataset = [{
+                    "mask": self.train_mask,
+                    "qry": self.train_qry,
+                }] * self.mask_steps_per_epoch + [{
+                    "sup": self.train_sup,
+                    "qry": self.train_qry,
+                }] * (self.steps_per_epoch - self.mask_steps_per_epoch)
+                self.train_loader = DataLoader(
+                    self.train_dataset,
+                    batch_size=1,
+                    shuffle=False,
+                    drop_last=True,
+                    num_workers=4,
+                    collate_fn=lambda batch: batch,
+                )
+                return self.train_loader
+            elif self.pipeline_stage == "mask":
+                self.train_dataset = [{
+                    "mask": self.train_mask,
+                    "qry": self.train_qry,
+                }] * self.steps_per_epoch
+            elif self.pipeline_stage == "ft":
+                self.train_dataset = [{
+                    "sup": self.train_sup,
+                    "qry": self.train_qry,
+                }] * self.steps_per_epoch
+            elif self.pipeline_stage == "joint":
+                self.train_dataset = [{
+                    "mask": self.train_mask,
+                    "sup": self.train_sup,
+                    "qry": self.train_qry,
+                }] * self.steps_per_epoch
+            self.train_loader = DataLoader(
+                self.train_dataset,
+                batch_size=1,
+                shuffle=False,
+                drop_last=True,
+                num_workers=4,
+                collate_fn=lambda batch: batch,
+            )
+            return self.train_loader
+        else:
+            if self.pipeline_stage == "mask":
+                self.train_dataset = [{
+                    "qry": self.train_qry,
+                }] * self.steps_per_epoch
+            elif self.pipeline_stage in {"ft", "joint"}:
+                self.train_dataset = [{
+                    "sup": self.train_sup,
+                    "qry": self.train_qry,
+                }] * self.steps_per_epoch
+            self.train_loader = {
+                "ft": DataLoader(
+                    self.train_dataset,
+                    batch_size=1,
+                    shuffle=False,
+                    drop_last=True,
+                    num_workers=4,
+                    collate_fn=lambda batch: batch,
+                )
+            }
+            if self.pipeline_stage in {"mask", "joint"}:
+                mask_dataset = EpisodicInfiniteWrapper(
+                    self.libri_dataset, self.steps_per_epoch)
+                self.train_loader["mask"] = DataLoader(
+                    mask_dataset,
+                    batch_size=self.train_config["optimizer"]["batch_size"],
+                    shuffle=True,
+                    drop_last=True,
+                    num_workers=4,
+                    collate_fn=get_single_collate(False),
+                )
+            return self.train_loader
 
     def val_dataloader(self):
         batch_size = self.train_config["optimizer"]["batch_size"]
@@ -142,14 +242,18 @@ class PruneAccentDataModule(pl.LightningDataModule):
         return self.test_loader
 
     def _sample(self):
-        generator = torch.Generator()
-        # generator.manual_seed(42)
-        generator.seed()
+        # generator = torch.Generator()
+        # # generator.manual_seed(42)
+        # generator.seed()
 
         key = self.key
-        split_len = [self.k, self.q, len(self.map_ids[key]) - self.k - self.q]
-        train_sup_ids, train_qry_ids, val_ids = random_split(
-            self.map_ids[key], split_len, generator=generator
+        split_len = [self.m, self.k, self.q,
+                     len(self.map_ids[key]) - self.m - self.k - self.q]
+        train_mask_ids, train_sup_ids, train_qry_ids, val_ids = random_split(
+            self.map_ids[key], split_len,
+            # generator=generator,
         )
-        return key, train_sup_ids, train_qry_ids, val_ids
+        if self.m == 0:
+            train_mask_ids = train_sup_ids
+        return key, train_mask_ids, train_sup_ids, train_qry_ids, val_ids
 

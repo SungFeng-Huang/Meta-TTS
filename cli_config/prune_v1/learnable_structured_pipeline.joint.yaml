@@ -1,0 +1,85 @@
+# log_dir: output/log/pretrain_LibriTTS.2
+# result_dir: output/result/dev.2
+
+seed_everything: 531
+model:
+  class_path: lightning.systems.prune.learnable_structured_pipeline.LearnableStructuredPruneSystem
+  init_args:
+    ckpt_path: output/ckpt/LibriTTS/meta-tts-accent-dev/1d34914e07244f87ad10c580ab85656c/checkpoints/epoch=39-step=39999.ckpt
+    qry_patience: 0
+    target_sparsity: 0.
+    verbose: 1
+    lam_mask:
+      mask_hidden: False
+      mask_mha: True
+      mask_pos_ffn: True
+      mask_duration: True
+      mask_pitch: True
+      mask_energy: True
+      mask_mel_linear: True
+      mask_postnet: True
+    mask_mode: soft
+    pipeline:
+      - joint
+    spk_emb_subset_weight_avg: True
+    preprocess_config: &preprocess_config config/preprocess/LibriTTS_VCTK.yaml
+    model_config: config/model/base.yaml
+    algorithm_config: config/algorithm/pretrain/pretrain_LibriTTS.2.yaml
+
+data:
+  class_path: lightning.datamodules.prune_accent_datamodule.PruneAccentDataModule
+  init_args:
+    steps_per_epoch: 200
+    mask_steps_per_epoch: 20
+    m: 0
+    k: 8
+    q: 8
+    key: p251
+    preprocess_config: *preprocess_config
+    train_config: &train_config
+      - config/train/LibriTTS.yaml
+      - config/train/base.yaml
+    batch_size: 32
+    libri_mask: False
+
+trainer:
+  ### Train settings
+  max_epochs: 100
+  # gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+  num_sanity_val_steps: -1
+  reload_dataloaders_every_n_epochs: 1
+
+  ### Logging and saving settings
+  enable_checkpointing: True
+  default_root_dir: output/learnable_structured/p251
+  # log_every_n_steps: 10
+
+  ### GPU-related settings
+  accelerator: gpu
+  devices: [0]
+  # strategy: ddp
+  auto_select_gpus: True
+
+  ### Callbacks
+  callbacks:
+    - class_path: lightning.callbacks.saver.learnable_prune_pipeline.LearnablePruneSaver
+      init_args:
+        preprocess_config: *preprocess_config
+    - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+      init_args:
+        save_weights_only: True
+        save_top_k: -1
+
+    ### Monitors
+    - class_path: pytorch_lightning.callbacks.DeviceStatsMonitor
+      init_args: {}
+    - class_path: pytorch_lightning.callbacks.LearningRateMonitor
+      init_args:
+        log_momentum: True
+
+  ### Malicious settings
+  profiler: simple
+
+  ### Depreciated settings
+  # deterministic: True

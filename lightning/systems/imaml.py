@@ -132,7 +132,8 @@ class IMAMLSystem(BaseAdaptorSystem):
                 clip_coef_clamped = torch.clamp(clip_coef, max=1.0).to(self.device)
                 for g in grads:
                     g.mul_(clip_coef_clamped)
-            grads = [self.trainer.training_type_plugin.reduce(g) for g in grads]
+            # grads = [self.trainer.training_type_plugin.reduce(g) for g in grads]
+            grads = [self.trainer.strategy.reduce(g) for g in grads]
 
             opt = self.optimizers()
             opt.zero_grad()

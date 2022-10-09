@@ -67,6 +67,9 @@ class PositionwiseFeedForward(nn.Module):
     def __init__(self, d_in, d_hid, kernel_size, dropout=0.1):
         super().__init__()
 
+        self.d_in = d_in
+        self.d_hid = d_hid
+
         # Use Conv1D
         # position-wise
         self.w_1 = nn.Conv1d(
