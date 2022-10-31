@@ -1,5 +1,6 @@
 import pytorch_lightning as pl
 from pytorch_lightning.utilities.cli import LightningCLI
+from typing import Any, Callable
 
 
 class MyLightningCLI(LightningCLI):
@@ -11,11 +12,31 @@ class MyLightningCLI(LightningCLI):
                               "model.init_args.libri_mask",
                               apply_on="instantiate")
 
+def change_default(func: Callable, arg_name: str, value: Any):
+    """hacky way to change default value of positional argument"""
+    # get function arguments
+    n_args = func.__code__.co_argcount  # counts
+    arg_names = func.__code__.co_varnames[:n_args]  # names
+
+    # get default arguments
+    df_vals = list(func.__defaults__)   # values
+    n_df_args = len(df_vals)    # counts
+    df_names = arg_names[-n_df_args:]   # names
+
+    # change argument default value
+    df_vals[df_names.index(arg_name)] = value
+    func.__defaults__ = tuple(df_vals)
+
+
 if __name__ == "__main__":
     import os
     import traceback
     from lightning.systems.prune.prune_accent import PruneAccentSystem
     from lightning.datamodules.prune_accent_datamodule import PruneAccentDataModule
+
+    # change dendrogram default for seaborn.clustermap
+    from scipy.cluster.hierarchy import dendrogram
+    change_default(dendrogram, "distance_sort", True)
 
     try:
         cli = MyLightningCLI(
