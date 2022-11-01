@@ -9,7 +9,7 @@ import learn2learn as l2l
 
 from learn2learn.algorithms.lightning import LightningMAML
 
-from utils.tools import get_mask_from_lengths
+from src.utils.tools import get_mask_from_lengths
 from lightning.systems.new_base_adaptor import BaseAdaptorSystem
 from lightning.utils import loss2dict
 

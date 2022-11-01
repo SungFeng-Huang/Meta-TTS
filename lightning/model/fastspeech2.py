@@ -10,7 +10,7 @@ from .speaker_encoder import SpeakerEncoder
 from .phoneme_embedding import PhonemeEmbedding
 from .adapters import SpeakerAdaLNAdapter, ProsodyEncoder, ProsodyAdaLNAdapter
 from .utils import reset_LN
-from utils.tools import get_mask_from_lengths
+from src.utils.tools import get_mask_from_lengths
 
 
 class FastSpeech2(pl.LightningModule):

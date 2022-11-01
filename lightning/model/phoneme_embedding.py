@@ -1,5 +1,4 @@
 import os
-import numpy as np
 import json
 import numpy as np
 
@@ -9,9 +8,9 @@ from torch.nn import functional as F
 
 import pytorch_lightning as pl
 
-import transformer.Constants as Constants
-from transformer import Encoder, Decoder, PostNet
-from transformer.Modules import ScaledDotProductAttention
+import src.transformer.Constants as Constants
+from src.transformer import Encoder, Decoder, PostNet
+from src.transformer.Modules import ScaledDotProductAttention
 from src.text.symbols import symbols
 
 

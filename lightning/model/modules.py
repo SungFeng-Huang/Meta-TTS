@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from utils.tools import get_mask_from_lengths, pad
+from src.utils.tools import get_mask_from_lengths, pad
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-import .Constants as Constants
+from . import Constants as Constants
 from .Layers import FFTBlock
 from src.text.symbols import symbols
 

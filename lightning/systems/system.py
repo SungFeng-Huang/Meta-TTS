@@ -21,7 +21,7 @@ from lightning.callbacks import Saver
 from lightning.optimizer import get_optimizer
 from lightning.scheduler import get_scheduler
 from lightning.utils import LightningMelGAN, loss2dict
-from utils.tools import expand, plot_mel
+from src.utils.tools import expand, plot_mel
 
 
 class System(pl.LightningModule):

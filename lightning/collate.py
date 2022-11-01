@@ -3,7 +3,7 @@ import torch
 from functools import partial
 from collections import defaultdict
 
-from utils.tools import pad_1D, pad_2D
+from src.utils.tools import pad_1D, pad_2D
 
 
 def reprocess(data, idxs):

@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
 
-from text import text_to_sequence
-from utils.tools import pad_1D, prosody_averaging, merge_stats, merge_speaker_map
+from src.text import text_to_sequence
+from src.utils.tools import pad_1D, prosody_averaging, merge_stats, merge_speaker_map
 from .tts import TTSDataset
 
 

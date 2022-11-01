@@ -10,7 +10,7 @@ from typing import Literal
 
 from .utils import DistributedProxySampler
 from lightning.dataset import XvecDataset as Dataset
-from utils.tools import pad_2D
+from src.utils.tools import pad_2D
 
 
 class XvecDataModule(pl.LightningDataModule):
