@@ -6,7 +6,7 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 from scipy.io import wavfile
 
-from utils.tools import expand, plot_mel
+from src.utils.tools import expand, plot_mel
 
 
 def synth_one_sample_with_target(targets, predictions, vocoder, preprocess_config):

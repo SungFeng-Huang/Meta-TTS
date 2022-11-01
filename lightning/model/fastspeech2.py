@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
-from transformer import Encoder, Decoder, PostNet
+from src.transformer import Encoder, Decoder, PostNet
 from .modules import VarianceAdaptor
 from .speaker_encoder import SpeakerEncoder
 from .phoneme_embedding import PhonemeEmbedding

@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from scipy.io.wavfile import write
 
-from audio.audio_processing import griffin_lim
+from .audio_processing import griffin_lim
 
 
 def get_mel_from_wav(audio, _stft):

@@ -12,7 +12,7 @@ import pytorch_lightning as pl
 import transformer.Constants as Constants
 from transformer import Encoder, Decoder, PostNet
 from transformer.Modules import ScaledDotProductAttention
-from text.symbols import symbols
+from src.text.symbols import symbols
 
 
 class PhonemeEmbedding(pl.LightningModule):

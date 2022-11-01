@@ -7,7 +7,7 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 from scipy.io import wavfile
 
-from utils.tools import expand, plot_mel
+from src.utils.tools import expand, plot_mel
 
 from typing import Any
 from pytorch_lightning import Trainer, LightningModule
