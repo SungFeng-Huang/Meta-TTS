@@ -7,6 +7,7 @@ import pandas as pd
 import pytorch_lightning as pl
 # from learn2learn.algorithms import MAML
 from learn2learn.utils import detach_module
+from typing import Dict, Any, Optional, Union, List
 
 # from lightning.systems.system import System
 from lightning.systems.utils import MAML
@@ -15,17 +16,44 @@ from lightning.model import FastSpeech2Loss, FastSpeech2
 
 VERBOSE = False
 
+
+import yaml
+def load_yaml(yaml_in: str) -> Dict[str, Any]:
+    return yaml.load(open(yaml_in, 'r'), Loader=yaml.FullLoader)
+
+
 class BaseAdaptorSystem(pl.LightningModule):
     """A PyTorch Lightning module for ANIL for FastSpeech2.
     """
 
     def __init__(self,
-                 preprocess_config: dict,
-                 model_config: dict,
-                 train_config: dict,
-                 algorithm_config: dict,
+                 preprocess_config: Union[dict, str],
+                 model_config: Union[dict, str],
+                 train_config: Union[dict, str, list],
+                 algorithm_config: Union[dict, str],
                  log_dir=None, result_dir=None):
         super().__init__()
+
+        if isinstance(preprocess_config, str):
+            preprocess_config = load_yaml(preprocess_config)
+        if isinstance(model_config, str):
+            model_config = load_yaml(model_config)
+        # if isinstance(train_config, str):
+        #     train_config = load_yaml(train_config)
+
+        if isinstance(train_config, str) or isinstance(train_config, dict):
+            train_config = [train_config]
+        _train_config = {}
+        for _config in train_config:
+            if isinstance(_config, str):
+                _train_config.update(load_yaml(_config))
+            elif isinstance(_config, dict):
+                _train_config.update(_config)
+        train_config = _train_config
+
+        if isinstance(algorithm_config, str):
+            algorithm_config = load_yaml(algorithm_config)
+
         self.preprocess_config = preprocess_config
         self.model_config = model_config
         self.train_config = train_config

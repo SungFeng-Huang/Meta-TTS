@@ -7,13 +7,47 @@ import pytorch_lightning as pl
 from lightning.dataset import MonolingualTTSDataset as Dataset
 from lightning.collate import get_single_collate
 
+import yaml
+from typing import Literal, Dict, Any, Union, List
+
+
+def load_yaml(yaml_in: str) -> Dict[str, Any]:
+    return yaml.load(open(yaml_in), Loader=yaml.FullLoader)
+
 
 class BaseDataModule(pl.LightningDataModule):
-    def __init__(self, preprocess_configs, train_config, algorithm_config,
-                 stage="train"):
+    def __init__(self,
+                 preprocess_config: Union[dict, str, list],
+                 train_config: Union[dict, str, list],
+                 algorithm_config: Union[dict, str],
+                 stage: str = "train"):
         super().__init__()
+
+        if (isinstance(preprocess_config, str)
+                or isinstance(preprocess_config, dict)):
+            preprocess_config = [preprocess_config]
+        _preprocess_configs = []
+        for _config in preprocess_config:
+            if isinstance(_config, str):
+                _preprocess_configs.append(load_yaml(_config))
+            elif isinstance(_config, dict):
+                _preprocess_configs.append(_config)
+        preprocess_configs = _preprocess_configs
         self.preprocess_configs = preprocess_configs
+
+        if isinstance(train_config, str) or isinstance(train_config, dict):
+            train_config = [train_config]
+        _train_config = {}
+        for _config in train_config:
+            if isinstance(_config, str):
+                _train_config.update(load_yaml(_config))
+            elif isinstance(_config, dict):
+                _train_config.update(_config)
+        train_config = _train_config
         self.train_config = train_config
+
+        if isinstance(algorithm_config, str):
+            algorithm_config = load_yaml(algorithm_config)
         self.algorithm_config = algorithm_config
 
         # Discriminate train/transfer

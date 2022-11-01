@@ -31,7 +31,8 @@ class BaseAdaptorFitSystem(BaseAdaptorSystem):
         save_step = self.train_config["step"]["save_step"]
         checkpoint = ModelCheckpoint(
             monitor="Train/Total Loss", mode="min", # monitor not used
-            every_n_train_steps=save_step, save_top_k=-1, save_last=True,
+            # every_n_train_steps=save_step,
+            save_top_k=-1, save_last=True,
         )
 
         # Monitor learning rate / gpu stats
