@@ -1,17 +1,14 @@
-# python main_cli.py test -c cli_config/xvec/test.yaml
+# python main_cli.py fit -c cli_config/xvec/fit.yaml
 
 seed_everything: 42
 
-model:
-  class_path: lightning.systems.xvec.XvecTestSystem
-  init_args:
-    p_dropout: 0.0
+model: cli_config/xvec/model.yaml
 
-data: cli_config/xvec/data.yaml
+data: cli_config/xvec/data.speaker.yaml
 
 trainer:
   ### Train settings
-  max_epochs: 200
+  max_epochs: 50
   gradient_clip_val: 1.0
   accumulate_grad_batches: 1
 

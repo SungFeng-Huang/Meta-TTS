@@ -27,7 +27,7 @@ if __name__ == "__main__":
         XvecTDNN, XvecDataModule,
         parser_kwargs={
             "fit": {
-                "default_config_files": ["cli_config/xvec/fit.yaml"],
+                "default_config_files": ["cli_config/xvec/fit.accent.yaml"],
             },
             "test": {
                 "default_config_files": ["cli_config/xvec/test.yaml"],
