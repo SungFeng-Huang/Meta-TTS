@@ -20,7 +20,7 @@ class MyLightningCLI(LightningCLI):
 
 
 if __name__ == "__main__":
-    from lightning.model import XvecTDNN
+    from projects.xvec.model import XvecTDNN
     from lightning.datamodules import XvecDataModule
 
     cli = MyLightningCLI(

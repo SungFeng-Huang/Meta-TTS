@@ -8,7 +8,8 @@ from collections import Counter
 from typing import Dict
 from torchmetrics import Accuracy
 from pytorch_lightning.utilities.cli import instantiate_class
-from lightning.model import XvecTDNN
+
+from ..model import XvecTDNN
 from .base import XvecWrapperMixin
 from .validate import ValidateMixin
 

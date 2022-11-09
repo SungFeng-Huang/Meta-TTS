@@ -4,7 +4,8 @@ import pandas as pd
 import numpy as np
 from collections import Counter
 from torchmetrics import Accuracy
-from lightning.model import XvecTDNN
+
+from ..model import XvecTDNN
 from .base import BaseMixin, XvecWrapperMixin
 
 

@@ -2,7 +2,8 @@
 
 import torch
 import pytorch_lightning as pl
-from lightning.model import XvecTDNN
+
+from ..model import XvecTDNN
 
 
 class BaseMixin(pl.LightningModule):
