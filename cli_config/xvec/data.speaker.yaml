@@ -1,4 +1,4 @@
-class_path: lightning.datamodules.XvecDataModule
+class_path: projects.xvec.datamodule.XvecDataModule
 init_args:
   preprocess_config:
     path:
