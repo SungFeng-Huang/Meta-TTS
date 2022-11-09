@@ -31,14 +31,16 @@ class XvecDataset(Dataset):
         self.region = [self.speaker_region_map.get(spk, None)
                        for spk in self.speaker]
         self.accent_map = {
-            None: -100,
             **{k: i for i, k in enumerate(self.df.groupby(["ACCENTS"]).groups)}
         }
         self.region_map = {
-            None: -100,
             **{k: i for i, k in
                enumerate(self.df.groupby(["ACCENTS", "REGION"]).groups)}
         }
+        if None in self.accent:
+            self.accent_map[None] = -100
+        if None in self.region:
+            self.region_map[None] = -100
 
         print(f"\nLength of dataset: {len(self.speaker)}")
 

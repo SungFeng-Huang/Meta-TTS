@@ -2,7 +2,6 @@
 # Usage: python main_cli.py [-c config_with_subcommand] subcommand [-c config]
 ###
 import os
-print(os.getcwd())
 import pytorch_lightning as pl
 from pytorch_lightning.utilities.cli import LightningCLI
 
@@ -24,6 +23,7 @@ class MyLightningCLI(LightningCLI):
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, os.getcwd())
+
     from projects.xvec.model import XvecTDNN
     from lightning.datamodules import XvecDataModule
 
@@ -34,7 +34,7 @@ if __name__ == "__main__":
                 "default_config_files": ["cli_config/xvec/fit.accent.yaml"],
             },
             "test": {
-                "default_config_files": ["cli_config/xvec/test.yaml"],
+                "default_config_files": ["cli_config/xvec/test.accent.yaml"],
             },
         },
         subclass_mode_model=True, subclass_mode_data=True)

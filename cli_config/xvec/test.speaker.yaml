@@ -7,11 +7,11 @@ model:
   init_args:
     p_dropout: 0.0
 
-data: cli_config/xvec/data.accent.yaml
+data: cli_config/xvec/data.speaker.yaml
 
 trainer:
   ### Train settings
-  max_epochs: 200
+  max_epochs: 50
   gradient_clip_val: 1.0
   accumulate_grad_batches: 1
 

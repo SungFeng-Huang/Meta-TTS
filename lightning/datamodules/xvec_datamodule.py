@@ -43,7 +43,11 @@ class XvecDataModule(pl.LightningDataModule):
         # Discriminate train/transfer
         self.target = target
         self.dataset = Dataset("total", self.preprocess_config)
-        self.num_classes = len(getattr(self.dataset, f"{self.target}_map"))
+        target_map = getattr(self.dataset, f"{self.target}_map")
+        if None in target_map:
+            self.num_classes = len(target_map) - 1
+        else:
+            self.num_classes = len(target_map)
 
     def setup(self, stage=None):
         # if stage in (None, 'fit'):
