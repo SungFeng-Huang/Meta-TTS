@@ -27,19 +27,19 @@ python projects/xvec/main_cli.py test -c cli_config/xvec/test.speaker.yaml --ckp
 ```
 
 ## Results
-### Accent classification
+### Accent classification on randomly-split test set
 | Accent | Count | Acc (\%) |
 | --- | --- | --- |
-| American || 99.6 |
-| Australian English || 95.2 |
-| British || 100 |
-| Canadian || 99.7 |
-| English || 99.6 |
-| Indian || 100 |
-| Irish || 100 |
-| NewZealand || 100 |
-| Northern Irish || 99.6 |
-| Scottish | 99.6 |
-| South African || 99.4 |
-| Welsh || 100 |
+| American | 840 | 99.6 |
+| Australian English | 83 | 95.2 |
+| British | 40 | 100 |
+| Canadian | 316 | 99.7 |
+| English | 1363 | 99.6 |
+| Indian | 117 | 100 |
+| Irish | 363 | 100 |
+| NewZealand | 43 | 100 |
+| Northern Irish | 258 | 99.6 |
+| Scottish | 761 | 99.6 |
+| South African | 169 | 99.4 |
+| Welsh | 38 | 100 |
 | Total || 99.4 |

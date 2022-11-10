@@ -8,7 +8,7 @@ from collections import defaultdict
 from math import ceil
 from typing import Literal
 
-from .utils import DistributedProxySampler
+from lightning.datamodules.utils import DistributedProxySampler
 from .dataset import XvecDataset as Dataset
 from src.utils.tools import pad_2D
 

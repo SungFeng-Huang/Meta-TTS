@@ -25,7 +25,7 @@ if __name__ == "__main__":
     sys.path.insert(0, os.getcwd())
 
     from projects.xvec.model import XvecTDNN
-    from lightning.datamodules import XvecDataModule
+    from projects.xvec.datamodule import XvecDataModule
 
     cli = MyLightningCLI(
         XvecTDNN, XvecDataModule,
