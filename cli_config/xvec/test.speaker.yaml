@@ -37,3 +37,4 @@ trainer:
   ### Depreciated settings
   # deterministic: True
 
+ckpt_path: output/xvec/lightning_logs/version_99/checkpoints/epoch=49-step=377950.ckpt
