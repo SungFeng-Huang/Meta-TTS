@@ -9,16 +9,15 @@ from dlhlp_lib.parsers.QueryParsers import SFQueryParser, NestSFQueryParser
 from dlhlp_lib.parsers.IOObjects import NumpyIO, PickleIO, WavIO, TextGridIO, TextIO, JSONIO
 
 
-class SFBQueryParser(BaseQueryParser):
+class SBQueryParser(BaseQueryParser):
     """
-    [root]/[spk]-[feat_name]-[basename][extension]
+    [root]/[spk]-[basename][extension]
     """
-    def __init__(self, root, feat_name):
+    def __init__(self, root):
         super().__init__(root)
-        self.feat_name = feat_name
     
     def get(self, query) -> List[str]:
-        return [f"{query['spk']}-{self.feat_name}-{query['basename']}"]
+        return [f"{query['spk']}-{query['basename']}"]
 
     def get_all(self, extension) -> List[str]:
         return [os.path.splitext(os.path.basename(x))[0] for x in glob.glob(f"{self.root}/*{extension}")]
@@ -31,35 +30,32 @@ class DataParser(BaseDataParser):
     def __init__(self, root):
         super().__init__(root)
 
-        self.wav_16000 = Feature(
-            SFBQueryParser(f"{self.root}/wav_16000", "wav_16000"), WavIO(sr=16000))
-        self.wav_22050 = Feature(
-            SFBQueryParser(f"{self.root}/wav_22050", "wav_22050"), WavIO(sr=22050))
+        self.wav = Feature(
+            SBQueryParser(f"{self.root}/wav"), WavIO(sr=22050))
         self.mel = Feature(
-            SFBQueryParser(f"{self.root}/mel", "mel"), NumpyIO())
+            SBQueryParser(f"{self.root}/mel"), NumpyIO())
         self.pitch = Feature(
-            SFBQueryParser(f"{self.root}/pitch", "pitch"), NumpyIO(), enable_cache=True)
+            SBQueryParser(f"{self.root}/pitch"), NumpyIO(), enable_cache=True)
         self.energy = Feature(
-            SFBQueryParser(f"{self.root}/energy", "energy"), NumpyIO(), enable_cache=True)
+            SBQueryParser(f"{self.root}/energy"), NumpyIO(), enable_cache=True)
         self.duration = Feature(
-            SFBQueryParser(f"{self.root}/duration", "duration"), NumpyIO(), enable_cache=True)
+            SBQueryParser(f"{self.root}/duration"), NumpyIO(), enable_cache=True)
         
         self.textgrid = Feature(
             NestSFQueryParser(f"{self.root}/TextGrid"), TextGridIO())
         self.phoneme = Feature(
-            SFBQueryParser(f"{self.root}/phoneme", "phoneme"), TextIO(), enable_cache=True)
+            SBQueryParser(f"{self.root}/phoneme"), TextIO(), enable_cache=True)
         self.text = Feature(
-            SFBQueryParser(f"{self.root}/text", "text"), TextIO(), enable_cache=True)
+            SBQueryParser(f"{self.root}/text"), TextIO(), enable_cache=True)
         self.spk_ref_mel_slices = Feature(
-            SFBQueryParser(f"{self.root}/spk_ref_mel_slices", "spk_ref_mel_slices"), NumpyIO())
+            SBQueryParser(f"{self.root}/spk_ref_mel_slices"), NumpyIO())
         
         self.stats_path = f"{self.root}/stats.json"
         self.speakers_path = f"{self.root}/speakers.json"
         self.metadata_path = f"{self.root}/data_info.json"
 
     def _init_structure(self):
-        os.makedirs(f"{self.root}/wav_16000", exist_ok=True)
-        os.makedirs(f"{self.root}/wav_22050", exist_ok=True)
+        os.makedirs(f"{self.root}/wav", exist_ok=True)
         os.makedirs(f"{self.root}/text", exist_ok=True)
     
     def get_all_queries(self):

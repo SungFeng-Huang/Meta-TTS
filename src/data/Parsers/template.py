@@ -16,12 +16,11 @@ INV_FRAME_PERIOD = AUDIO_CONFIG["audio"]["sampling_rate"] / AUDIO_CONFIG["stft"]
 
 
 def prepare_initial_features(data_parser: DataParser, query, data):
-    wav_16000, _ = librosa.load(data["wav_path"], sr=16000)
+    # wav_16000, _ = librosa.load(data["wav_path"], sr=16000)
     wav_22050, _ = librosa.load(data["wav_path"], sr=22050)
-    wav_16000 = wav_normalization(wav_16000)
+    # wav_16000 = wav_normalization(wav_16000)
     wav_22050 = wav_normalization(wav_22050)
-    data_parser.wav_16000.save(wav_16000, query)
-    data_parser.wav_22050.save(wav_22050, query)
+    data_parser.wav.save(wav_22050, query)
     data_parser.text.save(data["text"], query)
 
 
