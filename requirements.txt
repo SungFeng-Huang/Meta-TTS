@@ -1,3 +1,7 @@
+# Preprocess
+pynini
+montreal-forced-aligner
+
 pytorch-lightning[extra]
 learn2learn
 comet-ml

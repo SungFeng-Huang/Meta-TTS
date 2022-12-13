@@ -106,6 +106,7 @@ venv.bak/
 __pycache__
 .vscode
 .DS_Store
+._.DS_Store
 
 # MFA
 montreal-forced-aligner/
@@ -118,6 +119,8 @@ learn2learn/
 lightning_logs/
 raw_data
 output
+local_output
+new_data
 #preprocessed_data/miniAISHELL-3/
 #preprocessed_data/miniLibriTTS/
 #preprocessed_data/LibriTTS

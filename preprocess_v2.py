@@ -7,6 +7,12 @@ import Define
 from src.data.Parsers import get_raw_parser, get_preprocessor
 
 
+import git
+os.environ['MFA_ROOT_DOR'] = os.path.join(
+    git.Repo(os.getcwd(), search_parent_directories=True).working_dir,
+    "MFA"
+)
+
 if Define.CUDA_LAUNCH_BLOCKING:
     os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
