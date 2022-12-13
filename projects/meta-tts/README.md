@@ -6,11 +6,11 @@ This repository is the official implementation of ["Meta-TTS: Meta-Learning for 
 
 | multi-task learning | meta learning |
 | --- | --- |
-| ![](evaluation/images/meta-TTS-multi-task.png) | ![](evaluation/images/meta-TTS-meta-task.png) |
+| ![](../../evaluation/images/meta-TTS-multi-task.png) | ![](../../evaluation/images/meta-TTS-meta-task.png) |
 
 ### Meta-TTS
 
-![image](evaluation/images/meta-FastSpeech2.png)
+![image](../../evaluation/images/meta-FastSpeech2.png)
 
 ## Requirements
 
@@ -96,7 +96,7 @@ and the results would be under
 
 > **Note:** The evaluation code is not well-refactored yet.
 
-`cd evaluation/` and check [README.md](evaluation/README.md)
+`cd evaluation/` and check [README.md](../../evaluation/README.md)
 
 ## Pre-trained Models
 
@@ -118,9 +118,9 @@ You can download pretrained models [here](https://drive.google.com/drive/folders
 
 | Corpus | LibriTTS | VCTK |
 | --- | --- | --- |
-| Speaker Similarity | ![](evaluation/images/LibriTTS/errorbar_plot_encoder.png) | ![](evaluation/images/VCTK/errorbar_plot_encoder.png) |
-| Speaker Verification | ![](evaluation/images/LibriTTS/eer_encoder.png)<br>![](evaluation/images/LibriTTS/det_encoder.png) | ![](evaluation/images/VCTK/eer_encoder.png)<br>![](evaluation/images/VCTK/det_encoder.png) |
-| Synthesized Speech Detection | ![](evaluation/images/LibriTTS/auc_encoder.png)<br>![](evaluation/images/LibriTTS/roc_encoder.png) | ![](evaluation/images/VCTK/auc_encoder.png)<br>![](evaluation/images/VCTK/roc_encoder.png) |
+| Speaker Similarity | ![](../../evaluation/images/LibriTTS/errorbar_plot_encoder.png) | ![](../../evaluation/images/VCTK/errorbar_plot_encoder.png) |
+| Speaker Verification | ![](../../evaluation/images/LibriTTS/eer_encoder.png)<br>![](../../evaluation/images/LibriTTS/det_encoder.png) | ![](../../evaluation/images/VCTK/eer_encoder.png)<br>![](../../evaluation/images/VCTK/det_encoder.png) |
+| Synthesized Speech Detection | ![](../../evaluation/images/LibriTTS/auc_encoder.png)<br>![](../../evaluation/images/LibriTTS/roc_encoder.png) | ![](../../evaluation/images/VCTK/auc_encoder.png)<br>![](../../evaluation/images/VCTK/roc_encoder.png) |
 
 
 <!--## Contributing-->
