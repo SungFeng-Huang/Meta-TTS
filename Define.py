@@ -1,0 +1,2 @@
+DEBUG = True
+CUDA_LAUNCH_BLOCKING = True
