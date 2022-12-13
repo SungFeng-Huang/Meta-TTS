@@ -1,9 +1,9 @@
 # Meta-TTS: Meta-Learning for Few-shot SpeakerAdaptive Text-to-Speech
 
 This is the official repository of the following papers and my doctoral dissertation (still working on it):
-- ["Meta-TTS: Meta-Learning for Few-shot Speaker Adaptive Text-to-Speech"](https://doi.org/10.1109/TASLP.2022.3167258)
-- ["Few-Shot Cross-Lingual TTS Using Transferable Phoneme Embedding"](https://arxiv.org/abs/2206.15427)
-- "PERSONALIZED LIGHTWEIGHT TEXT-TO-SPEECH: VOICE CLONING WITH ADAPTIVE STRUCTURED PRUNING" (not publically available)
+- [Meta-TTS: Meta-Learning for Few-shot Speaker Adaptive Text-to-Speech](https://doi.org/10.1109/TASLP.2022.3167258)
+- [Few-Shot Cross-Lingual TTS Using Transferable Phoneme Embedding](https://arxiv.org/abs/2206.15427)
+- [PERSONALIZED LIGHTWEIGHT TEXT-TO-SPEECH: VOICE CLONING WITH ADAPTIVE STRUCTURED PRUNING]() (not publically available)
 
 
 ## Requirements
@@ -60,11 +60,11 @@ python3 preprocess.py config/preprocess/VCTK.yaml
 
 We are moving codes of different papers into `projects`.
 Checkout their docs respectively:
-### ["Meta-TTS: Meta-Learning for Few-shot Speaker Adaptive Text-to-Speech"](https://doi.org/10.1109/TASLP.2022.3167258)
-- Document: [meta-tts/README.md](./projects/meta-tts/README.md)
-### ["Few-Shot Cross-Lingual TTS Using Transferable Phoneme Embedding"](https://arxiv.org/abs/2206.15427)
-- Document: [cross-lingual/README.md](./projects/cross-lingual/README.md)
-### "PERSONALIZED LIGHTWEIGHT TEXT-TO-SPEECH: VOICE CLONING WITH ADAPTIVE STRUCTURED PRUNING"
-- Document: [prune/README.md](./projects/prune/README.md)
+- [Meta-TTS: Meta-Learning for Few-shot Speaker Adaptive Text-to-Speech](https://doi.org/10.1109/TASLP.2022.3167258)
+  - Document: [meta-tts/README.md](./projects/meta-tts/README.md)
+- [Few-Shot Cross-Lingual TTS Using Transferable Phoneme Embedding](https://arxiv.org/abs/2206.15427)
+  - Document: [cross-lingual/README.md](./projects/cross-lingual/README.md)
+- [PERSONALIZED LIGHTWEIGHT TEXT-TO-SPEECH: VOICE CLONING WITH ADAPTIVE STRUCTURED PRUNING]()
+  - Document: [prune/README.md](./projects/prune/README.md)
 
 
