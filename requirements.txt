@@ -1,6 +1,5 @@
 # Preprocess
-pynini
-montreal-forced-aligner
+-r src/data/requirements.txt
 
 pytorch-lightning[extra]
 learn2learn

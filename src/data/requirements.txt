@@ -1,0 +1,4 @@
+pynini
+montreal-forced-aligner
+-e git+https://github.com/hhhaaahhhaa/dlhlp-lib#egg=dlhlp_lib
+
