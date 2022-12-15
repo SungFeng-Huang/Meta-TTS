@@ -63,7 +63,7 @@ Checkout their docs respectively:
 - [Meta-TTS: Meta-Learning for Few-shot Speaker Adaptive Text-to-Speech](https://doi.org/10.1109/TASLP.2022.3167258)
   - Document: [meta-tts/README.md](./projects/meta-tts/README.md)
 - [Few-Shot Cross-Lingual TTS Using Transferable Phoneme Embedding](https://arxiv.org/abs/2206.15427)
-  - Document: [cross-lingual/README.md](./projects/cross-lingual/README.md)
+  - Document: [cross-lingual/README.md](./projects/cross_lingual/README.md)
 - [PERSONALIZED LIGHTWEIGHT TEXT-TO-SPEECH: VOICE CLONING WITH ADAPTIVE STRUCTURED PRUNING]()
   - Document: [prune/README.md](./projects/prune/README.md)
 
