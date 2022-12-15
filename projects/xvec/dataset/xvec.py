@@ -9,34 +9,52 @@ from torch.utils.data import Dataset
 class XvecDataset(Dataset):
 
     def __init__(self, dset, preprocess_config):
+        """
+        Args:
+            preprocess_config:
+                dictionary consist at least a key "path":
+                - path:
+                    dictionary consist at least 2 keys:
+                    - df_path: "./preprocessed_data/VCTK-speaker-info.csv"
+                    - preprocessed_path
+        """
         super().__init__()
-        self.df = pd.read_csv(preprocess_config["path"]["df_path"]).fillna("Unknown")
-        self.speaker_accent_map = {
-            data["pID"]: data["ACCENTS"] for _, data in self.df.iterrows()
-        }
-        self.speaker_region_map = {
-            data["pID"]: (data["ACCENTS"], data["REGION"])
-            for _, data in self.df.iterrows()
-        }
 
         self.preprocessed_path = preprocess_config["path"]["preprocessed_path"]
 
-        self.basename, self.speaker, _, _ = self.process_meta(
-            dset
-        )
+        # load VCTK speaker-accent info
+        self.df = pd.read_csv(preprocess_config["path"]["df_path"]).fillna("Unknown")
+
+        # load speaker-id map
         with open(os.path.join(self.preprocessed_path, "speakers.json")) as f:
             self.speaker_map = json.load(f)
-        self.accent = [self.speaker_accent_map.get(spk, None)
-                       for spk in self.speaker]
-        self.region = [self.speaker_region_map.get(spk, None)
-                       for spk in self.speaker]
-        self.accent_map = {
-            **{k: i for i, k in enumerate(self.df.groupby(["ACCENTS"]).groups)}
-        }
-        self.region_map = {
-            **{k: i for i, k in
-               enumerate(self.df.groupby(["ACCENTS", "REGION"]).groups)}
-        }
+
+        # build accent-id and region-id map
+        self.accent_map = {}
+        for i, k in enumerate(self.df.groupby(["ACCENTS"]).groups):
+            self.accent_map[k] = i
+        self.region_map = {}
+        for i, k in enumerate(self.df.groupby(["ACCENTS", "REGION"]).groups):
+            self.region_map[k] = i
+
+        # build spk->accent and spk->region maps
+        self.speaker_accent_map = {}    # spk -> accent
+        self.speaker_region_map = {}    # spk -> region
+        for _, data in self.df.iterrows():
+            spk, accent = data["pID"], data["ACCENTS"]
+            region = (data["ACCENTS"], data["region"])
+            self.speaker_accent_map[spk] = accent
+            self.speaker_region_map[spk] = region
+
+        # create list of basename and speaker
+        self.basename, self.speaker = self.process_meta(dset)
+        # create list of accent and region
+        self.accent, self.region = [], []
+        for spk in self.speaker:
+            self.accent.append(self.speaker_accent_map.get(spk, None))
+            self.region.append(self.speaker_region_map.get(spk, None))
+
+        # add None to accent and region map
         if None in self.accent:
             self.accent_map[None] = -100
         if None in self.region:
@@ -76,8 +94,6 @@ class XvecDataset(Dataset):
     def process_meta(self, dset):
         name = []
         speaker = []
-        text = []
-        raw_text = []
         with open(
             os.path.join(self.preprocessed_path, f"{dset}.txt"), "r", encoding="utf-8"
         ) as f:
@@ -85,8 +101,4 @@ class XvecDataset(Dataset):
                 n, s, t, r = line.strip("\n").split("|")
                 name.append(n)
                 speaker.append(s)
-                text.append(t)
-                raw_text.append(r)
-        return name, speaker, text, raw_text
-
-
+        return name, speaker

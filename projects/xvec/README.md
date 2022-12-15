@@ -5,24 +5,28 @@
 ## Preprocessing
 
 ## Training
-First `cd` to the root directory of this repository.
 
 ```bash
-# accent classifier
+# First, cd to repository's root
+cd `git rev-parse --show-toplevel`
+
+# train accent classifier
 python projects/xvec/main_cli.py fit -c cli_config/xvec/fit.accent.yaml
 
-# speaker classifier
+# train speaker classifier
 python projects/xvec/main_cli.py fit -c cli_config/xvec/fit.accent.yaml
 ```
 
 ## Evaluation
-First `cd` to the root directory of this repository.
 
 ```bash
-# accent classifier
+# First, cd to repository's root
+cd `git rev-parse --show-toplevel`
+
+# test accent classifier
 python projects/xvec/main_cli.py test -c cli_config/xvec/test.accent.yaml --ckpt_path <ckpt_path>
 
-# speaker classifier
+# test speaker classifier
 python projects/xvec/main_cli.py test -c cli_config/xvec/test.speaker.yaml --ckpt_path <ckpt_path>
 ```
 
