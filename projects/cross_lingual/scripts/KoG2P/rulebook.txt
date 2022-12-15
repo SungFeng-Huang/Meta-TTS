@@ -1,0 +1,212 @@
+### ----------------------------------------------------------------------------------------
+### 한국어 발음규칙 (Korean G2P Rulebook)
+### Last updated: 2019-01-31
+### Yejin Cho (ycho@utexas.edu)
+### 처리순서:
+###		예외처리 - 유기음화(겹받침) - 겹받침관련규칙 - 경음화 - 겹받침단순화 - 비음화 - 리을 재음절화
+###		- 유음화 - 구개음화 - 유기음화(홑받침) - 연음 - 종성중화 - 리을 재음절화 [종료]
+### ----------------------------------------------------------------------------------------
+### 예외처리
+ii,ll,[#-]y([aeoquv]),	ii,ll,rr,y\1,	# 일 연대, 삼십일여간
+(h0,aa|t0,xx),ll,-ii,ll,	\1,ll,rr,ii,ll,	# 들일, 볼일, 할일
+s0,vv,ll,-ii,kf,	s0,vv,ll,rr,ii,kf,	# 설익(다)
+mm,uu,ll,-k0,oo,-k0,ii,	mm,uu,ll,kk,oo,k0,ii,	# 물고기
+s0,ii,ll,-s0,ii,ll	s0,ii,ll,s0,ii,ll	# 실실
+k0,ii,-s0,xx,lk,	k0,ii,s0,xx,kf,	# 기슭
+c0,vv,ll,-ya,kf,	c0,vv,rr,ya,kf,	# 절약
+k0,xx,mf,-yo,-ii,ll,	k0,xx,-mm,yo,-ii,ll,	# 금요일
+lt,-ii,	ll,-ch,ii,	# 훑이
+(?<=nn,vv,)lb,(?=-(c0,(uu|vv),kf|t0,(uu|vv),ng))	pf,	# 넓죽/넓둥글다
+(?<=s0,ii,)lh,-c0,(?=xx,ng)	ll,cc,	# 싫증
+t0,aa,lk,	t0,aa,kf,	# 닭
+(wq|we|oo),nf,-k0,aa,c0,	\1,nf,k0,aa,tf,	# 온갖
+mm,aa,tf,-h0,yv,ng,	mm,aa,th,yv,ng,	# 맏형
+k0,vv,th,-oo,s0,	k0,vv,t0,oo,tf,	# 겉옷
+c0,uu,ll,-nn,vv,mf,-k0,ii,	c0,uu,ll,rr,vv,mf,-kk,ii,	# 줄넘기
+h0,oo,th,-ii,-p0,uu,ll,	h0,oo,nf,nn,ii,p0,uu,ll,	# 홑이불
+s0,aa,ks,-ii,ll,	s0,aa,ng,nn,ii,ll,	# 삯일
+mm,qq,nf,-ii,pf,	mm,qq,nf,nn,ii,pf,	# 맨입
+kk,oo,ch,-ii,ph,	kk,oo,nf,nn,ii,pf,	# 꽃잎
+nn,qq,-p0,oo,kf,-ya,kf,	nn,qq,p0,oo,ng,nn,ya,kf,	# 내복약
+h0,aa,nf,-yv,-rr,xx,mf,	h0,aa,nf,nn,yv,rr,xx,mf,	# 한여름
+nn,aa,mf,-c0,oo,nf,-yv,-p0,ii,	nn,aa,mf,c0,oo,nf,nn,yv,p0,ii,	# 남존여비
+s0,ii,nf,-yv,-s0,vv,ng,	s0,ii,nf,nn,yv,s0,vv,ng,	# 신여성
+s0,qq,kf,-yv,nf,-ph,ii,ll,	s0,qq,ng,nn,yv,nf,ph,ii,ll,	# 색연필
+t0,aa,mf,-yo,	t0,aa,mf,nn,yo,	# 담요
+nn,uu,nf,-yo,-k0,ii,	nn,uu,nf,nn,yo,k0,ii,	# 눈요기
+vv,pf,-yo,ng,	vv,mf,nn,yo,ng,	# (영)업용
+s0,ii,kf,-yo,ng,-yu,	s0,ii,k0,yo,ng,nn,yu,	# 식용유
+nf,-yu,nf,-rr,ii,	nf,nn,yu,ll,rr,ii,	# (국민)윤리
+(c0|s0),(aa|oo|uu),ll,-ii,(ph|p0|pf),	\1,\2,ll,rr,ii,pf,	# 잘입다, 솔잎, 술잎
+(?=(^|#))h0,aa,nf,-ii,ll,	h0,aa,nf,nn,ii,ll,	# 한일
+(?=(^|#))mm,aa,kf,-ii,ll,	mm,aa,ng,nn,ii,ll,	# 막일
+mm,oo,ll,-s0,aa,ng,-s0,ii,kf,	mm,oo,ll,ss,aa,ng,s0,ii,kf,	# 몰상식
+oo,s0,#ii,pf,	oo,nf,nn,ii,pf,	# 옷입(다)
+(nf|ll),-yv,-s0,vv,-s0,	\1,nn,yv,s0,vv,tf,	# (스물/서른)여섯
+(ng|mf|nf),-y([aeoquv]),	\1,nn,y\2,	# 밤윷, 직행열차, 콩엿, 볶은엿
+(wv|ii),ll,-y([aeoquv]),	\1,rr,y\2,	# 일/월요일
+ll,-y([aeoquv]),	ll,rr,y\1,	# 불여우, 물약, 서울역, 물엿, 물옆, 굴옆, 휘발유, 유들유들
+ii,ll,-c0,vv,ll,	ii,ll,cc,vv,ll,	# 일절
+(th|tf|s0),-y([aeoquv]),	nf,-nn,y\2,	# 쑥갓요
+(<=^|#)mm,aa,kf,-ii,ll	mm,aa,ng,nn,ii,ll	# 막일
+k0,uu,-k0,xx,nf,-rr,yu,	k0,uu,k0,xx,nf,nn,yu,	# 구근류
+k0,aa,ll,-([ct])0,xx,ng,	k0,aa,ll,\1\1,xx,ng,	# 갈등/갈증
+p0,aa,ll,-t0,oo,ng,	p0,aa,ll,tt,oo,ng,	# 발동
+c0,vv,ll,-t0,oo,	c0,vv,ll,tt,oo,	# 절도
+mm,aa,ll,-s0,aa,ll,	mm,aa,ll,ss,aa,ll,	# 말살
+p0,uu,ll,-s0,	p0,uu,ll,ss,	# 불소/불세출
+ii,ll,-s0,ii,	ii,ll,ss,ii,	# 일시
+p0,aa,ll,-c0,vv,nf,	p0,aa,ll,cc,vv,nf,	# 발전
+(?<=(s0,ii,nf,|s0,aa,mf,)-)(c|k|t)0,	\2\2,	# 신고, 신다, 신자, 삼고, 삼다, 삼자
+(?<=k0,ii,mf,-)p0,	pp,	# 김밥
+(?<=t0,vv,-t0,xx,mf,-)c0,	cc,	# 더듬지
+c0,aa,mf,-c0,aa,-rr,ii,	c0,aa,mf,cc,aa,rr,ii,	# 잠자리
+(?<=(ng|ll),-)c0,(?=uu,ll,-k0,ii)	cc,	# 물줄기, 강줄기
+(?<=(nf|ll),-)p0,vv,pf,	pp,vv,pf,	# 문법, 불법
+(?<=(nf|tf),-)p0,(?=aa,-rr,aa,mf)	pp,	# 신바람, 늦바람
+p0,aa,-rr,aa,mf,-k0,yv,ll,	p0,aa,rr,aa,mf,kk,yv,ll,	# 바람결
+(?<=(mf|kf),-)p0,(?=aa,pf,)	pp,	# 아침밥, 점심밥, 저녁밥
+(?<=nn,uu,nf,-)t0,	tt,	# 눈동자, 눈대중
+mm,aa,kf,-yv,mf,	mm,aa,ng,nn,yv,mf,	# 늑막염, 결막염
+p0,aa,lb,-(t|k)0,	p0,aa,pf,\1\1,	# 밟다, 밟고
+p0,aa,lb,-nn,	p0,aa,mf,nn,	# 밟는
+nn,vv,lb,-(t|k)0,	nn,vv,ll,\1\1,	# 넓다, 넓고
+mm,(aa|vv),s0,-ii,ss,-t0,aa,	mm,\1,t0,ii,tf,tt,aa,	# 맛있다
+mm,(aa|vv),s0,-vv,ps,-t0,aa,	mm,\1,t0,vv,pf,tt,aa,	# 맛없다
+c0,vv,c0,-vv,-mm,ii,	c0,vv,t0,vv,mm,ii,	# 젖어미
+h0,vv,s0,-uu,s0,-xx,mf,	h0,vv,t0,uu,s0,xx,mf,	# 헛웃음
+k0,aa,ps,-vv,-ch,ii,	k0,aa,p0,vv,ch,ii,	# 값어치
+k0,aa,ps,-ii,ss,-nn,xx,nf,	k0,aa,p0,ii,nf,nn,xx,nf,	# 값있는
+c0,vv,lm,-c0,ii,	c0,vv,mf,cc,ii,	# 젊지
+oo,lm,-k0,(?=[iy])	oo,mf,k0,	# 옮기(다)
+k0,uu,lm,-k0,ii,-t0,aa,	k0,uu,mf,k0,ii,t0,aa,	# 굶기다
+(nn|k0|h0),aa,ll,-(p|s|c|k|t)0,	\1,aa,ll,\2\2,	# 갈바, 할바, 만날것
+ch,vv,s0,-ii,nf,	ch,vv,t0,ii,nf,	# 첫인(상)
+(?<=(mf|nf),-)ii,-p0,uu,ll,	nn,ii,p0,uu,ll,	# 솜이불
+(?<=(nf|ll),-)k0,oo,-rr,ii,	kk,oo,rr,ii,	# 문고리
+(?<=(nf|ll),-)s0,qq,	ss,qq,	# 산새, 들새
+(?<=(nf|ll),-)c0,qq,-c0,uu,	cc,qq,c0,uu,	# 손재주, 글재주
+k0,ii,ll,-k0,aa,	k0,ii,ll,kk,aa,	# 길가
+mm,uu,ll,-t0,oo,ng,-ii,	mm,uu,ll,tt,oo,ng,ii,	# 물동이
+mm,uu,ll,-c0,	mm,uu,ll,-cc,	# 물증
+(?<=(nf|ll),-)p0,aa,-t0,aa,kf,	pp,aa,t0,aa,kf,	# 발바닥, 손바닥
+(?<=(nf|ll),-)s0,oo,kf,	ss,oo,kf,	# 굴속, 물속
+(?<=s0,uu,ll,-)(c|p|t)0,	\1\1,	# 술잔, 술독, 술병, 술자리
+k0,aa,ng,-k0,aa,	k0,aa,ng,kk,aa,	# 강가
+(?<=(ng|mf),-)t0,aa,ll,	tt,aa,ll,	# 초승달
+t0,xx,ng,-p0,uu,ll,	t0,xx,ng,pp,uu,ll,	# 등불
+ch,aa,ng,-s0,aa,ll,	ch,aa,ng,ss,aa,ll,	# 창살
+(?<=(ll|ng),-)c0,uu,ll,-k0,ii,	k0,aa,ng,cc,uu,ll,k0,ii,	# 강줄기, 물줄기
+aa,nf,-k0,oo,	aa,nf,kk,oo,	# 안고
+(?<=kk,yv,-aa,nf,-)(t|c)0,	\1\1,	# 껴안지, 껴안다
+ii,-c0,uu,kf,-ii,-c0,uu,kf,	ii,c0,uu,ng,nn,ii,c0,uu,kf,	# 이죽이죽
+ya,-k0,xx,mf,-ya,-k0,xx,mf,	ya,k0,xx,mf,nn,ya,k0,xx,mf,	# 야금야금
+p0,ee,-k0,qq,s0,-ii,s0,	p0,ee,k0,qq,nf,nn,ii,tf,	# 베갯잇
+kk,qq,s0,-ii,ph,	kk,qq,nf,nn,ii,pf,	# 깻잎
+nn,aa,-mm,uu,s0,-ii,ph,	nn,aa,mm,uu,nf,nn,ii,pf,	# 나뭇잎
+qq,s0,-yv,ll,	qq,nf,nn,yv,ll,	# 도리깻열
+t0,wi,s0,-(?=[aeqiouyvwx])	t0,wi,nf,-nn,	# 뒷윷, 뒷얘기
+nn,xx,c0,-yv,-rr,xx,mf,	nn,xx,tf,nn,yv,rr,xx,mf,	# 늦여름
+t0,ii,-k0,xx,tf,-(ii|xx|ee),	t0,ii,k0,xx,s0,\1,	# 디귿에, 디귿이
+(c0|ch|th|h0),ii,-xx,(c0|ch|th|h0),-(ii|xx|ee),	\1,ii,xx,s0,\3,	# 치읓이, 지읒에
+ph,ii,-xx,ph,-(ii|xx|ee),	ph,ii,xx,p0,\1,	# 피읖에
+kh,ii,-xx,kh,-(ii|xx|ee),	kh,ii,xx,k0,\1,	# 키읔이
+### 유기음화 (겹받침)
+l(b|p),-h0,	ll,-ph,
+nh,-(c|k|t)0,	nf,-\1h,
+lh,-(c|k|t)0,	ll,-\1h,
+lk,-h0,	ll,-kh,
+nc,-h0,	nf,-ch,
+### 겹받침 규칙 (ㄹㅎ)
+(k0,aa,|k0,uu,|k0,vv,|oo,|p0,aa,|nn,aa,|nn,xx,|p0,uu,|^ii,|-,ii,mm,aa,|mm,uu,|(^|-,)vv,)lk,-(t0|c0|s0),	\1kf,-\3,
+(k0,aa,|k0,uu,|k0,vv,|vv,|oo,|mm,aa,|p0,aa,|nn,aa,|nn,xx,|mm,uu,|p0,uu,|^ii,|-,ii,)lk,-k0,	\1ll,-kk,
+### 겹받침 규칙 (ㄴㅎ)
+nh,-(k|t|c)0,	nf,-\1h,
+nh,-s0,	nf,-ss,
+nh,-nn,	nf,-nn,
+nh,-(?=[aeqiouyvwx])	-nn,
+### 겹받침 규칙 (ㄹㅎ)
+lh,-nn,	ll,-rr,
+lh,-(k|t|c)0,	ll,-\1h,
+lh,-s0,	ll,-ss,
+lh,-(?=[aeqiouyvwx])	-rr,
+### 겹받침 규칙 (ㄴㅈ)
+nc,-([ktsc])0,	nf,-\1\1,
+### 겹받침 규칙 (ㄹㅁ)
+(c0,vv,|c0,ii,|k0,uu,|t0,aa,|(^|-,)oo,|k0,oo,)lm,-([ktsc])0,	\1mf,-\3\3,
+### 겹받침 규칙 (ㄹㅂ)
+(p0,aa,|tt,vv,|(^|-,)yv,|nn,vv,|(^|-,)ya,|cc,aa,)lb,-([ktsc])0,	\1ll,-\4\4,
+### 겹받침 규칙 (ㄹㅌ)
+h0,(aa|uu),lt,-nn,	h0,\1,ll,-ll,
+h0,(aa|uu),lt,-([ktsc])0,	h0,\1,ll,-\2\2,
+### 경음화
+lk,-(c|k|p|s|t)0,	kf,-\1\1,
+l(b|p),-p0,	pf,-pp,
+s0,-p0,	tf,-pp,
+l(b|t),-(c|k|s|t|p)0,	ll,-\2\2,
+lp,-(c|k|s|t)0,	pf,-\1\1,
+(c[h0]|s[s0]|t[fh]),-(c|k|s|t)0,	tf,-\2\2,
+k[fhks],-(c|k|p|s|t)0,	kf,-\1\1,
+p[sfh],-(c|k|p|s|t)0,	pf,-\1\1,
+(?<=(kf|kh|ks|ss|c0|ch|tf|th),-)p0,	pp,
+h0,-s0,	-ss,
+nh,-s0,	nf,-ss,
+lh,-s0,	ll,-ss,
+### 겹받침 단순화: 어말 또는 자음 앞
+(ks|lk),(?=(#|$|-[ptkshcmnr]))	kf,
+n[ch],(?=(#|$|-[ptkshcmnr]))	nf,
+l[bsth],(?=(#|$|-[ptkshcmnr]))	ll,
+lm,(?=(#|$|-[ptkshcmnr]))	mf,
+(ps|lp),(?=(#|$|-[ptkshcmnr]))	pf,
+### 겹받침 단순화: 모음 앞
+([kp])s,-(?=[aeqiouyvwx])	\1f,-ss,
+ls,-(?=[aeqiouyvwx])	ll,-ss,
+nc,-(?=[aeqiouyvwx])	nf,-c0,
+lk,-(?=[aeqiouyvwx])	ll,-k0,
+lm,-(?=[aeqiouyvwx])	ll,-mm,
+lb,-(?=[aeqiouyvwx])	ll,-p0,
+l([tp]),-(?=[aeqiouyvwx])	ll,-\1h,
+### 비음화
+(?<=[pk])0,-rr,	f,-nn,
+(c0|ch|s0|ss|tf|nh|h0),-nn,	nf,-nn,
+nc,-(p|t|k)0,	nf,-\1\1,
+nc,(?=-[ptkshcmnr])	nf,
+lm,-k0,	mf,-kk,
+lm,(?=-[ptkshcmnr])	mf,
+k[fhks],(?=-(nn|mm),)	ng,
+lk,(?=-(nn|mm),)	ng,
+p[sfh],(?=-(nn|mm),)	mf,
+l[bp],(?=-(nn|mm),)	mf,
+(?<=(mf|ng|pf|kf),-)rr,	nn,
+(c0|ch|s0|ss|tf|nh|h0),(?=-mm,)	nf,
+### 리을 재음절화
+ll,-(?=y)	-rr,
+### 유음화
+(nf|ll),-rr,	ll,-rr,
+l[lht],-nn,	ll,-rr,
+### 구개음화
+tf,-(?=[iy])	-c0,
+th,-(?=[iy])	-ch,
+tf,-h0,(?=[iy])	-ch,
+### 유기음화 (홑받침)
+(p|k)f,-h0,	-\1h,
+h0,-(c|k|t)0,	-\1h,
+(tf|th|s0),(-|#)h0,	-th,
+### 연음규칙
+(s0|ss|kk|p0|ph|pp|t0|th|tt|c0|ch|kh|kk|k0|mm|nn),-(?=[aeqiouyvwx])	-\1,
+nh,-(?=[aeqiouyvwx])	-nn,
+(s0|ss|c0|ch|th),(?=-[ptkshcmnr])	tf,
+h0,-(?=[aeqiouyvwx])	-
+lh,-?(?=[aeqiouyvwx])	-rr,
+(p|t|k)f,-?(?=[aeqiouyvwx])	-\g<1>0,
+(m|n)f,-?(?=[aeqiouyvwx])	-\1\1,
+### 종성규칙
+(s0|ss|c0|ch|th),(?=-|#|$)	tf,
+(kh|kk|ks|lk),(?=-|#|$|[ptkshcmnr])	kf,	# (ks|lk),(?=-[ptkshcmnr])	kf,
+(ph|lp|ps),(?=-|#|$|[ptkshcmnr])	pf,
+(?<=[ptkshcmnr].),-(?=[aeqiouyvwx])	,
+l[bhstp],(?=-|#|$|[ptkshcmnr])	ll,	# l[bt],(?=-[ptkshcmnr])	ll,
+nh,(?=-|#|$|[ptkshcmnr])	nf,-
+### 리을 재음절화
+(?<=[aeqiouyvwx].,)ll,-(?=[aeqiouyvwx])	-rr,
+ll,-ll,	ll,-rr,
