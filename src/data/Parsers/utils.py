@@ -19,13 +19,13 @@ def read_queries_from_txt(path):
 
 def write_queries_to_txt(data_parser: DataParser, queries, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    data_parser.phoneme.read_all()
+    # data_parser.phoneme.read_all()
     data_parser.text.read_all()
     lines = []
     for query in queries:
         try:
             line = [query["basename"], query["spk"]]
-            line.append(f"{{{data_parser.phoneme.read_from_query(query)}}}")
+            # line.append(f"{{{data_parser.phoneme.read_from_query(query)}}}")
             line.append(data_parser.text.read_from_query(query))
             lines.append(line)
         except:

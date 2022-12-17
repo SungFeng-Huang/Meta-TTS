@@ -10,6 +10,7 @@ from dlhlp_lib.tts_preprocess.basic import *
 import Define
 from .interface import BaseRawParser, BasePreprocessor
 from .parser import DataParser
+from .utils import write_queries_to_txt
 from . import template
 
 
@@ -97,8 +98,22 @@ class LibriTTSPreprocessor(BasePreprocessor):
         pass
 
     def split_dataset(self, cleaned_data_info_path: str):
-        # output_dir = os.path.dirname(cleaned_data_info_path)
+        output_dir = os.path.dirname(cleaned_data_info_path)
         # with open(cleaned_data_info_path, 'r', encoding='utf-8') as f:
         #     queries = json.load(f)
         # template.split_multispeaker_dataset(self.data_parser, queries, output_dir, val_spk_size=40)
-        pass
+
+        
+        queries = self.data_parser.get_all_queries()
+        train_set, dev_set, test_set = [], [], []
+        for q in queries:
+            if "train" in q["dset"]:
+                train_set.append(q)
+            elif "dev" in q["dset"]:
+                dev_set.append(q)
+            elif "test" in q["dset"]:
+                test_set.append(q)
+        
+        write_queries_to_txt(self.data_parser, train_set, f"{output_dir}/train.txt")
+        write_queries_to_txt(self.data_parser, dev_set, f"{output_dir}/val.txt")
+        write_queries_to_txt(self.data_parser, test_set, f"{output_dir}/test.txt")
