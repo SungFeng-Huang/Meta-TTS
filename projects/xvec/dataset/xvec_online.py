@@ -1,17 +1,11 @@
-import json
-import os
-
-import numpy as np
-import pandas as pd
-from torch.utils.data import Dataset
-
 from .xvec import XvecDataset
-from src.data.Parser.parser import DataParser
+from src.data.Parsers.parser import DataParser
 
 
 class XvecOnlineDataset(XvecDataset):
 
-    def __init__(self, dset, data_parser: DataParser, preprocess_config: dict):
+    def __init__(self, dset, preprocess_config: dict,
+                 data_parser: DataParser = None):
         super().__init__(dset, preprocess_config)
 
         if data_parser is None:

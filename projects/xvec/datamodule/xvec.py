@@ -1,15 +1,15 @@
 import torch
 import numpy as np
-
-from torch.utils.data import DataLoader, random_split, Subset, WeightedRandomSampler
-from torch.utils.data.dataset import ConcatDataset
-import pytorch_lightning as pl
 from collections import defaultdict
 from math import ceil
 from typing import Literal
 
+import pytorch_lightning as pl
+from torch.utils.data import DataLoader, random_split, Subset, WeightedRandomSampler
+from torch.utils.data.dataset import ConcatDataset
+
 from lightning.datamodules.utils import DistributedProxySampler
-from .dataset import XvecDataset as Dataset
+from ..dataset import XvecDataset as Dataset
 from src.utils.tools import pad_2D
 
 
@@ -20,10 +20,13 @@ class XvecDataModule(pl.LightningDataModule):
         num_classes: Number of target labels.
     """
 
+    dataset_cls = Dataset
+
     def __init__(self,
                  preprocess_config: dict,
                  train_config: dict,
                  *args,
+                 dset = "total",
                  target: Literal["speaker", "region", "accent"] = "speaker"):
         """Initialize XvecDataModule.
 
@@ -42,7 +45,8 @@ class XvecDataModule(pl.LightningDataModule):
 
         # Discriminate train/transfer
         self.target = target
-        self.dataset = Dataset("total", self.preprocess_config)
+        print(self.dataset_cls)
+        self.dataset = self.dataset_cls(dset, self.preprocess_config)
 
         target_map = getattr(self.dataset, f"{self.target}_map")
         self.num_classes = len(target_map)

@@ -11,6 +11,7 @@ class XvecDataset(Dataset):
     def __init__(self, dset, preprocess_config):
         """
         Args:
+            dset: load from "preprocess_config["path"]["preprocessed_path"]/{dset}.txt"
             preprocess_config:
                 dictionary consist at least a key "path":
                 - path:
@@ -42,7 +43,7 @@ class XvecDataset(Dataset):
         self.speaker_region_map = {}    # spk -> region
         for _, data in self.df.iterrows():
             spk, accent = data["pID"], data["ACCENTS"]
-            region = (data["ACCENTS"], data["region"])
+            region = (data["ACCENTS"], data["REGION"])
             self.speaker_accent_map[spk] = accent
             self.speaker_region_map[spk] = region
 
@@ -94,9 +95,8 @@ class XvecDataset(Dataset):
     def process_meta(self, dset):
         name = []
         speaker = []
-        with open(
-            os.path.join(self.preprocessed_path, f"{dset}.txt"), "r", encoding="utf-8"
-        ) as f:
+        filename = os.path.join(self.preprocessed_path, f"{dset}.txt")
+        with open(filename, "r", encoding="utf-8") as f:
             for line in f.readlines():
                 n, s, t, r = line.strip("\n").split("|")
                 name.append(n)
