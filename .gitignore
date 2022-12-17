@@ -110,6 +110,7 @@ __pycache__
 
 # MFA
 montreal-forced-aligner/
+MFA/
 
 # learn2learn
 learn2learn/
