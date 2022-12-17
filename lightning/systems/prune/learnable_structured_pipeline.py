@@ -17,7 +17,7 @@ from lightning.systems.prune.prune_accent import PruneAccentSystem
 from lightning.utils import loss2dict
 from .utils import global_learnable_unstructured, LogitsAndMasks, setup_structured_prune
 from transformer.Layers import FFTBlock, MultiHeadAttention, PositionwiseFeedForward
-from lightning.model.xvec import XvecTDNN
+from projects.xvec.model import XvecTDNN
 
 
 torch.autograd.set_detect_anomaly(True)

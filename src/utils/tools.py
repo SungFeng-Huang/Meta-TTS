@@ -1,5 +1,7 @@
 import os
 import json
+import yaml
+from typing import Dict, Any, Optional, Union, List
 
 import torch
 import torch.nn.functional as F
@@ -14,6 +16,10 @@ matplotlib.use("Agg")
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def load_yaml(yaml_in: str) -> Dict[str, Any]:
+    return yaml.load(open(yaml_in, 'r'), Loader=yaml.FullLoader)
 
 
 def to_device(data, device):

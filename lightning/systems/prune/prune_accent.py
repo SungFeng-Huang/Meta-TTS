@@ -2,22 +2,20 @@
 
 import os
 import yaml
-from typing import Dict, Any, Optional, Union, List
 import pandas as pd
+from typing import Dict, Any, Optional, Union, List
 from collections import defaultdict
+
 import torch
 from torch.nn import functional as F
 import pytorch_lightning as pl
 from torchmetrics import Accuracy
 
+from src.utils.tools import load_yaml
 from lightning.systems.base_adapt.base import BaseAdaptorSystem
 from lightning.model import FastSpeech2Loss, FastSpeech2
 from lightning.utils import loss2dict
-from lightning.model.xvec import XvecTDNN
-
-
-def load_yaml(yaml_in: str) -> Dict[str, Any]:
-    return yaml.load(open(yaml_in, 'r'), Loader=yaml.FullLoader)
+from projects.xvec.model import XvecTDNN
 
 
 class PruneAccentSystem(BaseAdaptorSystem):
