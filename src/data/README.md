@@ -10,7 +10,7 @@ First `cd` to the root directory of this repository.
 python preprocess_v2.py [raw_dir] [preprocessed_dir] --dataset [DATASET_TAG] [--parse_raw] [--prepare_mfa] [--mfa] [--preprocess] [--create_dataset [data_info_json_path]] [--force]
 ```
 
-`DATASET_TAG` can be one of the `LibriTTS`, `AISHELL-3`, `KSS`, `JSUT`, `CSS10`, `TAT`, `TAT_TTS`
+`DATASET_TAG` can be one of the `LibriTTS`, `AISHELL-3`, `KSS`, `JSUT`, `CSS10`, `TAT`, `TAT_TTS`, `VCTK`
 
 For example:
 ```

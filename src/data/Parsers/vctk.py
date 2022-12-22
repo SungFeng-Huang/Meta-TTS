@@ -21,15 +21,6 @@ class VCTKRawParser(BaseRawParser):
         super().__init__(root)
         self.preprocessed_root = preprocessed_root
         self.data_parser = DataParser(str(preprocessed_root))
-        self.dsets = [
-            "train-clean-100",
-            "train-clean-360",
-            "train-other-500",
-            "dev-clean",
-            "dev-other",
-            "test-clean",
-            "test-other",
-        ]
 
         self.data_parser.speaker_info_path = f"{preprocessed_root}/speaker-info.csv"
         if not os.path.exists(self.data_parser.speaker_info_path):
