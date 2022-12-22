@@ -2,8 +2,8 @@ class_path: projects.xvec.datamodule.XvecOnlineDataModule
 init_args:
   preprocess_config:
     path:
-      df_path: "./preprocessed_data/VCTK-speaker-info.csv"
-      preprocessed_path: "./new_data/preprocessed_data/miniLibriTTS"
+      df_path: "./new_data/preprocessed_data/VCTK/speaker-info.csv"
+      preprocessed_path: "./new_data/preprocessed_data/VCTK"
     preprocessing:
       val_size: 512
       text:
@@ -23,5 +23,5 @@ init_args:
   train_config:
     optimizer:
       batch_size: 64
-  target: speaker
+  target: accent
 

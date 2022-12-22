@@ -36,8 +36,8 @@ class FitMixin(ValidateMixin):
 
         self.train_acc = Accuracy(num_classes=self.num_classes,
                                   average="macro", ignore_index=-100)
-        self.train_class_acc = Accuracy(num_classes=self.num_classes,
-                                        average=None, ignore_index=-100)
+        self.train_classwise_acc = Accuracy(num_classes=self.num_classes,
+                                            average=None, ignore_index=-100)
 
     def on_train_start(self):
         self.train_count = Counter()
@@ -52,7 +52,7 @@ class FitMixin(ValidateMixin):
         self.log("train_acc", self.train_acc, sync_dist=True, prog_bar=True)
 
         # forward -> compute -> DDP sync
-        self.train_class_acc.update(output, batch["target"])
+        self.train_classwise_acc.update(output, batch["target"])
         self.train_count.update(batch["target"].cpu().numpy().tolist())
 
         return {'loss': loss}
@@ -85,11 +85,11 @@ class FitMixin(ValidateMixin):
             pass
 
         try:
-            train_acc = self.train_class_acc.compute().cpu().numpy().tolist()
+            train_acc = self.train_classwise_acc.compute().cpu().numpy().tolist()
             data.update({"train_acc": train_acc})
         except Exception as e:
             self.print(e)
-        self.train_class_acc.reset()
+        self.train_classwise_acc.reset()
 
         return data
 

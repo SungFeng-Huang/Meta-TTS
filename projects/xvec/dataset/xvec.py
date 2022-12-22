@@ -42,7 +42,7 @@ class XvecDataset(Dataset):
         self.speaker_accent_map = {}    # spk -> accent
         self.speaker_region_map = {}    # spk -> region
         for _, data in self.df.iterrows():
-            spk, accent = data["pID"], data["ACCENTS"]
+            spk, accent = data["ID"], data["ACCENTS"]
             region = (data["ACCENTS"], data["REGION"])
             self.speaker_accent_map[spk] = accent
             self.speaker_region_map[spk] = region

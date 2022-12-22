@@ -21,8 +21,8 @@ class TestMixin(BaseMixin):
         """
         super().__init__(*args, **kwargs)
 
-        self.test_class_acc = Accuracy(num_classes=self.num_classes,
-                                       average=None, ignore_index=11)
+        self.test_classwise_acc = Accuracy(num_classes=self.num_classes,
+                                           average=None, ignore_index=-100)
 
     def on_test_start(self):
         self.test_count = Counter()
@@ -33,7 +33,7 @@ class TestMixin(BaseMixin):
         loss = self.loss_func(output, batch["target"])
         self.log("test_loss", loss.item(), sync_dist=True)
 
-        self.test_class_acc.update(output, batch["target"])
+        self.test_classwise_acc.update(output, batch["target"])
         self.test_count.update(batch["target"].cpu().numpy().tolist())
 
         return {'loss': loss}
@@ -47,7 +47,7 @@ class TestMixin(BaseMixin):
         self.test_count.clear()
 
         try:
-            test_acc = self.test_class_acc.compute().cpu().numpy().tolist()
+            test_acc = self.test_classwise_acc.compute().cpu().numpy().tolist()
             self.log_dict({f"test_acc/{i}": acc
                            for i, acc in enumerate(test_acc)
                            if not np.isnan(acc)})
@@ -57,7 +57,7 @@ class TestMixin(BaseMixin):
             data.update({"test_acc": test_acc})
         except Exception as e:
             self.print(e)
-        self.test_class_acc.reset()
+        self.test_classwise_acc.reset()
 
         df = pd.DataFrame(data)
         self.print({k: v.item() for k, v in self.trainer.callback_metrics.items()

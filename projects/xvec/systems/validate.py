@@ -19,7 +19,7 @@ class ValidateMixin(BaseMixin):
         """
         super().__init__(*args, **kwargs)
 
-        self.val_class_acc = Accuracy(num_classes=self.num_classes,
+        self.val_classwise_acc = Accuracy(num_classes=self.num_classes,
                                       average=None, ignore_index=-100)
                                       # average=None, ignore_index=11)
 
@@ -32,7 +32,7 @@ class ValidateMixin(BaseMixin):
         loss = self.loss_func(output, batch["target"])
         self.log("val_loss", loss.item(), sync_dist=True)
 
-        self.val_class_acc.update(output, batch["target"])
+        self.val_classwise_acc.update(output, batch["target"])
         self.val_count.update(batch["target"].cpu().numpy().tolist())
 
         return {'loss': loss}
@@ -48,11 +48,11 @@ class ValidateMixin(BaseMixin):
             pass
 
         try:
-            val_acc = self.val_class_acc.compute().cpu().numpy().tolist()
+            val_acc = self.val_classwise_acc.compute().cpu().numpy().tolist()
             data.update({"val_acc": val_acc})
         except Exception as e:
             self.print(e)
-        self.val_class_acc.reset()
+        self.val_classwise_acc.reset()
 
         return data
 

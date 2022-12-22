@@ -9,6 +9,7 @@ from .libritts import LibriTTSPreprocessor, LibriTTSRawParser
 # from .css10 import CSS10Preprocessor, CSS10RawParser
 # from .kss import KSSPreprocessor, KSSRawParser
 # from .jsut import JSUTPreprocessor, JSUTRawParser
+from .vctk import VCTKPreprocessor, VCTKRawParser
 
 
 PREPROCESSORS = {
@@ -20,6 +21,7 @@ PREPROCESSORS = {
     # "JSUT": JSUTPreprocessor,
     # "TAT": TATPreprocessor,
     # "TATTTS": TATTTSPreprocessor,
+    "VCTK": VCTKPreprocessor,
 }
 
 RAWPARSERS = {
@@ -31,6 +33,7 @@ RAWPARSERS = {
     # "JSUT": JSUTRawParser,
     # "TAT": TATRawParser,
     # "TATTTS": TATTTSRawParser,
+    "VCTK": VCTKRawParser,
 }
 
 
