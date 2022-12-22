@@ -274,10 +274,13 @@ def plot_mel(data, stats, titles):
     return fig
 
 
-def pad_1D(inputs, PAD=0):
+def pad_1D(inputs, PAD=0, mode="constant"):
     def pad_data(x, length, PAD):
+        kwargs = {}
+        if mode == "constant":
+            kwargs = {"constant_values": PAD}
         x_padded = np.pad(
-            x, (0, length - x.shape[0]), mode="constant", constant_values=PAD
+            x, (0, length - x.shape[0]), mode=mode, **kwargs
         )
         return x_padded
 

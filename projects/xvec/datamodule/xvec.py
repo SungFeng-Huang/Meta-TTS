@@ -45,7 +45,6 @@ class XvecDataModule(pl.LightningDataModule):
 
         # Discriminate train/transfer
         self.target = target
-        print(self.dataset_cls)
         self.dataset = self.dataset_cls(dset, self.preprocess_config)
 
         target_map = getattr(self.dataset, f"{self.target}_map")

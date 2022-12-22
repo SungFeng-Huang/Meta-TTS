@@ -14,7 +14,7 @@ python preprocess_v2.py [raw_dir] [preprocessed_dir] --dataset [DATASET_TAG] [--
 
 For example:
 ```
-python preprocess_v2.py raw_data/LibriTTS preprocessed_data/LibriTTS --dataset LibriTTS [--parse_raw] [--prepare_mfa] [--mfa] [--preprocess] [--create_dataset] [--force]
+python preprocess_v2.py raw_data/LibriTTS preprocessed_data/LibriTTS --dataset LibriTTS [--parse_raw] [--prepare_mfa] [--mfa] [--preprocess] [--create_dataset [data_info_json_path]] [--force]
 ```
 
 # TextGrid

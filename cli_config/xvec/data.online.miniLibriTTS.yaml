@@ -1,0 +1,37 @@
+class_path: projects.xvec.datamodule.XvecOnlineDataModule
+init_args:
+  preprocess_config:
+    path:
+      df_path: "./preprocessed_data/VCTK-speaker-info.csv"
+      preprocessed_path: "./new_data/preprocessed_data/miniLibriTTS"
+    preprocessing:
+      val_size: 512
+      text:
+        text_cleaners: ["english_cleaners"]
+        language: "en"
+      audio:
+        sampling_rate: 22050
+        max_wav_value: 32768.0
+      stft:
+        filter_length: 1024
+        hop_length: 256
+        win_length: 1024
+      mel:
+        n_mel_channels: 80
+        mel_fmin: 0
+        mel_fmax: Null # set to null for MelGAN vocoder
+      pitch:
+        feature: "phoneme_level" # support 'phoneme_level' or 'frame_level'
+        normalization: False
+        log: True # don't use with normalization
+        word: False  # word-level average
+      energy:
+        feature: "phoneme_level" # support 'phoneme_level' or 'frame_level'
+        normalization: True
+        log: False # don't use with normalization
+        word: False  # word-level average
+  train_config:
+    optimizer:
+      batch_size: 64
+  target: speaker
+

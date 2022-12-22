@@ -117,3 +117,5 @@ class LibriTTSPreprocessor(BasePreprocessor):
         write_queries_to_txt(self.data_parser, train_set, f"{output_dir}/train.txt")
         write_queries_to_txt(self.data_parser, dev_set, f"{output_dir}/val.txt")
         write_queries_to_txt(self.data_parser, test_set, f"{output_dir}/test.txt")
+        write_queries_to_txt(self.data_parser, train_set + dev_set + test_set,
+                             f"{output_dir}/total.txt")

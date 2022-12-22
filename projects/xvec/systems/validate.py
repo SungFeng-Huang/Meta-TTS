@@ -20,7 +20,8 @@ class ValidateMixin(BaseMixin):
         super().__init__(*args, **kwargs)
 
         self.val_class_acc = Accuracy(num_classes=self.num_classes,
-                                      average=None, ignore_index=11)
+                                      average=None, ignore_index=-100)
+                                      # average=None, ignore_index=11)
 
     def on_validation_start(self):
         self.val_count = Counter()

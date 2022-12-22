@@ -1,8 +1,14 @@
+import os
+
 from .xvec import XvecDataset
 from src.data.Parsers.parser import DataParser
 
 
 class XvecOnlineDataset(XvecDataset):
+    """
+    Changes:
+        - speaker map: change from dict to list
+    """
 
     def __init__(self, dset, preprocess_config: dict,
                  data_parser: DataParser = None):
@@ -18,7 +24,7 @@ class XvecOnlineDataset(XvecDataset):
         accent = self.accent[idx]
         region = self.region[idx]
 
-        speaker_id = self.speaker_map[speaker]
+        speaker_id = self.speaker_map.index(speaker)
         accent_id = self.accent_map[accent]
         region_id = self.region_map[region]
 
@@ -37,3 +43,13 @@ class XvecOnlineDataset(XvecDataset):
         }
         return sample
 
+    def process_meta(self, dset):
+        name = []
+        speaker = []
+        filename = os.path.join(self.preprocessed_path, f"{dset}.txt")
+        with open(filename, "r", encoding="utf-8") as f:
+            for line in f.readlines():
+                n, s, r = line.strip("\n").split("|")
+                name.append(n)
+                speaker.append(s)
+        return name, speaker
