@@ -68,13 +68,13 @@ class VCTKRawParser(BaseRawParser):
 
     def parse(self, n_workers=4):
         res = {"data": [], "data_info": [], "all_speakers": []}
-        for speaker in tqdm(os.listdir(f"{self.root}/wav48_silence_trimmed"),
-                            desc="speakers"):
+        speakers = os.listdir(f"{self.root}/wav48_silence_trimmed")
+        for speaker in tqdm(sorted(speakers), desc="speakers"):
             if os.path.isfile(f"{self.root}/wav48_silence_trimmed/{speaker}"):
                 # it's "log.txt", not a speaker
                 continue
             res["all_speakers"].append(speaker)
-            for filename in os.listdir(f"{self.root}/wav48_silence_trimmed/{speaker}"):
+            for filename in sorted(os.listdir(f"{self.root}/wav48_silence_trimmed/{speaker}")):
                 if filename[-10:] != "_mic2.flac":
                     continue
                 basename = filename[:-10]
@@ -95,6 +95,8 @@ class VCTKRawParser(BaseRawParser):
                 }
                 res["data"].append(data)
                 res["data_info"].append(data_info)
+            if res["data_info"][-1]["spk"] != speaker:
+                del res["all_speakers"][-1]
 
         with open(self.data_parser.metadata_path, "w", encoding="utf-8") as f:
             json.dump(res["data_info"], f, indent=4)
@@ -147,9 +149,10 @@ class VCTKPreprocessor(BasePreprocessor):
                 accents[q["accent"]] = []
             accents[q["accent"]].append(q)
 
-        for accent in accents:
+        total_q = []
+        for accent in sorted(accents):
             write_queries_to_txt(self.data_parser, accents[accent],
                                  f"{output_dir}/{accent}.txt")
-        write_queries_to_txt(self.data_parser, sum(accents.values(), []),
-                             f"{output_dir}/total.txt")
+            total_q += accents[accent]
+        write_queries_to_txt(self.data_parser, total_q, f"{output_dir}/total.txt")
 

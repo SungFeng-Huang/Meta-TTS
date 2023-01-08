@@ -31,15 +31,25 @@ class LibriTTSRawParser(BaseRawParser):
     def prepare_initial_features(self, query, data):
         template.prepare_initial_features(self.data_parser, query, data)
 
+    def get_url(self, dset):
+        return f"https://www.openslr.org/resources/60/{dset}.tar.gz"
+
     def parse(self, n_workers=4):
         res = {"data": [], "data_info": [], "all_speakers": []}
+        if not os.path.exists(self.root):
+            os.makedirs(self.root, exist_ok=True)
         for dset in self.dsets:
             if not os.path.isdir(f"{self.root}/{dset}"):
-                continue
-            for speaker in tqdm(os.listdir(f"{self.root}/{dset}"), desc=dset):
+                if not os.path.exists(f"{self.root}/{dset}.tar.gz"):
+                    url = self.get_url(dset)
+                    os.system(f"wget {url} -P {self.root}/")
+                os.system(f"pv {self.root}/{dset}.tar.gz | tar -zxf - -C {self.root}/../")
+                os.remove(f"{self.root}/{dset}.tar.gz")
+                # continue
+            for speaker in tqdm(sorted(os.listdir(f"{self.root}/{dset}")), desc=dset):
                 res["all_speakers"].append(speaker)
-                for chapter in os.listdir(f"{self.root}/{dset}/{speaker}"):
-                    for filename in os.listdir(f"{self.root}/{dset}/{speaker}/{chapter}"):
+                for chapter in sorted(os.listdir(f"{self.root}/{dset}/{speaker}")):
+                    for filename in sorted(os.listdir(f"{self.root}/{dset}/{speaker}/{chapter}")):
                         if filename[-4:] != ".wav":
                             continue
                         basename = filename[:-4]
