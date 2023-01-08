@@ -10,6 +10,9 @@ class XvecDataset(Dataset):
 
     def __init__(self, dset, preprocess_config):
         """
+        spk_id depends on "speakers.json"
+        accent_id, region_id depends on "./preprocessed_data/VCTK-speaker-info.csv"
+
         Args:
             dset: load from "preprocess_config["path"]["preprocessed_path"]/{dset}.txt"
             preprocess_config:
@@ -26,29 +29,16 @@ class XvecDataset(Dataset):
         # load VCTK speaker-accent info
         self.df = pd.read_csv(preprocess_config["path"]["df_path"]).fillna("Unknown")
 
-        # load speaker-id map
-        with open(os.path.join(self.preprocessed_path, "speakers.json")) as f:
-            self.speaker_map = json.load(f)
-
-        # build accent-id and region-id map
-        self.accent_map = {}
-        for i, k in enumerate(self.df.groupby(["ACCENTS"]).groups):
-            self.accent_map[k] = i
-        self.region_map = {}
-        for i, k in enumerate(self.df.groupby(["ACCENTS", "REGION"]).groups):
-            self.region_map[k] = i
-
-        # build spk->accent and spk->region maps
-        self.speaker_accent_map = {}    # spk -> accent
-        self.speaker_region_map = {}    # spk -> region
-        for _, data in self.df.iterrows():
-            spk, accent = data["ID"], data["ACCENTS"]
-            region = (data["ACCENTS"], data["REGION"])
-            self.speaker_accent_map[spk] = accent
-            self.speaker_region_map[spk] = region
+        # build maps
+        self.build_speaker2id()
+        self.build_accent2id()
+        self.build_region2id()
+        self.build_speaker2accent()
+        self.build_speaker2region()
 
         # create list of basename and speaker
         self.basename, self.speaker = self.process_meta(dset)
+
         # create list of accent and region
         self.accent, self.region = [], []
         for spk in self.speaker:
@@ -62,6 +52,33 @@ class XvecDataset(Dataset):
             self.region_map[None] = -100
 
         print(f"\nLength of dataset: {len(self.speaker)}")
+
+    def build_speaker2id(self):
+        with open(os.path.join(self.preprocessed_path, "speakers.json")) as f:
+            self.speaker_map = json.load(f)
+
+    def build_accent2id(self):
+        self.accent_map = {}
+        for i, k in enumerate(self.df.groupby(["ACCENTS"]).groups):
+            self.accent_map[k] = i
+
+    def build_region2id(self):
+        self.region_map = {}
+        for i, k in enumerate(self.df.groupby(["ACCENTS", "REGION"]).groups):
+            self.region_map[k] = i
+
+    def build_speaker2accent(self):
+        self.speaker_accent_map = {}    # spk -> accent
+        for _, data in self.df.iterrows():
+            spk, accent = data["ID"], data["ACCENTS"]
+            self.speaker_accent_map[spk] = accent
+
+    def build_speaker2region(self):
+        self.speaker_region_map = {}    # spk -> region
+        for _, data in self.df.iterrows():
+            spk = data["ID"]
+            region = (data["ACCENTS"], data["REGION"])
+            self.speaker_region_map[spk] = region
 
     def __len__(self):
         return len(self.speaker)
