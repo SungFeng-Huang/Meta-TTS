@@ -105,11 +105,14 @@ class FitMixin(ValidateMixin):
                            for i, acc in enumerate(train_acc)})
         if "val_acc" in data:
             val_acc = data["val_acc"]
+            val_count = data["val_count"]
             self.log_dict({f"val_acc/{i}": acc
                            for i, acc in enumerate(val_acc)})
             self.log("val_acc",
-                     np.mean([acc for acc in val_acc
-                              if not np.isnan(acc)]))
+                     np.mean([
+                         acc for i, acc in enumerate(val_acc)
+                         if not np.isnan(acc) and val_count[i] > 0
+                     ]))
 
         df = pd.DataFrame(data)
         self.print({k: v.item() for k, v in self.trainer.callback_metrics.items()
