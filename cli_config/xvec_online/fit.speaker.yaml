@@ -2,9 +2,9 @@
 
 seed_everything: 42
 
-model: cli_config/xvec/model.yaml
+model: cli_config/xvec_online/model.yaml
 
-data: cli_config/xvec/data.online.miniLibriTTS.yaml
+data: cli_config/xvec_online/data.speaker.yaml
 
 trainer:
   ### Train settings

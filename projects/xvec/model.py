@@ -1,6 +1,8 @@
 """
 https://github.com/manojpamk/pytorch_xvectors/blob/master/models.py
 """
+from typing import Union
+
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
@@ -12,7 +14,7 @@ from lightning.augments import SpecAugmentMM
 class XvecTDNN(pl.LightningModule):
 
     def __init__(self,
-                 num_classes: int,
+                 num_classes: Union[int, dict],
                  *args,
                  p_dropout: float = 0.2,
                  **kwargs):
@@ -24,6 +26,16 @@ class XvecTDNN(pl.LightningModule):
         """
         super().__init__()
         self.save_hyperparameters()
+
+        # if isinstance(num_classes, dict):
+        #     # E.g.: {
+        #     #   'libritts': (0, 2456),  -> id 0~2455
+        #     #   'vctk': (2456, 2564)    -> id 2456~2563
+        #     # }
+        #     self.corpus2speaker_num = num_classes
+        #     num_classes = 0
+        #     for corpus, interval in self.corpus2speaker_num.items():
+        #         num_classes = max(num_classes, interval[1])
 
         self.num_classes = num_classes
 
@@ -73,13 +85,13 @@ class XvecTDNN(pl.LightningModule):
 
         if self.training:
             x = x + torch.randn(x.size()).to(x)*eps
-            # shape = x.size()
-            # noise = torch.cuda.FloatTensor(shape)
-            # torch.randn(shape, out=noise)
-            # x += noise*eps
 
         stats = torch.cat((x.mean(dim=2), x.std(dim=2)), dim=1)
         x = self.dropout_fc1(self.bn_fc1(F.relu(self.fc1(stats))))
         x = self.dropout_fc2(self.bn_fc2(F.relu(self.fc2(x))))
         x = self.fc3(x)
         return x
+
+    # def on_save_checkpoint(self, checkpoint):
+    #     if hasattr(self, "corpus2speaker_num"):
+    #         checkpoint["xvec-corpus2speaker_num"] = self.corpus2speaker_num

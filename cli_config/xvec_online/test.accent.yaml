@@ -1,0 +1,40 @@
+# python main_cli.py test -c cli_config/xvec/test.yaml
+
+seed_everything: 42
+
+model:
+  class_path: projects.xvec.systems.XvecTestSystem
+  init_args:
+    p_dropout: 0.0
+
+data: cli_config/xvec/data.accent.yaml
+
+trainer:
+  ### Train settings
+  max_epochs: 200
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+
+  ### Logging and saving settings
+  enable_checkpointing: True
+  default_root_dir: output/xvec
+
+  ### GPU-related settings
+  accelerator: gpu
+  devices: [0]
+  strategy: ddp
+  auto_select_gpus: True
+
+  ### Callbacks
+  callbacks:
+    - class_path: pytorch_lightning.callbacks.LearningRateMonitor
+      init_args:
+        log_momentum: True
+
+  ### Malicious settings
+  profiler: simple
+
+  ### Depreciated settings
+  # deterministic: True
+
+ckpt_path: output/xvec/lightning_logs/version_88/checkpoints/epoch=199-step=164200.ckpt

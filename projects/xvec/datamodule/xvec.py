@@ -47,8 +47,7 @@ class XvecDataModule(pl.LightningDataModule):
         self.target = target
         self.dataset = self.dataset_cls(dset, self.preprocess_config)
 
-        target_map = getattr(self.dataset, f"{self.target}_map")
-        self.num_classes = len(target_map)
+        self.num_classes = len(getattr(self.dataset, f"{self.target}_map"))
 
     def setup(self, stage=None):
         # if stage in (None, 'fit'):
@@ -80,7 +79,7 @@ class XvecDataModule(pl.LightningDataModule):
             batch_size=batch_size//torch.cuda.device_count(),
             sampler=DistributedProxySampler(sampler),
             drop_last=True,
-            num_workers=4,
+            num_workers=8,
             collate_fn=self.dict_collate,
         )
         return self.train_loader
@@ -93,7 +92,7 @@ class XvecDataModule(pl.LightningDataModule):
             batch_size=batch_size//torch.cuda.device_count(),
             shuffle=False,
             drop_last=False,
-            num_workers=4,
+            num_workers=8,
             collate_fn=self.dict_collate,
         )
         return self.val_loader
@@ -106,7 +105,7 @@ class XvecDataModule(pl.LightningDataModule):
             batch_size=batch_size//torch.cuda.device_count(),
             shuffle=False,
             drop_last=False,
-            num_workers=4,
+            num_workers=8,
             collate_fn=self.dict_collate,
         )
         return self.test_loader

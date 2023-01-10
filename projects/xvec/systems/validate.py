@@ -84,6 +84,9 @@ class ValidateMixin(BaseMixin):
             self.print("Last 10 val_acc:")
             self.print(df.nsmallest(n=10, columns=["val_acc"], keep='all')
                        .to_string(header=True, index=True))
+            self.print("Statistics of val_acc:")
+            self.print(df["val_acc"].value_counts(sort=False, bins=20)
+                       .to_string(header=True, index=True))
 
 
 class XvecValidateSystem(ValidateMixin, XvecTDNN):

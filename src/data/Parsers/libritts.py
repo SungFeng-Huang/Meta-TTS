@@ -77,7 +77,7 @@ class LibriTTSRawParser(BaseRawParser):
 
         n = len(res["data_info"])
         tasks = list(zip(res["data_info"], res["data"], [False] * n))
-        
+
         with Pool(processes=n_workers) as pool:
             for res in tqdm(pool.imap(ImapWrapper(self.prepare_initial_features), tasks, chunksize=64), total=n):
                 pass
@@ -92,11 +92,11 @@ class LibriTTSPreprocessor(BasePreprocessor):
     # Use prepared textgrids from ming024's repo
     def prepare_mfa(self, mfa_data_dir: Path):
         pass
-    
+
     # Use prepared textgrids from ming024's repo
     def mfa(self, mfa_data_dir: Path):
         pass
-    
+
     def denoise(self):
         pass
 
@@ -113,19 +113,30 @@ class LibriTTSPreprocessor(BasePreprocessor):
         #     queries = json.load(f)
         # template.split_multispeaker_dataset(self.data_parser, queries, output_dir, val_spk_size=40)
 
-        
+
         queries = self.data_parser.get_all_queries()
-        train_set, dev_set, test_set = [], [], []
+        write_queries_to_txt(self.data_parser, queries, f"{output_dir}/total.txt")
+
+        subsets = {}
         for q in queries:
-            if "train" in q["dset"]:
-                train_set.append(q)
-            elif "dev" in q["dset"]:
-                dev_set.append(q)
-            elif "test" in q["dset"]:
-                test_set.append(q)
-        
-        write_queries_to_txt(self.data_parser, train_set, f"{output_dir}/train.txt")
-        write_queries_to_txt(self.data_parser, dev_set, f"{output_dir}/val.txt")
-        write_queries_to_txt(self.data_parser, test_set, f"{output_dir}/test.txt")
-        write_queries_to_txt(self.data_parser, train_set + dev_set + test_set,
-                             f"{output_dir}/total.txt")
+            dset = q["dset"]
+            if dset not in subsets:
+                subsets[dset] = []
+            subsets[dset].append(q)
+        for dset in subsets:
+            write_queries_to_txt(self.data_parser, subsets[dset], f"{output_dir}/{dset}.txt")
+
+        # train_set, dev_set, test_set = [], [], []
+        # for q in queries:
+        #     if "train" in q["dset"]:
+        #         train_set.append(q)
+        #     elif "dev" in q["dset"]:
+        #         dev_set.append(q)
+        #     elif "test" in q["dset"]:
+        #         test_set.append(q)
+        #
+        # write_queries_to_txt(self.data_parser, train_set, f"{output_dir}/train.txt")
+        # write_queries_to_txt(self.data_parser, dev_set, f"{output_dir}/val.txt")
+        # write_queries_to_txt(self.data_parser, test_set, f"{output_dir}/test.txt")
+        # write_queries_to_txt(self.data_parser, train_set + dev_set + test_set,
+        #                      f"{output_dir}/total.txt")
