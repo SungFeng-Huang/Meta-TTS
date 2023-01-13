@@ -20,13 +20,13 @@ First `cd` to the root directory of this repository.
 
 ```bash
 # lottery ticket hypothesis
-python main_cli_prune_accent.fit.py fit -c cli_config/prune_v1/lottery_ticket.yaml
+python projects/prune/main_lottery_ticket.py fit -c cli_config/prune_v1/lottery_ticket.yaml
 
 # learnable unstructured pruning (not used)
-python main_cli_prune_accent.py fit -c cli_config/prune_v1/learnable_unstructured.yaml
+python projects/prune/main_learnable_unstructured.py fit -c cli_config/prune_v1/learnable_unstructured.yaml
 
 # learnable structured pruning
-python main_cli_learnable_prune.py fit -c cli_config/prune_v1/learnable_structured_pipeline.*.yaml
+python projects/prune/main_learnable_structured.py fit -c cli_config/prune_v1/learnable_structured_pipeline.*.yaml
 ```
 
 

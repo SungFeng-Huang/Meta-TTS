@@ -34,6 +34,11 @@ class MyLightningCLI(LightningCLI):
 
 
 if __name__ == "__main__":
+    import sys
+    current_dir =  os.path.abspath(os.path.dirname(__file__))
+    root_dir = os.path.abspath(current_dir + "/../../")
+    sys.path.insert(0, root_dir)
+
     import os
     import traceback
     from lightning.systems.prune.prune_accent import PruneAccentSystem
@@ -48,11 +53,12 @@ if __name__ == "__main__":
     # Optional: stitch back the trainer arguments
     epoch_loop = MyEpochLoop(cli.trainer.fit_loop.epoch_loop.min_steps,
                              cli.trainer.fit_loop.epoch_loop.max_steps)
-# Optional: connect children loops as they might have existing state
+    # Optional: connect children loops as they might have existing state
     epoch_loop.connect(cli.trainer.fit_loop.epoch_loop.batch_loop,
                        cli.trainer.fit_loop.epoch_loop.val_loop)
-# Instantiate and connect the loop.
+    # Instantiate and connect the loop.
     cli.trainer.fit_loop.connect(epoch_loop=epoch_loop)
+
     try:
         cli.trainer.fit(cli.model, datamodule=cli.datamodule)
     except:

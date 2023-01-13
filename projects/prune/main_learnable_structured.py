@@ -29,6 +29,11 @@ def change_default(func: Callable, arg_name: str, value: Any):
 
 
 if __name__ == "__main__":
+    import sys
+    current_dir =  os.path.abspath(os.path.dirname(__file__))
+    root_dir = os.path.abspath(current_dir + "/../../")
+    sys.path.insert(0, root_dir)
+
     import os
     import traceback
     from lightning.systems.prune.prune_accent import PruneAccentSystem
