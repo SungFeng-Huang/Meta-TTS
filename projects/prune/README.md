@@ -19,7 +19,7 @@ Offline extract mel-spectrogram, prosody features, etc.
 First `cd` to the root directory of this repository.
 
 ```bash
-# lottery ticket hypothesis
+# lottery ticket hypothesis (not used)
 python projects/prune/main_lottery_ticket.py fit -c cli_config/prune_v1/lottery_ticket.yaml
 
 # learnable unstructured pruning (not used)

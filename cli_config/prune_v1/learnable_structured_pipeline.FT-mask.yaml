@@ -3,7 +3,7 @@
 
 seed_everything: 531
 model:
-  class_path: lightning.systems.prune.learnable_structured_pipeline.LearnableStructuredPruneSystem
+  class_path: projects.prune.systems.learnable_structured_pipeline.LearnableStructuredPruneSystem
   init_args:
     ckpt_path: output/ckpt/LibriTTS/meta-tts-accent-dev/1d34914e07244f87ad10c580ab85656c/checkpoints/epoch=39-step=39999.ckpt
     qry_patience: 0
@@ -23,9 +23,13 @@ model:
       - ft
       - mask
     spk_emb_subset_weight_avg: True
+
     preprocess_config: &preprocess_config config/preprocess/LibriTTS_VCTK.yaml
     model_config: config/model/base.yaml
     algorithm_config: config/algorithm/pretrain/pretrain_LibriTTS.2.yaml
+
+    accent_ckpt: "output/xvec/lightning_logs/version_88/checkpoints/epoch=199-step=164200.ckpt"
+    speaker_ckpt: "output/xvec/lightning_logs/version_99/checkpoints/epoch=49-step=377950.ckpt"
 
 data:
   class_path: lightning.datamodules.prune_accent_datamodule.PruneAccentDataModule

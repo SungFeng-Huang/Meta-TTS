@@ -13,8 +13,8 @@ from pytorch_lightning.callbacks.pruning import ModelPruning, _MODULE_CONTAINERS
 from learn2learn.utils import clone_module, update_module, detach_module, clone_parameters
 
 from lightning.scheduler import get_scheduler
-from lightning.systems.prune.prune_accent import PruneAccentSystem
 from lightning.utils import loss2dict
+from .prune_accent import PruneAccentSystem
 from .utils import global_learnable_unstructured, LogitsAndMasks, setup_structured_prune
 from transformer.Layers import FFTBlock, MultiHeadAttention, PositionwiseFeedForward
 from projects.xvec.model import XvecTDNN

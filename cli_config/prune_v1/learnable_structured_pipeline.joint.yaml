@@ -22,9 +22,13 @@ model:
     pipeline:
       - joint
     spk_emb_subset_weight_avg: True
+
     preprocess_config: &preprocess_config config/preprocess/LibriTTS_VCTK.yaml
     model_config: config/model/base.yaml
     algorithm_config: config/algorithm/pretrain/pretrain_LibriTTS.2.yaml
+
+    accent_ckpt: "output/xvec/lightning_logs/version_88/checkpoints/epoch=199-step=164200.ckpt"
+    speaker_ckpt: "output/xvec/lightning_logs/version_99/checkpoints/epoch=49-step=377950.ckpt"
 
 data:
   class_path: lightning.datamodules.prune_accent_datamodule.PruneAccentDataModule
