@@ -1,18 +1,23 @@
 # X-vector
 
+
 ## Requirements
+
 
 ## Preprocessing
 
-### Old preprocessing
+
+### Offline preprocessing (old)
 Offline extract mel-spectrogram, prosody features, etc.
-- Document: [README.md#preprocessing](/README.md#preprocessing)
+- Document: [preprocessor/README.md](/preprocessor/README.md)
 - Configs: [cli_config/xvec](/cli_config/xvec/)
 
-### New preprocessing
+
+### Online preprocessing (new)
 Online extract mel-spectrogram, prosody features, etc.
 - Document: [src/data/README.md](/src/data/README.md)
 - Configs: [cli_config/xvec_online](/cli_config/xvec_online)
+
 
 ## Training
 
@@ -27,6 +32,7 @@ python projects/xvec/main_cli.py fit -c cli_config/xvec/fit.accent.yaml
 python projects/xvec/main_cli.py fit -c cli_config/xvec/fit.accent.yaml
 ```
 
+
 ## Evaluation
 
 ```bash
@@ -39,6 +45,7 @@ python projects/xvec/main_cli.py test -c cli_config/xvec/test.accent.yaml --ckpt
 # test speaker classifier
 python projects/xvec/main_cli.py test -c cli_config/xvec/test.speaker.yaml --ckpt_path <ckpt_path>
 ```
+
 
 ## Results
 ### Accent classification on randomly-split test set

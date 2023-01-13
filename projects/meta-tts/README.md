@@ -6,11 +6,12 @@ This repository is the official implementation of ["Meta-TTS: Meta-Learning for 
 
 | multi-task learning | meta learning |
 | --- | --- |
-| ![](../../evaluation/images/meta-TTS-multi-task.png) | ![](../../evaluation/images/meta-TTS-meta-task.png) |
+| ![](/evaluation/images/meta-TTS-multi-task.png) | ![](/evaluation/images/meta-TTS-meta-task.png) |
 
 ### Meta-TTS
 
-![image](../../evaluation/images/meta-FastSpeech2.png)
+![image](/evaluation/images/meta-FastSpeech2.png)
+
 
 ## Requirements
 
@@ -35,28 +36,17 @@ pyenv activate meta-tts
 pip install -r requirements.txt
 ```
 
+
 ## Preprocessing
-First, download [LibriTTS](https://www.openslr.org/60/) and [VCTK](https://datashare.ed.ac.uk/handle/10283/3443), then change the paths in `config/preprocess/LibriTTS.yaml` and `config/preprocess/VCTK.yaml`, then run
-```bash
-python3 prepare_align.py config/preprocess/LibriTTS.yaml
-python3 prepare_align.py config/preprocess/VCTK.yaml
-```
-for some preparations.
 
-Alignments of LibriTTS is provided [here](https://github.com/kan-bayashi/LibriTTSLabel.git), and
-the alignments of VCTK is provided [here](https://drive.google.com/file/d/1ScLIiyIgLRIZ03DqCmrZ8F75miC77o8g/view?usp=sharing).
-You have to unzip the files into `preprocessed_data/LibriTTS/TextGrid/` and
-`preprocessed_data/VCTK/TextGrid/`.
+### Offline preprocessing (old)
+Offline extract mel-spectrogram, prosody features, etc.
+- Document: [preprocessor/README.md](/preprocessor/README.md)
+- Configs: [cli_config/meta-tts](/cli_config/meta-tts/)
 
-Then run the preprocessing script:
-```bash
-python3 preprocess.py config/preprocess/LibriTTS.yaml
+### Online preprocessing (new)
+> Still in progress.
 
-# Copy stats from LibriTTS to VCTK to keep pitch/energy normalization the same shift and bias.
-cp preprocessed_data/LibriTTS/stats.json preprocessed_data/VCTK/
-
-python3 preprocess.py config/preprocess/VCTK.yaml
-```
 
 ## Training
 
@@ -92,11 +82,13 @@ python3 main.py -s test \
 and the results would be under
 `output/result/<corpus>/<experiment_key>/<algorithm>/`.
 
+
 ## Evaluation
 
 > **Note:** The evaluation code is not well-refactored yet.
 
-`cd evaluation/` and check [README.md](../../evaluation/README.md)
+`cd evaluation/` and check [README.md](/evaluation/README.md)
+
 
 ## Pre-trained Models
 
@@ -114,13 +106,14 @@ then put the checkpoint files under
 
 You can download pretrained models [here](https://drive.google.com/drive/folders/1Av7afSMcHX6pp2_ZmpHqfJNx6ONM7N8d?usp=sharing).
 
+
 ## Results
 
 | Corpus | LibriTTS | VCTK |
 | --- | --- | --- |
-| Speaker Similarity | ![](../../evaluation/images/LibriTTS/errorbar_plot_encoder.png) | ![](../../evaluation/images/VCTK/errorbar_plot_encoder.png) |
-| Speaker Verification | ![](../../evaluation/images/LibriTTS/eer_encoder.png)<br>![](../../evaluation/images/LibriTTS/det_encoder.png) | ![](../../evaluation/images/VCTK/eer_encoder.png)<br>![](../../evaluation/images/VCTK/det_encoder.png) |
-| Synthesized Speech Detection | ![](../../evaluation/images/LibriTTS/auc_encoder.png)<br>![](../../evaluation/images/LibriTTS/roc_encoder.png) | ![](../../evaluation/images/VCTK/auc_encoder.png)<br>![](../../evaluation/images/VCTK/roc_encoder.png) |
+| Speaker Similarity | ![](/evaluation/images/LibriTTS/errorbar_plot_encoder.png) | ![](/evaluation/images/VCTK/errorbar_plot_encoder.png) |
+| Speaker Verification | ![](/evaluation/images/LibriTTS/eer_encoder.png)<br>![](/evaluation/images/LibriTTS/det_encoder.png) | ![](../../evaluation/images/VCTK/eer_encoder.png)<br>![](../../evaluation/images/VCTK/det_encoder.png) |
+| Synthesized Speech Detection | ![](/evaluation/images/LibriTTS/auc_encoder.png)<br>![](/evaluation/images/LibriTTS/roc_encoder.png) | ![](../../evaluation/images/VCTK/auc_encoder.png)<br>![](../../evaluation/images/VCTK/roc_encoder.png) |
 
 
 <!--## Contributing-->
