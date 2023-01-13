@@ -2,7 +2,8 @@ class_path: projects.xvec.datamodule.XvecOnlineDataModule
 init_args:
   dataset_configs:
     - corpus_id: libritts
-      dset: "./new_data/preprocessed_data/LibriTTS/total.txt"
+      dset:
+        - "./new_data/preprocessed_data/LibriTTS/total.txt"
       path_config:
         df_path: "./new_data/preprocessed_data/VCTK/speaker-info.csv"
         preprocessed_path: "./new_data/preprocessed_data/LibriTTS"

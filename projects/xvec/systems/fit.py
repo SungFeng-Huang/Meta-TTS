@@ -22,6 +22,7 @@ class FitMixin(ValidateMixin):
                  optim_config: Dict,
                  lr_sched_config: Dict,
                  *args,
+                 ckpt_path: str = None,
                  **kwargs):
         """A system wrapper for fitting XvecTDNN.
 
@@ -30,6 +31,8 @@ class FitMixin(ValidateMixin):
             lr_sched_config: Config of learning rate scheduler.
         """
         super().__init__(*args, **kwargs)
+        if ckpt_path is not None:
+            self.load_state_dict(torch.load(ckpt_path)["state_dict"])
 
         self.optim_config = optim_config
         self.lr_sched_config = lr_sched_config

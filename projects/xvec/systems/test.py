@@ -63,6 +63,9 @@ class TestMixin(BaseMixin):
         self.print({k: v.item() for k, v in self.trainer.callback_metrics.items()
                     if k in ["test_loss", "test_acc"]})
         self.print(df.to_string(header=True, index=True))
+        self.print("Statistics of test_acc:")
+        self.print(df["test_acc"].value_counts(sort=False, bins=20)
+                    .to_string(header=True, index=True))
 
 
 class XvecTestSystem(TestMixin, XvecTDNN):

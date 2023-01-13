@@ -1,11 +1,8 @@
-# python main_cli.py test -c cli_config/xvec/test.yaml
+# python main_cli.py fit -c cli_config/xvec/fit.yaml
 
 seed_everything: 42
 
-model:
-  class_path: projects.xvec.systems.XvecTestSystem
-  init_args:
-    p_dropout: 0.0
+model: cli_config/xvec_online/model.retrain.speaker.yaml
 
 data: cli_config/xvec_online/data.speaker.yaml
 
@@ -37,5 +34,3 @@ trainer:
   ### Depreciated settings
   # deterministic: True
 
-# ckpt_path: output/xvec/lightning_logs/version_99/checkpoints/epoch=49-step=377950.ckpt
-ckpt_path: output/xvec/speaker.updated.ckpt

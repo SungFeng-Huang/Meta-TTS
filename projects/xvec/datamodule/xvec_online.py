@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Literal, Any, Union
+from typing import Literal, Any, Union, Dict
 
 import torch
 import torchaudio.transforms as T
@@ -158,3 +158,11 @@ class XvecOnlineDataModule(XvecDataModule):
             # "wav_lens": samples["wav_lens"],
             "spec_lens": samples["spec_lens"],
         }
+
+    def state_dict(self) -> None:
+        return {
+            f"{self.target}_map": getattr(self.datasets[0], f"{self.target}_map")
+        }
+
+    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
+        pass
