@@ -12,7 +12,7 @@ Offline extract mel-spectrogram, prosody features, etc.
 ### New preprocessing
 Online extract mel-spectrogram, prosody features, etc.
 - [Document](/src/data/README.md)
-- Configs: [cli_config/xvec_online](cli_config/xvec_online)
+- Configs: [cli_config/xvec_online](/cli_config/xvec_online)
 
 ## Training
 
