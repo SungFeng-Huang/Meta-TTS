@@ -27,10 +27,10 @@ class MonolingualTTSDataset(TTSDataset):
             df_path = "preprocessed_data/VCTK-speaker-info.csv"
         self.df = pd.read_csv(df_path).fillna("Unknown")
         self.speaker_accent_map = {
-            data["pID"]: data["ACCENTS"] for _, data in self.df.iterrows()
+            data["ID"]: data["ACCENTS"] for _, data in self.df.iterrows()
         }
         self.speaker_region_map = {
-            data["pID"]: (data["ACCENTS"], data["REGION"])
+            data["ID"]: (data["ACCENTS"], data["REGION"])
             for _, data in self.df.iterrows()
         }
         self.accent = [self.speaker_accent_map.get(spk, None)

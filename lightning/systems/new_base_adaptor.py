@@ -14,13 +14,13 @@ from torchmetrics import Accuracy
 
 # from lightning.systems.system import System
 from lightning.systems.utils import Task, MAML
-from lightning.metrics import XvecAccentAccuracy
-from lightning.model.xvec import XvecTDNN
+# from lightning.metrics import XvecAccentAccuracy
 from lightning.model import FastSpeech2Loss, FastSpeech2
 from lightning.callbacks import GlobalProgressBar, Saver
 from lightning.optimizer import get_optimizer
 from lightning.scheduler import get_scheduler
 from lightning.utils import loss2dict
+from projects.xvec.model import XvecTDNN
 
 
 VERBOSE = False

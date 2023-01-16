@@ -11,7 +11,7 @@ from torchmetrics import Accuracy
 from lightning.systems.base_adapt.base import BaseAdaptorSystem
 from lightning.callbacks.saver import ValidateSaver
 # from lightning.metrics import XvecAccentAccuracy
-from lightning.model.xvec import XvecTDNN
+from projects.xvec.model import XvecTDNN
 from lightning.utils import loss2dict
 
 

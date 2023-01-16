@@ -5,7 +5,7 @@ import torch
 from torch import Tensor
 from torchmetrics import Accuracy
 
-from lightning.model import XvecTDNN
+from projects.xvec.model import XvecTDNN
 
 
 class XvecAccentAccuracy(Accuracy):

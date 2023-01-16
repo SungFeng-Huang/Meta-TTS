@@ -22,6 +22,7 @@ model:
     pipeline:
       - mask
       - ft
+    # spk_emb_subset_weight_avg: True
 
     preprocess_config: &preprocess_config config/preprocess/LibriTTS_VCTK.yaml
     model_config: config/model/base.yaml
@@ -33,10 +34,10 @@ model:
 data:
   class_path: lightning.datamodules.prune_accent_datamodule.PruneAccentDataModule
   init_args:
-    steps_per_epoch: 1000
-    mask_steps_per_epoch: 200
-    m: 32
-    k: 32
+    steps_per_epoch: 200
+    mask_steps_per_epoch: 20
+    m: 0
+    k: 8
     q: 8
     key: p251
     preprocess_config: *preprocess_config
@@ -44,6 +45,7 @@ data:
       - config/train/LibriTTS.yaml
       - config/train/base.yaml
     batch_size: 32
+    # libri_mask: False
 
 trainer:
   ### Train settings

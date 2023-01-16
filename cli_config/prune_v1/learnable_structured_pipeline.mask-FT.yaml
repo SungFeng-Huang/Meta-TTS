@@ -3,7 +3,7 @@
 
 seed_everything: 531
 model:
-  class_path: lightning.systems.prune.learnable_structured_pipeline.LearnableStructuredPruneSystem
+  class_path: projects.prune.systems.learnable_structured_pipeline.LearnableStructuredPruneSystem
   init_args:
     ckpt_path: output/ckpt/LibriTTS/meta-tts-accent-dev/1d34914e07244f87ad10c580ab85656c/checkpoints/epoch=39-step=39999.ckpt
     qry_patience: 0
