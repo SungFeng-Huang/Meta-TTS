@@ -42,7 +42,7 @@ class LearnableStructuredPruneSystem(PruneAccentSystem):
                  lam_mask: dict = None,
                  mask_mode: str = "hard",
                  pipeline: list = None,
-                 spk_emb_subset_weight_avg: bool = True,
+                 weight_avg_spk_emb_from_subset: bool = True,
                  libri_mask: bool = False,
                  ):
         super().__init__(
@@ -75,16 +75,21 @@ class LearnableStructuredPruneSystem(PruneAccentSystem):
         # Case 1: average all training speaker embedding
         #   Done in `on_fit_start()`
         # Case 2: average from a subset of training speakers
-        #   Set self.spk_emb_subset_avg = True
-        self.spk_emb_subset_weight_avg = spk_emb_subset_weight_avg
-        if self.spk_emb_subset_weight_avg:
-            # weight avg from subset of trained speaker
+        #   Set self.weight_avg_spk_emb_from_subset = True
+        self.weight_avg_spk_emb_from_subset = weight_avg_spk_emb_from_subset
+        if self.weight_avg_spk_emb_from_subset:
+            # new_spk_emb = softmax(logits) * (spk_emb * spk_emb_w_avg_weight_orig)
+
+            # mask out unseen speakers
             n_spk = self.model.speaker_emb.model.weight_orig.shape[0]
             spk_avg_weight = torch.ones(n_spk)
             spk_avg_weight[2311:] = -float('inf')
             self.spk_emb_w_avg_weight_orig = torch.nn.Parameter(
                 spk_avg_weight, requires_grad=False
             )
+
+            # logits for weight avg
+            n_spk = self.model.speaker_emb.model.weight_orig.shape[0]
             spk_avg_probs = torch.ones(n_spk)
             spk_avg_probs[2311:] = 0
             self.spk_emb_w_avg_subset_logits = torch.nn.Parameter(
@@ -100,11 +105,6 @@ class LearnableStructuredPruneSystem(PruneAccentSystem):
         self.p_idx = 0
         self.libri_mask = libri_mask
 
-        # self.logits_and_masks.sample_masks(training=False)    # for sanity_check or resume_ckpt
-        # self.logits_and_masks.mask_model(self.model, detach_mask=True)
-        # if self.spk_emb_subset_weight_avg:
-        #     self._sample_spk_emb_w_avg_subset_mask(training=False)
-
     @property
     def pipeline_stage(self):
         return self.pipeline[self.p_idx]
@@ -113,7 +113,7 @@ class LearnableStructuredPruneSystem(PruneAccentSystem):
         """Initialize optimizers, batch-wise and epoch-wise schedulers."""
         mask_params = list(self.logits_and_masks.parameters())
         ft_params = list(self.model.parameters())
-        if self.spk_emb_subset_weight_avg:
+        if self.weight_avg_spk_emb_from_subset:
             mask_params = mask_params + [self.spk_emb_w_avg_subset_logits]
             ft_params = ft_params + [self.spk_emb_w_avg_weight_orig]
         self.mask_optimizer = torch.optim.Adam(mask_params, lr=1e2)
@@ -202,13 +202,13 @@ class LearnableStructuredPruneSystem(PruneAccentSystem):
         pass
 
     # def _setup_mask_then_ft_stage_change(self,):
-    #     if self.spk_emb_subset_weight_avg:
+    #     if self.weight_avg_spk_emb_from_subset:
     #         with torch.no_grad():
     #             self._sample_spk_emb_w_avg_subset_mask(training=False)
     #             self.spk_emb_w_avg_subset_mask.detach_()
     #
     # def _setup_ft_then_mask_stage_change(self,):
-    #     if self.spk_emb_subset_weight_avg:
+    #     if self.weight_avg_spk_emb_from_subset:
     #         with torch.no_grad():
     #             self._sample_spk_emb_w_avg_subset_mask(training=True)
     #             # self.spk_emb_w_avg_subset_mask.detach_()
@@ -324,7 +324,7 @@ class LearnableStructuredPruneSystem(PruneAccentSystem):
         self.logits_and_masks.sample_masks(training=False)    # for sanity_check or ft
         self.logits_and_masks.mask_model(self.model, detach_mask=True)
 
-        if self.spk_emb_subset_weight_avg:
+        if self.weight_avg_spk_emb_from_subset:
             self._sample_spk_emb_w_avg_subset_mask(training=False)
             self._sample_weighted_speaker_emb()
 
@@ -442,7 +442,7 @@ class LearnableStructuredPruneSystem(PruneAccentSystem):
         self.logits_and_masks.sample_masks(training=True)
         self.logits_and_masks.mask_model(self.model, detach_mask=False)
 
-        if self.spk_emb_subset_weight_avg:
+        if self.weight_avg_spk_emb_from_subset:
             self._sample_spk_emb_w_avg_subset_mask(training=True)
             self._sample_weighted_speaker_emb()
 
@@ -486,7 +486,7 @@ class LearnableStructuredPruneSystem(PruneAccentSystem):
                        ft_sched=None):
         self.logits_and_masks.mask_model(self.model, detach_mask=True)
 
-        if self.spk_emb_subset_weight_avg:
+        if self.weight_avg_spk_emb_from_subset:
             self._sample_spk_emb_w_avg_subset_mask(training=False)
             self._sample_weighted_speaker_emb()
 
@@ -592,7 +592,7 @@ class LearnableStructuredPruneSystem(PruneAccentSystem):
                 named_probs.append((n, prob))
                 self.logger.experiment.add_histogram(
                     "prob/"+n[:-7], prob*100, self.current_epoch)
-        if self.spk_emb_subset_weight_avg:
+        if self.weight_avg_spk_emb_from_subset:
             prob = torch.distributions.utils.logits_to_probs(
                 self.spk_emb_w_avg_subset_logits, is_binary=True
             )
@@ -643,6 +643,9 @@ class LearnableStructuredPruneSystem(PruneAccentSystem):
         self.qry_stats[-1]["entropy_prob"] = entropy_prob.item()*100
 
     def _sample_spk_emb_w_avg_subset_mask(self, training=False):
+        """
+        Sample binary mask for each seen speaker & 0 for unseen speakers.
+        """
         with torch.no_grad():
             spk_avg_mask = torch.ones_like(self.spk_emb_w_avg_subset_logits)
             spk_avg_mask[2311:] = 0
@@ -659,6 +662,9 @@ class LearnableStructuredPruneSystem(PruneAccentSystem):
             ) * spk_avg_mask
 
     def _sample_weighted_speaker_emb(self):
+        """
+        Normalize sampled binary masks * seen speaker mask([1,1,1,...,0,0,0,...])
+        """
         assert hasattr(self.model.speaker_emb.model, "weight_orig")
         assert hasattr(self.model.speaker_emb.model, "weight_mask")
         orig = self.model.speaker_emb.model.weight_orig

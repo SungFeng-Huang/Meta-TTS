@@ -22,7 +22,7 @@ model:
     pipeline:
       - mask
       - ft
-    # spk_emb_subset_weight_avg: True
+    # weight_avg_spk_emb_from_subset: True
 
     preprocess_config: &preprocess_config config/preprocess/LibriTTS_VCTK.yaml
     model_config: config/model/base.yaml

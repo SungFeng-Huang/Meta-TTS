@@ -483,18 +483,18 @@ class LogitsAndMasks(pl.LightningModule):
 
     def get_FFT_layer_i_property(self, module, i):
         def w_qs_weight_mask(self):
-            in_channel_mask = self.d_hidden_mask
+            in_channel_mask = self.d_hidden_mask    # [d_hidden]
             out_channel_mask = (
                 getattr(self, f"{module}_{i}_n_head_mask")
                 * getattr(self, f"{module}_{i}_d_k_mask")
-            )
+            )   # [n_head, d_k]
             return in_channel_mask.view(1, -1) * out_channel_mask.view(-1, 1)
         def w_qs_bias_mask(self):
             in_channel_mask = getattr(self, f"{module}_{i}_w_qs_bias_mask")
             out_channel_mask = (
                 getattr(self, f"{module}_{i}_n_head_mask")
                 * getattr(self, f"{module}_{i}_d_k_mask")
-            )
+            )   # [n_head, d_k]
             return in_channel_mask.view(-1) * out_channel_mask.view(-1)
 
         w_ks_weight_mask = w_qs_weight_mask
@@ -503,42 +503,42 @@ class LogitsAndMasks(pl.LightningModule):
             out_channel_mask = (
                 getattr(self, f"{module}_{i}_n_head_mask")
                 * getattr(self, f"{module}_{i}_d_k_mask")
-            )
+            )   # [n_head, d_k]
             return in_channel_mask.view(-1) * out_channel_mask.view(-1)
 
         def w_vs_weight_mask(self):
-            in_channel_mask = self.d_hidden_mask
+            in_channel_mask = self.d_hidden_mask    # [d_hidden]
             out_channel_mask = (
                 getattr(self, f"{module}_{i}_n_head_mask")
                 * getattr(self, f"{module}_{i}_d_v_mask")
-            )
+            )   # [n_head, d_v]
             return in_channel_mask.view(1, -1) * out_channel_mask.view(-1, 1)
         def w_vs_bias_mask(self):
             in_channel_mask = getattr(self, f"{module}_{i}_w_vs_bias_mask")
             out_channel_mask = (
                 getattr(self, f"{module}_{i}_n_head_mask")
                 * getattr(self, f"{module}_{i}_d_v_mask")
-            )
+            )   # [n_head, d_v]
             return in_channel_mask.view(-1) * out_channel_mask.view(-1)
 
         def fc_weight_mask(self):
             in_channel_mask = (
                 getattr(self, f"{module}_{i}_n_head_mask")
                 * getattr(self, f"{module}_{i}_d_v_mask")
-            )
-            out_channel_mask = self.d_hidden_mask
+            )   # [n_head, d_v]
+            out_channel_mask = self.d_hidden_mask   # [d_hidden]
             return in_channel_mask.view(1, -1) * out_channel_mask.view(-1, 1)
         def fc_bias_mask(self):
             in_channel_mask = getattr(self, f"{module}_{i}_fc_bias_mask")
-            out_channel_mask = self.d_hidden_mask
+            out_channel_mask = self.d_hidden_mask   # [d_hidden]
             return in_channel_mask.view(-1) * out_channel_mask.view(-1)
 
         def layer_norm_mask(self):
-            channel_mask = self.d_hidden_mask
+            channel_mask = self.d_hidden_mask   # [d_hidden]
             return channel_mask.view(-1)
 
         def w_1_weight_mask(self):
-            in_channel_mask = self.d_hidden_mask
+            in_channel_mask = self.d_hidden_mask    # [d_hidden]
             out_channel_mask = getattr(self, f"{module}_{i}_d_ffn_hid_mask")
             return (
                 in_channel_mask.view(1, -1, 1) * out_channel_mask.view(-1, 1, 1)
@@ -550,13 +550,13 @@ class LogitsAndMasks(pl.LightningModule):
 
         def w_2_weight_mask(self):
             in_channel_mask = getattr(self, f"{module}_{i}_d_ffn_hid_mask")
-            out_channel_mask = self.d_hidden_mask
+            out_channel_mask = self.d_hidden_mask   # [d_hidden]
             return (
                 in_channel_mask.view(1, -1, 1) * out_channel_mask.view(-1, 1, 1)
             )
         def w_2_bias_mask(self):
             in_channel_mask = getattr(self, f"{module}_{i}_ffn_w_2_bias_mask")
-            out_channel_mask = self.d_hidden_mask
+            out_channel_mask = self.d_hidden_mask   # [d_hidden]
             return in_channel_mask.view(-1) * out_channel_mask.view(-1)
 
         return {
@@ -596,7 +596,7 @@ class LogitsAndMasks(pl.LightningModule):
 
     def get_variance_predictor_property(self, module):
         def conv_layer_conv1d_1_conv_weight_mask(self):
-            in_channel_mask = self.d_hidden_mask
+            in_channel_mask = self.d_hidden_mask    # [d_hidden]
             out_channel_mask = getattr(self, f"{module}_conv_1_mask")
             return (
                 in_channel_mask.view(1, -1, 1) * out_channel_mask.view(-1, 1, 1)
@@ -657,7 +657,7 @@ class LogitsAndMasks(pl.LightningModule):
 
     @property
     def mel_linear_weight_mask(self):
-        in_channel_mask = self.d_hidden_mask
+        in_channel_mask = self.d_hidden_mask    # [d_hidden]
         # d_out = d_mel, no out_channel_mask
         return in_channel_mask.view(1, -1)
 
@@ -724,6 +724,9 @@ def setup_structured_prune(model):
         module_name, tensor_name = n.rsplit('.', 1)
         submodule = model.get_submodule(module_name)
         move_param_to_orig(submodule, tensor_name)
+
+    # TODO: BN running_mean/running_var
+    # Doesn't affect forward (would be masked by next layer's input channel mask)
 
 class ManualPCGrad():
     """
