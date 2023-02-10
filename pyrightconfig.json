@@ -1,0 +1,20 @@
+{
+    "venvPath": "/home/r06942045/.pyenv/versions/",
+    "venv": "meta-tts-397",
+    "typeCheckingMode": "off",
+    "useLibraryCodeForTypes": true,
+    "exclude": [
+        "**/output/**",
+        "**/preprocessed_data/**",
+        "**/raw_data/**",
+        "**/new_data/**",
+        "**/local_output/**",
+        "hypertorch/examples/**",
+        "evaluation/*/**",
+    ],
+    "executionEnvironments": [
+        {
+          "root": "./",
+        }
+    ],
+}

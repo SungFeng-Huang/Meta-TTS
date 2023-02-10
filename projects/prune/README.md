@@ -4,6 +4,7 @@ The code is still refactoring.
 
 
 ## Requirements
+Checkout [README.md#requirements](/README.md#requirements).
 
 ## Preprocessing
 ### Offline preprocessing (old)
@@ -31,6 +32,11 @@ python projects/prune/main_learnable_structured.py fit -c cli_config/prune_v1/le
 
 
 ## Evaluation
+
+To get **"pruned" small model** instead of **"masked" large model** from checkpoint, checkout `ckpt_utils.py`, change the ckpt_path, then run:
+```bash
+python projects/prune/ckpt_utils.py
+```
 
 
 ## Results

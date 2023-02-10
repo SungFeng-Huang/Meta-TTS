@@ -1,0 +1,21 @@
+[
+    {
+        "workspace": "/home/r06942045/myProjects/Meta-TTS",
+        "logLevel": "error",
+        "args": [],
+        "severity": {
+            "convention": "Information",
+            "error": "Error",
+            "fatal": "Error",
+            "refactor": "Hint",
+            "warning": "Warning",
+            "info": "Information"
+        },
+        "path": ["/home/r06942045/myProjects/Meta-TTS"],
+        "interpreter": [
+            "/home/r06942045/.pyenv/versions/3.9.7/envs/meta-tts-397/bin/python"
+        ],
+        "importStrategy": "useBundled",
+        "showNotifications": "off"
+    }
+]
