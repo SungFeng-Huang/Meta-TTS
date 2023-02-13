@@ -1,49 +1,18 @@
 import sys
 import os
 
-current_dir =  os.path.abspath(os.path.dirname(__file__))
-root_dir = os.path.abspath(current_dir + "/../../")
-sys.path.insert(0, root_dir)
-
 from collections import OrderedDict
 from copy import deepcopy
 import torch
-import json
 from lightning.model import FastSpeech2
 from lightning.model.modules import VarianceAdaptor
 from lightning.model.speaker_encoder import SpeakerEncoder
 from src.transformer.Models import Encoder, Decoder, FFTBlock
 from projects.prune.pruned_transformer import \
-    MultiHeadAttention, PositionwiseFeedForward, \
     PrunedMultiHeadAttention, PrunedPositionwiseFeedForward, \
     PostNet, VariancePredictor, \
     PrunedPostNet, PrunedVariancePredictor
 
-
-def print_ckpt_stats(ckpt):
-    print(ckpt.keys())
-    for key in ckpt:
-        if key == "state_dict":
-            print(key, ckpt[key].keys())
-        elif key == "optimizer_states":
-            continue
-        elif key == "lam_state_dict":
-            print(key, ckpt[key].keys())
-        elif key == "model_state_dict":
-            print(key, ckpt[key].keys())
-            for k in ckpt[key]:
-                print(key, k, ckpt[key][k].keys())
-        else:
-            continue
-            print(key, ckpt[key])
-    # print(ckpt["model_state_dict"]["mask"]["model.postnet.convolutions.2.0.conv.weight_mask"])
-    # key = "model.postnet.convolutions.2.0.conv.weight"
-    # mask = ckpt["model_state_dict"]["mask"][f"{key}_mask"]
-    # print(torch.nonzero(torch.sum(mask, dim=(1,2))), mask.shape[0])
-    # print(torch.nonzero(torch.sum(mask, dim=(0,2))), mask.shape[1])
-    # print(torch.nonzero(torch.sum(mask, dim=(0,1))), mask.shape[2])
-    # print(torch.nonzero(mask, as_tuple=True))
-    # orig = ckpt["model_state_dict"]["orig"][f"{key}_orig"]
 
 def logits_to_prob_hist(ckpt):
     logits = torch.nn.utils.parameters_to_vector(ckpt["lam_state_dict"]["logits"].values())
@@ -95,8 +64,7 @@ def prune_model(
                 device=new_emb.device,
             )
 
-        # {encoder,decoder}.position_enc
-        # {encoder,decoder}.layer_stack
+        # {encoder,decoder}.{position_enc,layer_stack
         if isinstance(c, Encoder) or isinstance(c, Decoder):
             # position_enc
             mask = ckpt["model_state_dict"]["mask"][f"model.{n}.position_enc_mask"]
@@ -181,105 +149,3 @@ def prune_model(
 
     return model
 
-
-if __name__ == "__main__":
-    ckpt =\
-    torch.load("output/learnable_structured/p251/lightning_logs/version_5/checkpoints/epoch=8-step=1815.ckpt")
-    # torch.load("output/learnable_structured/p251/lightning_logs/version_4/checkpoints/epoch=10-step=2222.ckpt")
-    print_ckpt_stats(ckpt)
-    # print(logits_to_prob_hist(ckpt))
-
-    # [1] * 2311 + [0] * ...
-    print(set(ckpt["state_dict"]["spk_emb_w_avg_weight_orig"].cpu().tolist()))
-    # sigmoid -> [{0,1}] * 2311 + [0] * ...
-    print(torch.sigmoid(ckpt["state_dict"]["spk_emb_w_avg_subset_logits"]).sum())
-
-    from src.utils.tools import load_yaml
-    model = FastSpeech2(
-        load_yaml("config/preprocess/LibriTTS_VCTK.yaml"),
-        load_yaml("config/model/base.yaml"),
-        load_yaml("config/algorithm/pretrain/pretrain_LibriTTS.2.yaml")
-    ).cuda()
-
-    masked_model = mask_model(model, ckpt).eval()
-    pruned_model = prune_model(model, ckpt).eval()
-    del model
-    # print(model)
-
-    # masked_params = list(masked_model.named_parameters()) + list(masked_model.named_buffers())
-    # pruned_params = list(pruned_model.named_parameters()) + list(pruned_model.named_buffers())
-    masked_params = list(masked_model.named_parameters())
-    pruned_params = list(pruned_model.named_parameters())
-    # for (nm, mp), (np, pp) in zip(masked_params, pruned_params):
-    #     assert nm == np
-    #     if np.startswith("variance_adaptor"):
-    #         print(nm)
-    #         print(mp, mp.shape)
-    #         print(pp, pp.shape)
-    #         print()
-
-    # for n, c in masked_model.named_children():
-    #     print(n)
-
-    # print(list(masked_model.encoder.named_children()))
-
-    # exit()
-
-    input = {
-        "speaker_args": torch.zeros((5,)).long().cuda(),
-        "texts": torch.ones((5, 20)).long().cuda(),
-        "src_lens": torch.arange(16, 21).long().cuda(),
-        "max_src_len": torch.tensor(20).long().cuda(),
-        # "d_targets": torch.randint(1,20,(5,20)).long().cuda(),
-        # "p_targets": torch.randn((5,20)).long().cuda(),
-        # "e_targets": torch.randn((5,20)).long().cuda(),
-    }
-    # for i in range(5):
-    #     input["d_targets"][i, 16+i:] = 0
-    #     input["p_targets"][i, 16+i:] = 0
-    #     input["e_targets"][i, 16+i:] = 0
-
-    # buffer: dict[str, dict[str, torch.Tensor]] = {"inputs": {}, "outputs": {}}
-    # def mask_hook(module, inputs, outputs):
-    #     buffer["inputs"]["mask"] = inputs
-    #     buffer["outputs"]["mask"] = outputs
-    # def prune_hook(module, inputs, outputs):
-    #     buffer["inputs"]["prune"] = inputs
-    #     buffer["outputs"]["prune"] = outputs
-    # submodule = "variance_adaptor.duration_predictor.conv_layer.layer_norm_1"
-    # masked_model.get_submodule(submodule).register_forward_hook(mask_hook)
-    # pruned_model.get_submodule(submodule).register_forward_hook(prune_hook)
-    # mw = masked_model.get_submodule(submodule).weight
-    # mb = masked_model.get_submodule(submodule).bias
-    # pw = pruned_model.get_submodule(submodule).weight
-    # pb = pruned_model.get_submodule(submodule).bias
-    # print("mask", mw, mw.shape)
-    # print("prune", pw, pw.shape)
-    # print("mask", mb, mb.shape)
-    # print("prune", pb, pb.shape)
-
-    masked_output = masked_model(**input)
-    pruned_output = pruned_model(**input)
-    # for key in buffer:
-    #     for mo, po in zip(buffer[key]["mask"], buffer[key]["prune"]):
-    #         # print(key, "mask", mo[mo.nonzero(as_tuple=True)], len(mo.nonzero()))
-    #         # print(key, "prune", po[po.nonzero(as_tuple=True)], po.shape, len(po.nonzero()))
-    #         d_m_index = mo.sum(0).nonzero().flatten()
-    #         # new_mo = mo.index_select(1, d_m_index)
-    #         # print(key, "mask", new_mo, new_mo.shape)
-    #         print(mo.sum(0).nonzero().shape)
-    #         print(key, "mask", mo, mo.shape)
-    #         print(key, "prune", po, po.shape)
-    #         print()
-    for mo, po in zip(masked_output, pruned_output):
-        print(torch.allclose(mo, po, atol=1.1e-6))
-        if not torch.allclose(mo, po, atol=1.1e-6):
-            print(mo)
-            print(po)
-            print(mo[~torch.isclose(mo, po, atol=1.1e-6)])
-            print(po[~torch.isclose(mo, po, atol=1.1e-6)])
-            print((mo-po)[~torch.isclose(mo, po, atol=1.1e-6)])
-            # mod = mo[mo != po]
-            # pod = po[mo != po]
-            # print(torch.abs((mod-pod)/mod))
-        print()
