@@ -7,29 +7,8 @@ from torch.nn import functional as F
 
 from src.transformer.Layers import ConvNorm, PostNet
 from lightning.model.modules import VariancePredictor, Conv
-from .SubLayers import PrunedLinear
+from .SubLayers import PrunedLinear, PrunedLayerNorm, PrunedConv1d
 
-class PrunedConvNorm(ConvNorm):
-
-    def forward(self, signal):
-        if self.conv.in_channels and self.conv.out_channels:
-            # d_in > 0, d_out > 0
-            conv_signal = self.conv(signal)
-        elif self.conv.out_channels:
-            # d_in == 0, d_out > 0
-            # conv would ourput wrong size
-            conv_signal = torch.zeros(
-                signal.shape[0], self.conv.out_channels, signal.shape[2],
-                device=signal.device,
-            ) + self.conv.bias[None, :, None]
-        else:
-            # d_out == 0
-            conv_signal = torch.randn(
-                signal.shape[0], 0, signal.shape[2],
-                device=signal.device,
-            )
-
-        return conv_signal
 
 class PrunedPostNet(PostNet):
     """
@@ -43,8 +22,6 @@ class PrunedPostNet(PostNet):
         postnet_kernel_size: int = 5,
         postnet_n_convolutions: int = 5,
         orig: PostNet = None,
-        # n: str = None,
-        # model_state_dict: dict[str, dict[str, torch.Tensor]] = None,
     ):
         assert postnet_kernel_size or orig
         if orig:
@@ -57,12 +34,6 @@ class PrunedPostNet(PostNet):
             # normal constructor
             super().__init__(n_mel_channels, postnet_embedding_dim,
                             postnet_kernel_size, postnet_n_convolutions)
-        # elif n and model_state_dict:
-        #     # prune constructor
-        #     torch.nn.Module.__init__(self)
-        #     self.convolutions = nn.ModuleList()
-        #     self.prune(n, model_state_dict)
-        #
 
     def prune(
         self,
@@ -84,7 +55,9 @@ class PrunedPostNet(PostNet):
 
             d_out_index = BN_0_mask.nonzero().flatten()
 
-            self.convolutions[i][0] = self.pruned_conv(
+            # self.convolutions[i][0] = self.pruned_conv(
+            #     n, model_state_dict, i, d_in_index, d_out_index)
+            self.convolutions[i][0].conv = self.pruned_conv(
                 n, model_state_dict, i, d_in_index, d_out_index)
             self.convolutions[i][1] = self.pruned_BN(
                 n, model_state_dict, i, d_out_index)
@@ -106,20 +79,22 @@ class PrunedPostNet(PostNet):
                   .index_select(0, d_out_index)
                   .index_select(1, d_in_index))
         state_dict["weight"] = conv_w
-        conv_b = (model_state_dict["orig"][f"model.{n}.convolutions.{i}.0.conv.bias_orig"]
-                    .index_select(0, d_out_index))
-        if model_state_dict["mask"][f"model.{n}.convolutions.{i}.0.conv.bias_mask"].sum() == 0:
-            conv_b *= 0
-        state_dict["bias"] = conv_b
+        use_bias = model_state_dict["mask"][f"model.{n}.convolutions.{i}.0.conv.bias_mask"].sum() > 0
+        if use_bias:
+            conv_b = (model_state_dict["orig"][f"model.{n}.convolutions.{i}.0.conv.bias_orig"]
+                        .index_select(0, d_out_index))
+            state_dict["bias"] = conv_b
 
-        conv = PrunedConvNorm(
+        conv = PrunedConv1d(
             d_in, d_out,
+            bias=use_bias,
             kernel_size=self.convolutions[i][0].conv.kernel_size[0],
             stride=1,
             padding=self.convolutions[i][0].conv.padding[0],
             dilation=1,
-        ).to(device=conv_b.device)
-        conv.conv.load_state_dict(state_dict)
+            device=conv_w.device,
+        )
+        conv.load_state_dict(state_dict)
         return conv
 
     def pruned_BN(
@@ -148,47 +123,9 @@ class PrunedPostNet(PostNet):
             "num_batches_tracked": num_batches_tracked,
         })
 
-        new_BN = nn.BatchNorm1d(d_out,
-                                device=w_BN.device)
+        new_BN = nn.BatchNorm1d(d_out, device=w_BN.device)
         new_BN.load_state_dict(state_dict)
         return new_BN
-
-    # def forward(self, x: torch.Tensor):
-    #     x = x.contiguous().transpose(1, 2)
-
-    #     for i in range(len(self.convolutions) - 1):
-    #         if self.convolutions[i][0].in_channels and self.convolutions[i][0].out_channels:
-    #             # d_in > 0, d_out > 0
-    #             x = F.dropout(torch.tanh(self.convolutions[i](x)), 0.5, self.training)
-    #         elif self.convolutions[i][0].out_channels:
-    #             # d_in = 0, d_out > 0
-    #             # conv would output wrong size
-    #             x = torch.zeros(
-    #                 x.shape[0], self.convolutions[i][0].out_channels, x.shape[2],
-    #                 device=x.device,
-    #             ) + self.convolutions[i][0].bias[None, :, None]
-    #             x = F.dropout(torch.tanh(self.convolutions[i][1](x)), 0.5, self.training)
-    #         else:
-    #             # d_in ? 0, d_out = 0
-    #             # conv would raise RuntimeError, BN would raise IndexError
-    #             # directly output (B, 0, L)-sized tensor
-    #             x = torch.randn(x.shape[0], 0, x.shape[2], device=x.device)
-
-    #     # assert output dim > 0
-    #     if self.convolutions[-1][0].in_channels:
-    #         # d_in > 0, d_out > 0
-    #         x = F.dropout(self.convolutions[-1](x), 0.5, self.training)
-    #     else:
-    #         # d_in = 0, d_out > 0
-    #         # conv would output wrong size
-    #         x = torch.zeros(
-    #             x.shape[0], self.convolutions[-1][0].out_channels, x.shape[2],
-    #             device=x.device,
-    #         ) + self.convolutions[-1][0].bias[None, :, None]
-    #         x = F.dropout(torch.tanh(self.convolutions[-1][1](x)), 0.5, self.training)
-
-    #     x = x.contiguous().transpose(1, 2)
-    #     return x
 
 
 class PrunedVariancePredictor(VariancePredictor):
@@ -232,9 +169,11 @@ class PrunedVariancePredictor(VariancePredictor):
         d_conv_2_index = LN_2_mask.nonzero().flatten()
         d_lin_index = lin_w_mask.sum(dim=[1]).nonzero().flatten()
 
-        self.conv_layer.conv1d_1 = self.pruned_conv(n, model_state_dict, 1, d_conv_0_index, d_conv_1_index)
+        # self.conv_layer.conv1d_1 = self.pruned_conv(n, model_state_dict, 1, d_conv_0_index, d_conv_1_index)
+        self.conv_layer.conv1d_1.conv = self.pruned_conv(n, model_state_dict, 1, d_conv_0_index, d_conv_1_index)
         self.conv_layer.layer_norm_1 = self.pruned_LN(n, model_state_dict, 1, d_conv_1_index)
-        self.conv_layer.conv1d_2 = self.pruned_conv(n, model_state_dict, 2, d_conv_1_index, d_conv_2_index)
+        # self.conv_layer.conv1d_2 = self.pruned_conv(n, model_state_dict, 2, d_conv_1_index, d_conv_2_index)
+        self.conv_layer.conv1d_2.conv = self.pruned_conv(n, model_state_dict, 2, d_conv_1_index, d_conv_2_index)
         self.conv_layer.layer_norm_2 = self.pruned_LN(n, model_state_dict, 2, d_conv_2_index)
         self.linear_layer = self.pruned_linear(n, model_state_dict, d_conv_2_index, d_lin_index)
     
@@ -254,20 +193,22 @@ class PrunedVariancePredictor(VariancePredictor):
                   .index_select(0, d_out_index)
                   .index_select(1, d_in_index))
         state_dict["weight"] = conv_w
-        conv_b = (model_state_dict["orig"][f"model.{n}.conv_layer.conv1d_{i}.conv.bias_orig"]
-                    .index_select(0, d_out_index))
-        if model_state_dict["mask"][f"model.{n}.conv_layer.conv1d_{i}.conv.bias_mask"].sum() == 0:
-            conv_b *= 0
-        state_dict["bias"] = conv_b
+        use_bias = model_state_dict["mask"][f"model.{n}.conv_layer.conv1d_{i}.conv.bias_mask"].sum() > 0
+        if use_bias:
+            conv_b = (model_state_dict["orig"][f"model.{n}.conv_layer.conv1d_{i}.conv.bias_orig"]
+                        .index_select(0, d_out_index))
+            state_dict["bias"] = conv_b
 
-        conv = PrunedConv(
+        conv = PrunedConv1d(
             d_in, d_out,
+            bias=use_bias,
             kernel_size=getattr(self.conv_layer, f"conv1d_{i}").conv.kernel_size[0],
             stride=1,
             padding=getattr(self.conv_layer, f"conv1d_{i}").conv.padding[0],
             dilation=1,
-        ).to(device=conv_b.device)
-        conv.conv.load_state_dict(state_dict)
+            device=conv_w.device,
+        )
+        conv.load_state_dict(state_dict)
         return conv
 
     def pruned_LN(
@@ -278,6 +219,7 @@ class PrunedVariancePredictor(VariancePredictor):
         d_in_index: torch.LongTensor,
     ):
         d_in = len(d_in_index)
+        d_orig = model_state_dict["orig"][f"model.{n}.conv_layer.layer_norm_{i}.weight_orig"].shape[0]
 
         w_LN = (model_state_dict["orig"][f"model.{n}.conv_layer.layer_norm_{i}.weight_orig"]
                 .index_select(0, d_in_index))
@@ -285,8 +227,11 @@ class PrunedVariancePredictor(VariancePredictor):
                 .index_select(0, d_in_index))
         state_dict = OrderedDict({"weight": w_LN, "bias": b_LN})
 
-        new_LN = nn.LayerNorm(d_in,
-                              device=b_LN.device)
+        new_LN = PrunedLayerNorm(
+            d_orig=d_orig,
+            normalized_shape=d_in,
+            device=b_LN.device,
+        )
         new_LN.load_state_dict(state_dict)
         return new_LN
 
@@ -306,35 +251,12 @@ class PrunedVariancePredictor(VariancePredictor):
              .index_select(0, d_out_index)
              .index_select(1, d_in_index))
         state_dict["weight"] = w
-        b = (model_state_dict["orig"][f"model.{n}.linear_layer.bias_orig"]
-             .index_select(0, d_out_index))
-        if model_state_dict["mask"][f"model.{n}.linear_layer.bias_mask"].sum() == 0:
-            b *= 0
-        state_dict["bias"] = b
+        use_bias = model_state_dict["mask"][f"model.{n}.linear_layer.bias_mask"].sum() > 0
+        if use_bias:
+            b = (model_state_dict["orig"][f"model.{n}.linear_layer.bias_orig"]
+                .index_select(0, d_out_index))
+            state_dict["bias"] = b
 
-        linear = PrunedLinear(d_in, d_out,
-                              device=b.device)
+        linear = PrunedLinear(d_in, d_out, bias=use_bias, device=w.device)
         linear.load_state_dict(state_dict)
         return linear
-
-
-class PrunedConv(Conv):
-
-    def forward(self, x):
-        x = x.contiguous().transpose(1, 2)
-        if self.conv.in_channels and self.conv.out_channels:
-            # d_in > 0, d_out > 0
-            x = self.conv(x)
-        elif self.conv.out_channels:
-            # d_in == 0, d_out > 0
-            # conv would ourput wrong size
-            x = torch.zeros(
-                x.shape[0], self.conv.out_channels, x.shape[2],
-                device=x.device,
-            ) + self.conv.bias[None, :, None]
-        else:
-            # d_out == 0
-            x = torch.randn(x.shape[0], 0, x.shape[2], device=x.device)
-        x = x.contiguous().transpose(1, 2)
-
-        return x
