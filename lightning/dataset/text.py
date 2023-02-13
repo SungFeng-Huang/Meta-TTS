@@ -1,6 +1,7 @@
 import json
 import os
 
+import torch
 import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
@@ -61,5 +62,23 @@ class TextDataset(Dataset):
 
         return ids, raw_texts, speakers, texts, text_lens, max(text_lens)
 
-
+    def dict_collate(self, data):
+        ids, raw_texts, speakers, texts, text_lens, max_text_len = self.collate_fn(data)
+        # if torch.cuda.is_available():
+        #     return {
+        #         "ids": ids,
+        #         "raw_texts": raw_texts,
+        #         "speaker_args": torch.from_numpy(speakers).cuda(),
+        #         "texts": torch.from_numpy(texts).long().cuda(),
+        #         "src_lens": torch.from_numpy(text_lens).cuda(),
+        #         "max_src_len": max_text_len,
+        #     }
+        return {
+            "ids": ids,
+            "raw_texts": raw_texts,
+            "speaker_args": torch.from_numpy(speakers),
+            "texts": torch.from_numpy(texts).long(),
+            "src_lens": torch.from_numpy(text_lens),
+            "max_src_len": max_text_len,
+        }
 
