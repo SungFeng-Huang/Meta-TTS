@@ -714,10 +714,12 @@ def setup_structured_prune(model):
             module.register_parameter(tensor_name+"_orig", tensor)
             del module._parameters[tensor_name]
 
-    for n, p in list(model.named_parameters()):
+    for n, p in list(model.named_parameters()) + list(model.named_buffers()):
         #TODO: check whether exceptions
         if n in {"variance_adaptor.pitch_bins",
                     "variance_adaptor.energy_bins"}:
+            continue
+        if n.endswith("num_batches_tracked"):
             continue
         # elif "_orig" in n:
         #     continue
