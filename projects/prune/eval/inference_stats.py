@@ -52,8 +52,16 @@ if __name__ == "__main__":
     os.chdir(root_dir)
     print(os.getcwd())
 
+    memory_alloc = {}
+
     print("load ckpt")
     ckpt = torch.load("output/learnable_structured/p251/lightning_logs/version_5/checkpoints/epoch=8-step=1815.ckpt")
+    torch.cuda.reset_peak_memory_stats()
+    memory_alloc["used"] = torch.cuda.max_memory_allocated()
+    memory_alloc["ckpt"] = memory_alloc["used"]
+    print(memory_alloc)
+    # print("MEM (ckpt)", torch.cuda.max_memory_allocated())
+    # print("MEM (ckpt)", torch.cuda.max_memory_allocated(ckpt["model_state_dict"]["mask"]["model.encoder.src_word_emb.weight_mask"].device))
 
     preprocess_yaml: str = ckpt["hyper_parameters"]["preprocess_config"]
     model_yaml: str = ckpt["hyper_parameters"]["model_config"]
@@ -71,11 +79,28 @@ if __name__ == "__main__":
         load_yaml(model_yaml),
         load_yaml(algorithm_yaml)
     ).eval().cuda()
+    torch.cuda.reset_peak_memory_stats()
+    memory_alloc["full"] = torch.cuda.max_memory_allocated() - memory_alloc["used"]
+    memory_alloc["used"] = torch.cuda.max_memory_allocated()
+    print(memory_alloc)
+    # print("MEM (ckpt + model)", torch.cuda.max_memory_allocated())
+    # print("MEM (ckpt+model)", torch.cuda.max_memory_allocated(model.encoder.src_word_emb.weight.device))
 
     print("mask model")
     masked_model = mask_model(model, ckpt).eval()
+    torch.cuda.reset_peak_memory_stats()
+    memory_alloc["mask"] = torch.cuda.max_memory_allocated() - memory_alloc["used"]
+    memory_alloc["used"] = torch.cuda.max_memory_allocated()
+    print(memory_alloc)
+    # print("MEM (ckpt + model + masked)", torch.cuda.max_memory_allocated())
+
     print("prune model")
     pruned_model = prune_model(model, ckpt).eval()
+    torch.cuda.reset_peak_memory_stats()
+    memory_alloc["prune"] = torch.cuda.max_memory_allocated() - memory_alloc["used"]
+    memory_alloc["used"] = torch.cuda.max_memory_allocated()
+    print(memory_alloc)
+    # print("MEM (ckpt + model + masked + pruned)", torch.cuda.max_memory_allocated())
     
     pretrain_ckpt = torch.load(ckpt["hyper_parameters"]["ckpt_path"])
     model.load_state_dict({
@@ -90,6 +115,11 @@ if __name__ == "__main__":
         except:
             model.speaker_emb.model.weight_orig[2311:] = \
                 model.speaker_emb.model.weight_orig[:2311].mean(dim=0)
+    torch.cuda.reset_peak_memory_stats()
+    memory_alloc["pretrain_ckpt"] = torch.cuda.max_memory_allocated() - memory_alloc["used"]
+    memory_alloc["used"] = torch.cuda.max_memory_allocated()
+    print(memory_alloc)
+    # print("MEM (ckpt + model + masked + pruned + ptckpt)", torch.cuda.max_memory_allocated())
 
     test_models = {
         "full": model,
@@ -123,7 +153,7 @@ if __name__ == "__main__":
                     with record_function(f"model_inference-{mode}"):
                         test_model(**data)
                         prof.step()
-                    peak_mem = torch.cuda.max_memory_allocated(model.device)
+                    peak_mem = torch.cuda.max_memory_allocated(model.device) - memory_alloc["used"] + memory_alloc[mode]
                     memory_peak[mode].append(peak_mem)
     print(prof.key_averages().table(sort_by="cuda_time_total", top_level_events_only=True, row_limit=len(test_models)))
     for key in nparams:

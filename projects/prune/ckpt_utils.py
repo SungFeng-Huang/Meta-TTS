@@ -64,7 +64,7 @@ def prune_model(
                 device=new_emb.device,
             )
 
-        # {encoder,decoder}.{position_enc,layer_stack
+        # {encoder,decoder}.{position_enc,layer_stack}
         if isinstance(c, Encoder) or isinstance(c, Decoder):
             # position_enc
             mask = ckpt["model_state_dict"]["mask"][f"model.{n}.position_enc_mask"]
