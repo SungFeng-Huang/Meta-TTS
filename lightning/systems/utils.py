@@ -14,130 +14,134 @@ import hypergrad as hg
 from hypergrad import CG_torch, get_outer_gradients, update_tensor_grads
 
 from lightning.collate import split_reprocess
+from lightning.algorithms.utils import copy_module
+from lightning.algorithms.MAML import MAML, MetaSGD, AlphaMAML, AdamTransform
 
+# class TheMAML(l2l.algorithms.MAML):
+#     def __init__(self,
+#                  model,
+#                  lr,
+#                  first_order=False,
+#                  allow_unused=None,
+#                  allow_nograd=False):
+#         super().__init__(model, lr, first_order, allow_unused, allow_nograd)
 
-class MAML(l2l.algorithms.MAML):
-    def __init__(self,
-                 model,
-                 lr,
-                 first_order=False,
-                 allow_unused=None,
-                 allow_nograd=False):
-        super().__init__(model, lr, first_order, allow_unused, allow_nograd)
+#     def inner_freeze(self, module_name=""):
+#         for p in self.module.get_submodule(module_name).parameters():
+#             p.inner_freeze = True
 
-    def inner_freeze(self, module_name=""):
-        for p in self.module.get_submodule(module_name).parameters():
-            p.inner_freeze = True
+#     def inner_unfreeze(self, module_name=""):
+#         for p in self.module.get_submodule(module_name).parameters():
+#             p.inner_freeze = False
 
-    def inner_unfreeze(self, module_name=""):
-        for p in self.module.get_submodule(module_name).parameters():
-            p.inner_freeze = False
+#     def outer_freeze(self, module_name=""):
+#         for p in self.module.get_submodule(module_name).parameters():
+#             p.requires_grad = False
 
-    def outer_freeze(self, module_name=""):
-        for p in self.module.get_submodule(module_name).parameters():
-            p.requires_grad = False
+#     def outer_unfreeze(self, module_name=""):
+#         for p in self.module.get_submodule(module_name).parameters():
+#             p.requires_grad = True
 
-    def outer_unfreeze(self, module_name=""):
-        for p in self.module.get_submodule(module_name).parameters():
-            p.requires_grad = True
+#     def adapt(self,
+#               loss,
+#               first_order=None,
+#               allow_unused=None,
+#               allow_nograd=None):
+#         """
+#         Different from l2l.algorithms.MAML, we make this function out of space.
+#         """
+#         copied = self.copy()
+#         # super(MAML, copied).adapt(loss, first_order, allow_unused, allow_nograd)
+#         copied.adapt_(loss, first_order, allow_unused, allow_nograd)
+#         return copied
 
-    def adapt(self,
-              loss,
-              first_order=None,
-              allow_unused=None,
-              allow_nograd=None):
-        """
-        Different from l2l.algorithms.MAML, we make this function out of space.
-        """
-        copied = self.copy()
-        # super(MAML, copied).adapt(loss, first_order, allow_unused, allow_nograd)
-        copied.adapt_(loss, first_order, allow_unused, allow_nograd)
-        return copied
+#     def adapt_(self,
+#                loss,
+#                first_order=None,
+#                allow_unused=None,
+#                allow_nograd=None):
+#         """
+#         In-place adapt. Same as l2l.algorithms.MAML.adapt(), but deal with "inner_freeze" attr.
+#         """
+#         # return super().adapt(loss, first_order, allow_unused, allow_nograd)
+#         if first_order is None:
+#             first_order = self.first_order
+#         if allow_unused is None:
+#             allow_unused = self.allow_unused
+#         if allow_nograd is None:
+#             allow_nograd = self.allow_nograd
+#         second_order = not first_order
 
-    def adapt_(self,
-               loss,
-               first_order=None,
-               allow_unused=None,
-               allow_nograd=None):
-        """
-        In-place adapt. Same as l2l.algorithms.MAML.adapt().
-        """
-        # return super().adapt(loss, first_order, allow_unused, allow_nograd)
-        if first_order is None:
-            first_order = self.first_order
-        if allow_unused is None:
-            allow_unused = self.allow_unused
-        if allow_nograd is None:
-            allow_nograd = self.allow_nograd
-        second_order = not first_order
+#         if allow_nograd:
+#             # Compute relevant gradients
+#             diff_params = [p for p in self.module.parameters()
+#                            if (p.requires_grad
+#                                and not getattr(p, "inner_freeze", False))]
+#             grad_params = torch_grad(loss,
+#                                      diff_params,
+#                                      retain_graph=second_order,
+#                                      create_graph=second_order,
+#                                      allow_unused=allow_unused)
+#             gradients = []
+#             grad_counter = 0
 
-        if allow_nograd:
-            # Compute relevant gradients
-            diff_params = [p for p in self.module.parameters()
-                           if (p.requires_grad
-                               and not getattr(p, "inner_freeze", False))]
-            grad_params = torch_grad(loss,
-                                     diff_params,
-                                     retain_graph=second_order,
-                                     create_graph=second_order,
-                                     allow_unused=allow_unused)
-            gradients = []
-            grad_counter = 0
+#             # Handles gradients for non-differentiable parameters
+#             for n, p in self.module.named_parameters():
+#                 if (p.requires_grad
+#                         and not getattr(p, "inner_freeze", False)):
+#                     gradient = grad_params[grad_counter]
+#                     grad_counter += 1
+#                 else:
+#                     gradient = None
+#                 gradients.append(gradient)
+#         else:
+#             try:
+#                 gradients = torch_grad(loss,
+#                                        self.module.parameters(),
+#                                        retain_graph=second_order,
+#                                        create_graph=second_order,
+#                                        allow_unused=allow_unused)
+#             except RuntimeError:
+#                 traceback.print_exc()
+#                 print('learn2learn: Maybe try with allow_nograd=True and/or allow_unused=True ?')
 
-            # Handles gradients for non-differentiable parameters
-            for n, p in self.module.named_parameters():
-                if (p.requires_grad
-                        and not getattr(p, "inner_freeze", False)):
-                    gradient = grad_params[grad_counter]
-                    grad_counter += 1
-                else:
-                    gradient = None
-                gradients.append(gradient)
-        else:
-            try:
-                gradients = torch_grad(loss,
-                                       self.module.parameters(),
-                                       retain_graph=second_order,
-                                       create_graph=second_order,
-                                       allow_unused=allow_unused)
-            except RuntimeError:
-                traceback.print_exc()
-                print('learn2learn: Maybe try with allow_nograd=True and/or allow_unused=True ?')
+#         # Update the module
+#         updates = [-self.lr * g if g is not None else None for g in gradients]
+#         self.module = update_module(self.module, updates)
 
-        # Update the module
-        updates = [-self.lr * g if g is not None else None for g in gradients]
-        self.module = update_module(self.module, updates)
+#     def clone(self, first_order=None, allow_unused=None, allow_nograd=None):
+#         if first_order is None:
+#             first_order = self.first_order
+#         if allow_unused is None:
+#             allow_unused = self.allow_unused
+#         if allow_nograd is None:
+#             allow_nograd = self.allow_nograd
+#         return MAML(clone_module(self.module),
+#                     lr=self.lr,
+#                     first_order=first_order,
+#                     allow_unused=allow_unused,
+#                     allow_nograd=allow_nograd)
 
-    def clone(self, first_order=None, allow_unused=None, allow_nograd=None):
-        if first_order is None:
-            first_order = self.first_order
-        if allow_unused is None:
-            allow_unused = self.allow_unused
-        if allow_nograd is None:
-            allow_nograd = self.allow_nograd
-        return MAML(clone_module(self.module),
-                    lr=self.lr,
-                    first_order=first_order,
-                    allow_unused=allow_unused,
-                    allow_nograd=allow_nograd)
+#     def copy(self, first_order=None, allow_unused=None, allow_nograd=None):
+#         """
+#         Return a copied model instance pointing to the same parameters/buffers.
+#         Useful to keep track of the parameters before update_module().
+#         """
+#         if first_order is None:
+#             first_order = self.first_order
+#         if allow_unused is None:
+#             allow_unused = self.allow_unused
+#         if allow_nograd is None:
+#             allow_nograd = self.allow_nograd
+#         return MAML(copy_module(self.module),
+#                     lr=self.lr,
+#                     first_order=first_order,
+#                     allow_unused=allow_unused,
+#                     allow_nograd=allow_nograd)
 
-    def copy(self, first_order=None, allow_unused=None, allow_nograd=None):
-        """
-        Return a copied model instance pointing to the same parameters/buffers.
-        Useful to keep track of the parameters before update_module().
-        """
-        if first_order is None:
-            first_order = self.first_order
-        if allow_unused is None:
-            allow_unused = self.allow_unused
-        if allow_nograd is None:
-            allow_nograd = self.allow_nograd
-        return MAML(copy_module(self.module),
-                    lr=self.lr,
-                    first_order=first_order,
-                    allow_unused=allow_unused,
-                    allow_nograd=allow_nograd)
-
+# from lightning.algorithms.MAML import MAML as GBMAML
+# from lightning.algorithms.MAML import MetaSGD, AlphaMAML, AdamTransform
+# MAML = GBMAML
 
 class Task:
     """
@@ -251,106 +255,3 @@ def CG(module: MAML,
 
     return grads, valid_error, predictions
 
-
-def copy_module(module, memo=None):
-    """
-    [[Source]](https://github.com/learnables/learn2learn/blob/master/learn2learn/utils.py)
-    Modified from l2l.utils.clone_module().
-    
-    **Description**
-
-    Creates a copied module instance, whose parameters/buffers/submodules
-    are linked to their origin data_ptr.
-    While update_module() updates the model parameters in-place, it generates
-    new parameters then assign it back to the model instance, this implies that
-    we cannot access the original parameters from the computational graph anymore.
-    Through this function, we can keep track of the original parameters without
-    additional clonings.
-
-    **Arguments**
-
-    * **module** (Module) - Module to be copied.
-
-    **Return**
-
-    * (Module) - The copied module.
-
-    **Example**
-
-    ~~~python
-    # create new model instance pointing to the original parameters/buffers
-    copied = copy_module(model)   
-    error = loss(copied(X), y)
-    grads = torch.autograd.grad(
-        error,
-        copied.parameters(),
-        create_graph=True,
-    )
-    updates = [-lr * g for g in grads]
-    l2l.update_module(copied, updates=updates)
-    # copied.parameters are newly created nodes on the computational graph, while
-    # we can access the original parameters through model.parameters
-    ~~~
-    """
-    # NOTE: This function might break in future versions of PyTorch.
-
-    # TODO: This function might require that module.forward()
-    #       was called in order to work properly, if forward() instanciates
-    #       new variables.
-
-    if memo is None:
-        # Maps data_ptr to the tensor.
-        # Useful when a Module uses parameters from another Module; see:
-        # https://github.com/learnables/learn2learn/issues/174
-        memo = {}
-
-    # First, create a copy of the module.
-    # Adapted from:
-    # https://github.com/pytorch/pytorch/blob/65bad41cbec096aa767b3752843eddebf845726f/torch/nn/modules/module.py#L1171
-    if not isinstance(module, torch.nn.Module):
-        return module
-    copied = module.__new__(type(module))
-    copied.__dict__ = module.__dict__.copy()
-    copied._parameters = copied._parameters.copy()
-    copied._buffers = copied._buffers.copy()
-    copied._modules = copied._modules.copy()
-
-    # Second, link all parameters
-    if hasattr(copied, '_parameters'):
-        for param_key in module._parameters:
-            if module._parameters[param_key] is not None:
-                param = module._parameters[param_key]
-                param_ptr = param.data_ptr
-                if param_ptr in memo:
-                    copied._parameters[param_key] = memo[param_ptr]
-                else:
-                    copied._parameters[param_key] = param
-                    memo[param_ptr] = param
-
-    # Third, handle the buffers if necessary
-    if hasattr(copied, '_buffers'):
-        for buffer_key in module._buffers:
-            if copied._buffers[buffer_key] is not None and \
-                    copied._buffers[buffer_key].requires_grad:
-                buff = module._buffers[buffer_key]
-                buff_ptr = buff.data_ptr
-                if buff_ptr in memo:
-                    copied._buffers[buffer_key] = memo[buff_ptr]
-                else:
-                    copied._buffers[buffer_key] = buff
-                    memo[param_ptr] = buff
-
-    # Then, recurse for each submodule
-    if hasattr(copied, '_modules'):
-        for module_key in copied._modules:
-            copied._modules[module_key] = copy_module(
-                module._modules[module_key],
-                memo=memo,
-            )
-
-    # Finally, rebuild the flattened parameters for RNNs
-    # See this issue for more details:
-    # https://github.com/learnables/learn2learn/issues/139
-    if hasattr(copied, 'flatten_parameters'):
-        copied = copied._apply(lambda x: x)
-    return copied

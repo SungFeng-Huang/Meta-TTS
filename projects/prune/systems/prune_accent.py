@@ -43,6 +43,27 @@ class PruneAccentSystem(BaseAdaptorSystem):
                  result_dir: str = None,
                  accent_ckpt: str = "output/xvec/lightning_logs/version_88/checkpoints/epoch=199-step=164200.ckpt",
                  speaker_ckpt: str= "output/xvec/lightning_logs/version_99/checkpoints/epoch=49-step=377950.ckpt"):
+        """
+        Args:
+            preprocess_config: preprocess config
+            model_config: model config
+            algorithm_config: algorithm config
+            ckpt_path: pretrained checkpoint path
+            qry_patience: number of steps for early stopping by eval on query set
+            log_dir:
+            result_dir:
+            accent_ckpt: checkpoint path of pretrained accent classifier
+            speaker_ckpt: checkpoint path of pretrained speaker classifier
+
+        Attributes:
+            model: FastSpeech2 model (load from ckpt_path).
+            loss_func: FastSpeech2 loss function.
+            d_target (bool): Whether use ground-truth duration for inference. Default ``False``.
+            reference_prosody (bool): Whether use ground-truch prosody for prosody encoder. Only effective when algorithm_config["adapt"]["AdaLN"]["prosody"] exists. Default: ``True``.
+            override_kwargs: kwargs to override during inference.
+            avg_train_spk_emb (bool): Initialize new speaker embeddings with the average of pretrained speaker embeddings. Default: ``True``.
+            log_metrics_per_step (bool): self.log_dict(metrics) in every train/val step. Default: ``False``.
+        """
         pl.LightningModule.__init__(self)
 
         if isinstance(preprocess_config, str):
@@ -248,37 +269,6 @@ class PruneAccentSystem(BaseAdaptorSystem):
             "epoch_start": epoch_start,
             **val_output,
         }
-
-    def distill_step(self, batch, teacher=None, student=None):
-        r"""
-        Args:
-            _model: Use copied model instead of self.
-        """
-        with torch.no_grad():
-            t_preds = teacher(
-                **batch,
-                average_spk_emb=True,
-                reference_prosody=(batch["p_targets"].unsqueeze(2)
-                                if self.reference_prosody else None),
-            )
-            duration_target = torch.clamp(
-                (torch.round(torch.exp(t_preds[4]) - 1)),
-                min=0,
-            )
-        s_preds = student(
-            **batch,
-            average_spk_emb=True,
-            reference_prosody=(batch["p_targets"].unsqueeze(2)
-                               if self.reference_prosody else None),
-        )
-        gt = {
-            "mels": t_preds[1], # postnet_mel_predictions
-            "p_targets": t_preds[2],
-            "e_targets": t_preds[3],
-            "d_targets": duration_target,
-        }
-        loss = self.loss_func(gt, s_preds)
-        return loss, t_preds, s_preds
 
     def subset_step(self, batch, subset_name, synth=False, _model=None,
                     eval=True):

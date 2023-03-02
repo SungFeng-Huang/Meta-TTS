@@ -31,7 +31,32 @@ class BaseAdaptorSystem(pl.LightningModule):
                  model_config: Union[dict, str],
                  train_config: Union[dict, str, list],
                  algorithm_config: Union[dict, str],
-                 log_dir=None, result_dir=None):
+                 log_dir=None,
+                 result_dir=None):
+        """
+        Args:
+            preprocess_config: Preprocess config.
+                Include data path, sampling rate, etc.
+            model_config: Model config.
+                Include number of layers, dimensions, etc.
+            train_config: Training config.
+                Include batch size, scheduler steps, training steps, etc.
+            algorithm_config: Algorithm config.
+                Include fine-tuning setups.
+            log_dir:
+            result_dir:
+
+        Attributes:
+            model: FastSpeech2 model (load from ckpt_path).
+            loss_func: FastSpeech2 loss function.
+            learner (MAML): MAML learner object for adaptation.
+            d_target (bool): Whether use ground-truth duration for inference. Default ``False``.
+            reference_prosody (bool): Whether use ground-truch prosody for prosody encoder. Only effective when algorithm_config["adapt"]["AdaLN"]["prosody"] exists. Default: ``True``.
+            avg_train_spk_emb (bool): Initialize new speaker embeddings with the average of pretrained speaker embeddings. Default: ``True``.
+            
+        Expected (not implemented):
+            override_kwargs: kwargs to override during inference.
+        """
         super().__init__()
 
         if isinstance(preprocess_config, str):
