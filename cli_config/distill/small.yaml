@@ -30,7 +30,7 @@ trainer:
 
   ### Logging and saving settings
   enable_checkpointing: True
-  default_root_dir: output/distill/baseline
+  default_root_dir: output/distill/small
   log_every_n_steps: 100
   check_val_every_n_epoch: 10
 
