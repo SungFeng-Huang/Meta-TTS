@@ -81,7 +81,7 @@ class IMAMLSystem(BaseAdaptorSystem):
         qry_data = batch[0][1][0]
 
         # self.gpu_stats(f"Step {self.global_step}: Before inner update")
-        learner, task = self.adapt(batch, self.adaptation_steps, return_task, train=train)
+        learner, task = self.adapt(batch, self.adaptation_steps, return_task=True, train=train)
         # self.gpu_stats(f"Step {self.global_step}: After inner update")
         stochastic = self.algorithm_config["adapt"]["imaml"]["stochastic"]
         reg_param = self.algorithm_config["adapt"]["imaml"]["reg_param"]
