@@ -77,14 +77,14 @@ class DistillSystem(BaseAdaptorFitSystem):
             result_dir=result_dir,
         )
         # adaptation_lr = self.algorithm_config["adapt"]["task"]["lr"]
-        self.learner = AdaMAML(
-            self.model,
-            lr=3e-5,
-            adapt_transform=False,
-            first_order=True,
-            allow_unused=False,
-            allow_nograd=True,
-        )
+        # self.learner = AdaMAML(
+        #     self.model,
+        #     lr=1e0,
+        #     adapt_transform=False,
+        #     first_order=True,
+        #     allow_unused=False,
+        #     allow_nograd=True,
+        # )
 
         teacher_ckpt = torch.load(ckpt_path)
         teacher_preprocess_yaml: dict = teacher_ckpt["hyper_parameters"]["preprocess_config"]
@@ -99,6 +99,11 @@ class DistillSystem(BaseAdaptorFitSystem):
         self.teacher = FastSpeech2(teacher_preprocess_yaml,
                                    teacher_model_yaml,
                                    teacher_algorithm_yaml)
+        teacher_state_dict = {
+            k[6:]: v for k, v in teacher_ckpt["state_dict"].items()
+            if k.startswith("model.")
+        }
+        self.teacher.load_state_dict(teacher_state_dict)
 
         self.teacher.requires_grad_(False)
         self.teacher.eval()
@@ -179,6 +184,37 @@ class DistillSystem(BaseAdaptorFitSystem):
         teacher = teacher or self.teacher
         student = student or self.model
 
+        models = {"teacher": teacher, "student": student}
+        outputs = {"teacher": {}, "student": {}}
+        hooks = []
+        def forward_hooks(model_name, module_name):
+            def hook(module, input, output):
+                # if module_name == "encoder":
+                #     enc_output, = output
+                # elif module_name == "decoder":
+                #     dec_output, mask = output
+                # elif module_name == "variance_adaptor":
+                #     (
+                #         x,
+                #         pitch_prediction,
+                #         energy_prediction,
+                #         log_duration_prediction,
+                #         duration_rounded,
+                #         mel_len,
+                #         mel_mask,
+                #     ) = output
+                if isinstance(output, tuple):
+                    outputs[model_name][module_name] = output[0]
+                else:
+                    outputs[model_name][module_name] = output
+
+            return hook
+        for model_name in ["teacher", "student"]:
+            model = models[model_name]
+            for module_name in ["encoder", "decoder", "variance_adaptor", "mel_linear", "postnet", "speaker_emb"]:
+                module = model.get_submodule(module_name)
+                hooks.append(module.register_forward_hook(forward_hooks(model_name, module_name)))
+
         with torch.no_grad():
             t_preds = teacher(
                 **batch,
@@ -196,13 +232,19 @@ class DistillSystem(BaseAdaptorFitSystem):
             reference_prosody=(batch["p_targets"].unsqueeze(2)
                                if self.reference_prosody else None),
         )
+
         gt = {
             "mels": t_preds[1], # postnet_mel_predictions
             "p_targets": t_preds[2],
             "e_targets": t_preds[3],
             "d_targets": duration_target,
         }
-        loss = self.loss_func(gt, s_preds)
+        loss = list(self.loss_func(gt, s_preds))
+        for module_name in ["encoder", "decoder", "variance_adaptor", "mel_linear", "postnet", "speaker_emb"]:
+            loss[0] = loss[0] + torch.nn.functional.mse_loss(outputs["student"][module_name], outputs["teacher"][module_name])
+
+        for hook in hooks:
+            hook.remove()
         return loss, t_preds, s_preds
 
     def training_step(self, batch, batch_idx, dataloader_idx=0):
