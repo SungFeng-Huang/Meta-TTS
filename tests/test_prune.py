@@ -18,20 +18,109 @@ from projects.prune.pruned_transformer.SubLayers import PrunedLinear, PrunedConv
 from src.utils.tools import load_yaml
 
 
-@pytest.mark.parametrize("d_in_ratio", [0, 0.3])
-@pytest.mark.parametrize("d_out_ratio", [0, 0.2])
+@pytest.mark.parametrize(
+    ("d_in_ratio", "d_out_ratio"),
+    [
+        (0, 0),
+        (0, 0.3),
+        (0.2, 0),
+        (0.2, 0.3),
+    ]
+)
 @pytest.mark.parametrize("use_bias", [True, False])
-def test_prune_linear_cpu(d_in_ratio: float, d_out_ratio: float, use_bias: bool):
-    _test_prune_linear(d_in_ratio=d_in_ratio, d_out_ratio=d_out_ratio, use_bias=use_bias, device='cpu')
+@pytest.mark.parametrize(
+    "device",
+    [
+        'cpu',
+        pytest.param(
+            'cuda', marks=pytest.mark.skipif(not torch.cuda.is_available(), reason='No GPU was detected')
+        ),
+    ]
+)
+def test_prune_linear(d_in_ratio: float, d_out_ratio: float, use_bias: bool, device: str):
+    d_in, d_out = 256, 256
 
-@unittest.skipUnless(torch.cuda.is_available(), 'No GPU was detected')
-@pytest.mark.parametrize("d_in_ratio", [0, 0.3])
-@pytest.mark.parametrize("d_out_ratio", [0, 0.2])
-@pytest.mark.parametrize("use_bias", [True, False])
-def test_prune_linear_cuda(d_in_ratio: float, d_out_ratio: float, use_bias: bool):
-    _test_prune_linear(d_in_ratio=d_in_ratio, d_out_ratio=d_out_ratio, use_bias=use_bias, device='cuda')
+    d_in_mask = torch.rand(d_in, device=torch.device(device)) < d_in_ratio
+    d_out_mask = torch.rand(d_out, device=torch.device(device)) < d_out_ratio
+    d_in_index = d_in_mask.nonzero().flatten()
+    d_out_index = d_out_mask.nonzero().flatten()
+    pruned_d_in = len(d_in_index)
+    pruned_d_out = len(d_out_index)
 
-@unittest.skipUnless(torch.cuda.is_available(), 'No GPU was detected')
+    linear = torch.nn.Linear(d_in, d_out, device=torch.device(device))
+    input = torch.randn(4, d_in, device=torch.device(device))
+    pruned_input = input.index_select(1, d_in_index)
+
+    state_dict = OrderedDict()
+    w = (linear.state_dict()["weight"]
+         .index_select(0, d_out_index)
+         .index_select(1, d_in_index)
+         .reshape(pruned_d_out, pruned_d_in))
+    state_dict["weight"] = w
+    if use_bias:
+        b = (linear.state_dict()["bias"]
+             .index_select(0, d_out_index)
+             .reshape(pruned_d_out))
+        state_dict["bias"] = b
+
+    new_linear = PrunedLinear(pruned_d_in, pruned_d_out, bias=use_bias, device=torch.device(device))
+    new_linear.load_state_dict(state_dict)
+
+    masked_state_dict = linear.state_dict()
+    masked_state_dict["weight"] = masked_state_dict["weight"] * d_out_mask.reshape(-1, 1) * d_in_mask.reshape(1, -1)
+    if use_bias:
+        masked_state_dict["bias"] = masked_state_dict["bias"] * d_out_mask
+    else:
+        masked_state_dict["bias"] = masked_state_dict["bias"] * 0
+    linear.load_state_dict(masked_state_dict)
+
+    assert_allclose(linear(input).index_select(1, d_out_index), new_linear(pruned_input))
+
+
+@pytest.mark.parametrize("d_out_ratio", [0, 0.2, 1])
+@pytest.mark.parametrize(
+    "device",
+    [
+        'cpu',
+        pytest.param(
+            'cuda', marks=pytest.mark.skipif(not torch.cuda.is_available(), reason='No GPU was detected')
+        ),
+    ]
+)
+def test_prune_LN(d_out_ratio: float, device: str):
+    d_out = 256
+
+    d_out_mask = torch.rand(d_out, device=torch.device(device)) < d_out_ratio
+    d_out_index = d_out_mask.nonzero().flatten()
+    pruned_d_out = len(d_out_index)
+
+    layer_norm = torch.nn.LayerNorm(d_out, device=torch.device(device))
+    input = torch.randn(4, d_out, device=torch.device(device))
+    pruned_input = input.index_select(1, d_out_index)
+    masked_input = input * d_out_mask
+
+    w = torch.randn(256, device=torch.device(device))
+    b = torch.randn(256, device=torch.device(device))
+    layer_norm.load_state_dict({"weight": w, "bias": b})
+
+    pruned_state_dict = OrderedDict({
+        "weight": w.index_select(0, d_out_index),
+        "bias": b.index_select(0, d_out_index),
+    })
+    new_layer_norm = PrunedLayerNorm(d_orig=d_out, normalized_shape=pruned_d_out, device=torch.device(device))
+    new_layer_norm.load_state_dict(pruned_state_dict)
+
+    masked_state_dict = OrderedDict({
+        "weight": w * d_out_mask,
+        "bias": b * d_out_mask,
+    })
+    layer_norm.load_state_dict(masked_state_dict)
+
+    assert_allclose(layer_norm(masked_input).index_select(1, d_out_index), new_layer_norm(pruned_input))
+
+
+# @unittest.skipUnless(torch.cuda.is_available(), 'No GPU was detected')
+@pytest.mark.skipif(not torch.cuda.is_available(), reason='No GPU was detected')
 @pytest.mark.parametrize(
     "ckpt_path",
     ["output/learnable_structured/p251/lightning_logs/version_5/checkpoints/epoch=8-step=1815.ckpt",
@@ -82,42 +171,5 @@ def test_prune(ckpt_path: str):
             # msg=f"mask: {mo[~torch.isclose(mo, po, rtol=1e-5, atol=1.1e-6)]}\nprune: {po[~torch.isclose(mo, po, rtol=1e-5, atol=1.1e-6)]}\n{(mo-po)[~torch.isclose(mo, po, rtol=1e-5, atol=1.1e-6)]}"
         )
 
-def _test_prune_linear(d_in_ratio: float, d_out_ratio: float, use_bias: bool, device: str):
-    d_in, d_out = 256, 256
 
-    d_in_mask = torch.rand(d_in, device=torch.device(device)) < (1-d_in_ratio)
-    d_out_mask = torch.rand(d_out, device=torch.device(device)) < (1-d_out_ratio)
-    d_in_index = d_in_mask.nonzero().flatten()
-    d_out_index = d_out_mask.nonzero().flatten()
-    pruned_d_in = len(d_in_index)
-    pruned_d_out = len(d_out_index)
-    pruned_input = input.index_select(1, d_in_index)
-
-    linear = torch.nn.Linear(d_in, d_out, device=torch.device(device))
-    input = torch.randn(4, d_in, device=torch.device(device))
-
-    state_dict = OrderedDict()
-    w = (linear.state_dict()["weight"]
-         .index_select(0, d_out_index)
-         .index_select(1, d_in_index)
-         .reshape(pruned_d_out, pruned_d_in))
-    state_dict["weight"] = w
-    if use_bias:
-        b = (linear.state_dict()["bias"]
-             .index_select(0, d_out_index)
-             .reshape(pruned_d_out))
-        state_dict["bias"] = b
-
-    new_linear = PrunedLinear(pruned_d_in, pruned_d_out, bias=use_bias, device=torch.device(device))
-    new_linear.load_state_dict(state_dict)
-
-    masked_state_dict = linear.state_dict()
-    masked_state_dict["weight"] = masked_state_dict["weight"] * d_out_mask.reshape(-1, 1) * d_in_mask.reshape(1, -1)
-    if use_bias:
-        masked_state_dict["bias"] = masked_state_dict["bias"] * d_out_mask
-    else:
-        masked_state_dict["bias"] = masked_state_dict["bias"] * 0
-    linear.load_state_dict(masked_state_dict)
-
-    assert_allclose(linear(input).index_select(1, d_out_index), new_linear(pruned_input))
-    # assert torch.equal(linear(input).index_select(1, d_out_index), new_linear(pruned_input))
+# def _test_prune_LN(d_out_ratio: float, device: str):
