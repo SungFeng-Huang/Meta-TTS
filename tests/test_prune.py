@@ -77,6 +77,77 @@ def test_prune_linear(d_in_ratio: float, d_out_ratio: float, use_bias: bool, dev
     assert_allclose(linear(input).index_select(1, d_out_index), new_linear(pruned_input))
 
 
+@pytest.mark.parametrize(
+    ("d_in_ratio", "d_out_ratio"),
+    [
+        (0, 0),
+        (0, 0.3),
+        (0.2, 0),
+        (0.2, 0.3),
+    ]
+)
+@pytest.mark.parametrize("use_bias", [True, False])
+@pytest.mark.parametrize(
+    "device",
+    [
+        'cpu',
+        pytest.param(
+            'cuda', marks=pytest.mark.skipif(not torch.cuda.is_available(), reason='No GPU was detected')
+        ),
+    ]
+)
+def test_prune_conv1d(d_in_ratio: float, d_out_ratio: float, use_bias: bool, device: str):
+    d_in, d_out = 256, 256
+    kernel_size = 9
+    padding = (kernel_size-1)//2
+
+    d_in_mask = torch.rand(d_in, device=torch.device(device)) < d_in_ratio
+    d_out_mask = torch.rand(d_out, device=torch.device(device)) < d_out_ratio
+    d_in_index = d_in_mask.nonzero().flatten()
+    d_out_index = d_out_mask.nonzero().flatten()
+    pruned_d_in = len(d_in_index)
+    pruned_d_out = len(d_out_index)
+
+    conv1d = torch.nn.Conv1d(
+        d_in, d_out,
+        bias=use_bias,
+        kernel_size=kernel_size,
+        padding=padding,
+        device=torch.device(device),
+    )
+    input = torch.randn(4, d_in, 32, device=torch.device(device))
+    pruned_input = input.index_select(1, d_in_index)
+
+    state_dict = OrderedDict()
+    w = (conv1d.state_dict()["weight"]
+         .index_select(0, d_out_index)
+         .index_select(1, d_in_index)
+         .reshape(pruned_d_out, pruned_d_in, kernel_size))
+    state_dict["weight"] = w
+    if use_bias:
+        b = (conv1d.state_dict()["bias"]
+             .index_select(0, d_out_index)
+             .reshape(pruned_d_out))
+        state_dict["bias"] = b
+
+    new_conv1d = PrunedConv1d(
+        pruned_d_in, pruned_d_out,
+        bias=use_bias,
+        kernel_size=kernel_size,
+        padding=padding,
+        device=torch.device(device),
+    )
+    new_conv1d.load_state_dict(state_dict)
+
+    masked_state_dict = conv1d.state_dict()
+    masked_state_dict["weight"] = masked_state_dict["weight"] * d_out_mask.reshape(-1, 1, 1) * d_in_mask.reshape(1, -1, 1)
+    if use_bias:
+        masked_state_dict["bias"] = masked_state_dict["bias"] * d_out_mask
+    conv1d.load_state_dict(masked_state_dict)
+
+    assert_allclose(conv1d(input).index_select(1, d_out_index), new_conv1d(pruned_input))
+
+
 @pytest.mark.parametrize("d_out_ratio", [0, 0.2, 1])
 @pytest.mark.parametrize(
     "device",
