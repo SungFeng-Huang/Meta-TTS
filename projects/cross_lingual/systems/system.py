@@ -14,7 +14,7 @@ class System(pl.LightningModule):
 
     def __init__(
         self, data_configs, model_config, train_config, algorithm_config,
-        log_dir, result_dir, ckpt_dir=None
+        log_dir, result_dir, ckpt_dir=None, *args, **kwargs
     ):
         super().__init__()
         self.data_configs = data_configs
@@ -79,7 +79,10 @@ class System(pl.LightningModule):
 
     def configure_optimizers(self):
         """Initialize optimizers, batch-wise and epoch-wise schedulers."""
-        self.optimizer = get_optimizer(self.build_optimized_model(), self.model_config, self.train_config)
+        optimized_modules = self.build_optimized_model()
+        cnt = sum([p.numel() for p in optimized_modules.parameters() if p.requires_grad])
+        print(f"Optimizable parameters: {cnt}")
+        self.optimizer = get_optimizer(optimized_modules, self.model_config, self.train_config)
 
         self.scheduler = {
             "scheduler": get_scheduler(self.optimizer, self.train_config),

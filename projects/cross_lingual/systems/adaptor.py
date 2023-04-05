@@ -39,4 +39,3 @@ class AdaptorSystem(System):
             outputs[test_name] = test_fn(batch, batch_idx)
 
         return outputs
-       
