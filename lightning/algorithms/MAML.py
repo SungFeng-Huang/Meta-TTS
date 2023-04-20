@@ -10,6 +10,7 @@ from torch.optim import Optimizer
 from torch.nn import Module, Identity
 from typing import Literal, Tuple, Iterable, Callable
 import functools
+import traceback
 
 from lightning.algorithms.utils import GBML
 
@@ -220,20 +221,62 @@ class WeightDecayParameterUpdate(ParameterUpdate):
 
         """
         parameters = list(parameters)
-        updates = super().forward(
-            loss, parameters,
-            create_graph=create_graph,
-            retain_graph=retain_graph,
-            allow_unused=allow_unused,
-            allow_nograd=allow_nograd,
-        )
+        if allow_nograd:
+            parameters = list(parameters)
+            diff_params = [p for p in parameters if p.requires_grad]
+            grad_params = torch.autograd.grad(
+                loss,
+                diff_params,
+                retain_graph=create_graph,
+                create_graph=create_graph,
+                allow_unused=allow_unused)
+            gradients = []
+
+            # Handles gradients for non-differentiable parameters
+            grad_counter = 0
+            for param in parameters:
+                if param.requires_grad:
+                    gradient = grad_params[grad_counter]
+                    grad_counter += 1
+                else:
+                    gradient = None
+                gradients.append(gradient)
+        else:
+            try:
+                gradients = torch.autograd.grad(
+                    loss,
+                    parameters,
+                    create_graph=create_graph,
+                    retain_graph=retain_graph,
+                    allow_unused=allow_unused,
+                )
+            except RuntimeError:
+                traceback.print_exc()
+                msg = 'learn2learn: Maybe try with allow_nograd=True and/or' +\
+                      'allow_unused=True ?'
+                print(msg)
+
+        updates = []
+        grad_clip_norm = 1
+        # with torch.no_grad():
+        total_norm = torch.norm(torch.stack([torch.norm(g, 2.0) for g in gradients if g is not None]), 2.0)
+        clip_coef = grad_clip_norm / (total_norm + 1e-6)
+        clip_coef_clamped = torch.clamp(clip_coef, max=1.0)
+        for g in gradients:
+            if g is not None:
+                g = g * clip_coef_clamped
+            updates.append(g)
 
         wd_updates = []
         for p, g, t in zip(list(parameters), updates, self.transforms_indices):
-            if t is None or g is None:
+            if g is None:
                 wd_update = g
-            else:
+            elif t is None:
                 wd_update = g + p * self.weight_decay
+            else:
+                transform = self.transforms_modules[t]
+                update = transform(g)
+                wd_update = update + p * self.weight_decay
             wd_updates.append(wd_update)
 
         return wd_updates
@@ -267,7 +310,7 @@ class AdamTransform(Scale):
         """
         super().__init__(alpha=alpha)
         self.defaults = defaults
-        self.betas = torch.nn.Parameter(torch.tensor(defaults["betas"]))
+        self.betas = torch.nn.Parameter(torch.tensor(defaults["betas"]), requires_grad=False)
         # self.state = {
         #     "step": 0,
         #     "exp_avg": torch.zeros(*shape),
