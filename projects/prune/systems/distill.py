@@ -12,7 +12,7 @@ import torch
 # from pytorch_lightning.callbacks.pruning import ModelPruning, _MODULE_CONTAINERS
 # from learn2learn.utils import clone_module, update_module, detach_module, clone_parameters
 
-from lightning.algorithms.MAML import MAML, MetaSGD, AlphaMAML, AdaMAML
+from lightning.algorithms.MAML import MAML, MetaSGD, AlphaMAML, AdamWMAML
 from lightning.systems.base_adapt.fit import BaseAdaptorFitSystem
 from lightning.callbacks.saver import FitSaver
 from lightning.optimizer import get_optimizer
@@ -77,7 +77,7 @@ class DistillSystem(BaseAdaptorFitSystem):
             result_dir=result_dir,
         )
         # adaptation_lr = self.algorithm_config["adapt"]["task"]["lr"]
-        # self.learner = AdaMAML(
+        # self.learner = AdamWMAML(
         #     self.model,
         #     lr=1e0,
         #     adapt_transform=False,

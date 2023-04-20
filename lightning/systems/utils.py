@@ -15,7 +15,7 @@ from hypergrad import CG_torch, get_outer_gradients, update_tensor_grads
 
 from lightning.collate import split_reprocess
 from lightning.algorithms.utils import copy_module
-from lightning.algorithms.MAML import MAML, MetaSGD, AlphaMAML, AdamTransform
+from lightning.algorithms.MAML import MAML, MetaSGD, AlphaMAML, AdamWTransform
 
 # class TheMAML(l2l.algorithms.MAML):
 #     def __init__(self,
