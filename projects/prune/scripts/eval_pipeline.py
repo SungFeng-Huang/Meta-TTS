@@ -35,6 +35,8 @@ class MOS:
         outputs = []
         for spk in tqdm(sorted(os.listdir(self.root_dir))):
             output = {}
+            if not os.path.isdir(f"{self.root_dir}/{spk}"):
+                continue
             for pipeline in sorted(os.listdir(f"{self.root_dir}/{spk}")):
                 stages = pipeline.split('-')
                 output["speaker"] = spk
@@ -163,6 +165,35 @@ class MOS:
 
         return outputs
 
+    def metadata(self):
+        outputs = []
+        for spk in tqdm(sorted(os.listdir(self.root_dir))):
+            if not os.path.isdir(f"{self.root_dir}/{spk}"):
+                continue
+            output = {}
+            for pipeline in sorted(os.listdir(f"{self.root_dir}/{spk}")):
+                stages = pipeline.split('-')
+                output["speaker"] = spk
+
+                pipeline_dir = f"{self.root_dir}/{spk}/{pipeline}/lightning_logs"
+                ver = sorted(
+                    os.listdir(pipeline_dir),
+                    key=lambda x: int(x.split('_')[-1])
+                )[-1]
+                dir = f"{pipeline_dir}/{ver}/fit"
+                for stage in stages:
+                    try:
+                        csv_file = self.last_stage_val_csv(dir, stage)
+                        version = csv_file.split('/')[-6]
+                        epoch = csv_file.split('/')[-1].split('.')[0]
+                        output[(pipeline, stage)] = f"{version}/{epoch}"
+                    except:
+                        continue
+            outputs.append(output)
+        df = pd.DataFrame(outputs).set_index("speaker")#dropna()
+        df.columns = pd.MultiIndex.from_tuples(df.columns)
+        return df
+
 
 class AccentMOS(MOS):
     def __init__(self, source_dir, root_dir):
@@ -275,6 +306,8 @@ class SpeakerMOS(MOS):
         outputs = []
         paths = {}
         for spk in tqdm(sorted(os.listdir(self.root_dir))):
+            if not os.path.isdir(f"{self.root_dir}/{spk}"):
+                continue
             output = {}
             output["speaker"] = spk
             paths[spk] = {}
@@ -428,11 +461,15 @@ if __name__ == "__main__":
 
     # spk sample
     spk_mos = SpeakerMOS(source_dir, root_dir)
-    _df, paths = spk_mos.average(metric, 531)
-    print(_df)
-    print(_df.mean())
-    print(_df.std())
+    # _df, paths = spk_mos.average(metric, 531)
+    # print(_df)
+    # print(_df.mean())
+    # print(_df.std())
     # print(json.dumps(paths, indent=4))
+    metadata = spk_mos.metadata()
+    print(metadata)
+    metadata.to_csv(f"{root_dir}/metadata.csv")
+    # pd.read_csv("...", header=[0,1], index_col=0)
 
     # spk_mos.copy_files(f"{target_dir}/audio", paths)
 
