@@ -15,27 +15,6 @@ This repository is the official implementation of ["Meta-TTS: Meta-Learning for 
 
 ## Requirements
 
-This is how I build my environment, which is not needed to be exactly the same:
-- Sign up for [Comet.ml](https://www.comet.ml/), find out your workspace and API key via [www.comet.ml/api/my/settings](www.comet.ml/api/my/settings) and fill them in `config/comet.py`. Comet logger is used throughout train/val/test stages.
-  - Check my training logs [here](https://www.comet.ml/b02901071/meta-tts/view/Zvh3Lz3Wvy2AiWcinD06TaS0G).
-- [Optional] Install [pyenv](https://github.com/pyenv/pyenv.git) for Python version
-  control, change to Python 3.8.6.
-```bash
-# After download and install pyenv:
-pyenv install 3.8.6
-pyenv local 3.8.6
-```
-- [Optional] Install [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv.git) as a plugin of pyenv for clean virtual environment.
-```bash
-# After install pyenv-virtualenv
-pyenv virtualenv meta-tts
-pyenv activate meta-tts
-```
-- Install requirements:
-```bash
-pip install -r requirements.txt
-```
-
 
 ## Preprocessing
 
@@ -53,11 +32,12 @@ Offline extract mel-spectrogram, prosody features, etc.
 To train the models in the paper, run this command:
 
 ```bash
-python3 main.py -s train \
-                -p config/preprocess/<corpus>.yaml \
-                -m config/model/base.yaml \
-                -t config/train/base.yaml config/train/<corpus>.yaml \
-                -a config/algorithm/<algorithm>.yaml
+python3 projects/meta-tts/main.py \
+    -s train \
+    -p config/preprocess/<corpus>.yaml \
+    -m config/model/base.yaml \
+    -t config/train/base.yaml config/train/<corpus>.yaml \
+    -a config/algorithm/<algorithm>.yaml
 ```
 
 To reproduce, please use 8 V100 GPUs for meta models, and 1 V100 GPU for baseline
@@ -72,12 +52,13 @@ project name is set in `config/comet.py`.
 
 To inference the models, run:
 ```bash
-python3 main.py -s test \
-                -p config/preprocess/<corpus>.yaml \
-                -m config/model/base.yaml \
-                -t config/train/base.yaml config/train/<corpus>.yaml \
-                -a config/algorithm/<algorithm>.yaml \
-                -e <experiment_key> -c <checkpoint_file_name>
+python3 projects/meta-tts/main.py \
+    -s test \
+    -p config/preprocess/<corpus>.yaml \
+    -m config/model/base.yaml \
+    -t config/train/base.yaml config/train/<corpus>.yaml \
+    -a config/algorithm/<algorithm>.yaml \
+    -e <experiment_key> -c <checkpoint_file_name>
 ```
 and the results would be under
 `output/result/<corpus>/<experiment_key>/<algorithm>/`.
