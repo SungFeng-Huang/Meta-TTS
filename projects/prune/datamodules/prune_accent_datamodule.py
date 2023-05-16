@@ -69,11 +69,9 @@ class PruneAccentDataModule(pl.LightningDataModule):
         self.target = target
         if self.target != "speaker":
             raise ValueError
-        # self.dataset = MonolingualTTSDataset(
-        #     preprocess_config["subsets"]["train"], self.preprocess_config,
-        #     self.train_config)
-        self.dataset = MonolingualTTSDataset("total", self.preprocess_config,
-                                             self.train_config)
+        self.dataset = MonolingualTTSDataset(
+            "total", # preprocess_config["subsets"]["train"]
+            self.preprocess_config, self.train_config)
         self.num_classes = len(getattr(self.dataset, f"{self.target}_map"))
         self.steps_per_epoch = steps_per_epoch
         self.mask_steps_per_epoch = mask_steps_per_epoch
@@ -134,87 +132,26 @@ class PruneAccentDataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         """Training dataloader, not modified for multiple dataloaders."""
-        # self.train_dataset = [{
-        #     "sup": self.train_sup,
-        #     "qry": self.train_qry,
-        # }]
-        # self.train_dataset = EpisodicInfiniteWrapper(
-        #     self.train_dataset, self.steps_per_epoch)
         if not self.libri_mask:
             if not hasattr(self, "pipeline_stage"):
-                self.train_dataset = [{
-                    "mask": self.train_mask,
-                    "qry": self.train_qry,
-                }] * self.mask_steps_per_epoch + [{
-                    "sup": self.train_sup,
-                    "qry": self.train_qry,
-                }] * (self.steps_per_epoch - self.mask_steps_per_epoch)
-                self.train_loader = DataLoader(
-                    self.train_dataset,
-                    batch_size=1,
-                    shuffle=False,
-                    drop_last=True,
-                    num_workers=4,
-                    collate_fn=lambda batch: batch,
-                )
-                return self.train_loader
+                self.train_loader = self.fixed_mask_steps_dataloader()
             elif self.pipeline_stage == "mask":
-                self.train_dataset = [{
-                    "mask": self.train_mask,
-                    "qry": self.train_qry,
-                }] * self.steps_per_epoch
+                self.train_loader = self.mask_stage_dataloader()
             elif self.pipeline_stage == "ft":
-                self.train_dataset = [{
-                    "sup": self.train_sup,
-                    "qry": self.train_qry,
-                }] * self.steps_per_epoch
+                self.train_loader = self.ft_stage_dataloader()
             elif self.pipeline_stage == "joint":
-                self.train_dataset = [{
-                    "mask": self.train_mask,
-                    "sup": self.train_sup,
-                    "qry": self.train_qry,
-                }] * self.steps_per_epoch
-            self.train_loader = DataLoader(
-                self.train_dataset,
-                batch_size=1,
-                shuffle=False,
-                drop_last=True,
-                num_workers=4,
-                collate_fn=lambda batch: batch,
-            )
-            return self.train_loader
+                self.train_loader = self.joint_stage_dataloader()
         else:
             if self.pipeline_stage == "mask":
-                self.train_dataset = [{
-                    "qry": self.train_qry,
-                }] * self.steps_per_epoch
-            elif self.pipeline_stage in {"ft", "joint"}:
-                self.train_dataset = [{
-                    "sup": self.train_sup,
-                    "qry": self.train_qry,
-                }] * self.steps_per_epoch
-            self.train_loader = {
-                "ft": DataLoader(
-                    self.train_dataset,
-                    batch_size=1,
-                    shuffle=False,
-                    drop_last=True,
-                    num_workers=4,
-                    collate_fn=lambda batch: batch,
-                )
-            }
-            if self.pipeline_stage in {"mask", "joint"}:
-                mask_dataset = EpisodicInfiniteWrapper(
-                    self.libri_dataset, self.steps_per_epoch)
-                self.train_loader["mask"] = DataLoader(
-                    mask_dataset,
-                    batch_size=self.train_config["optimizer"]["batch_size"],
-                    shuffle=True,
-                    drop_last=True,
-                    num_workers=4,
-                    collate_fn=get_single_collate(False),
-                )
-            return self.train_loader
+                self.train_loader = {
+                    "mask": self.libri_mask_stage_dataloader(),
+                    "ft": self.ft_stage_dataloader(),
+                }
+            elif self.pipeline_stage == "ft":
+                self.train_loader = {
+                    "ft": self.ft_stage_dataloader(),
+                }
+        return self.train_loader
 
     def val_dataloader(self):
         batch_size = self.train_config["optimizer"]["batch_size"]
@@ -257,3 +194,86 @@ class PruneAccentDataModule(pl.LightningDataModule):
             train_mask_ids = train_sup_ids
         return key, train_mask_ids, train_sup_ids, train_qry_ids, val_ids
 
+    def libri_mask_stage_dataloader(self):
+        mask_dataset = EpisodicInfiniteWrapper(self.libri_dataset, self.steps_per_epoch)
+        train_loader = DataLoader(
+            mask_dataset,
+            batch_size=self.train_config["optimizer"]["batch_size"],
+            shuffle=True,
+            drop_last=True,
+            num_workers=4,
+            collate_fn=get_single_collate(False),
+        ) 
+        return train_loader
+
+    def mask_stage_dataloader(self):
+        mask_dataset = [
+            {
+                "mask": self.train_mask,
+                "qry": self.train_qry,
+            }
+            for _ in range(self.steps_per_epoch)
+        ]
+        train_loader = DataLoader(
+            mask_dataset,
+            batch_size=1,
+            shuffle=False,
+            drop_last=True,
+            num_workers=4,
+            collate_fn=lambda batch: batch,
+        )
+        return train_loader
+
+    def ft_stage_dataloader(self):
+        # ft_dataset for fine-tuning TTS parameters
+        ft_dataset = [
+            {
+                "sup": self.train_sup,
+                "qry": self.train_qry,
+            }
+            for _ in range(self.steps_per_epoch)
+        ]
+        train_loader = DataLoader(
+            ft_dataset,
+            batch_size=1,
+            shuffle=False,
+            drop_last=True,
+            num_workers=4,
+            collate_fn=lambda batch: batch,
+        )
+        return train_loader
+
+    def joint_stage_dataloader(self):
+        joint_dataset = [{
+            "mask": self.train_mask,
+            "sup": self.train_sup,
+            "qry": self.train_qry,
+        }] * self.steps_per_epoch
+        train_loader = DataLoader(
+            joint_dataset,
+            batch_size=1,
+            shuffle=False,
+            drop_last=True,
+            num_workers=4,
+            collate_fn=lambda batch: batch,
+        )
+        return train_loader
+
+    def fixed_mask_steps_dataloader(self):
+        """ Theoretically won't happen for pipeline series."""
+        train_dataset = [{
+            "mask": self.train_mask,
+            "qry": self.train_qry,
+        }] * self.mask_steps_per_epoch + [{
+            "sup": self.train_sup,
+            "qry": self.train_qry,
+        }] * (self.steps_per_epoch - self.mask_steps_per_epoch)
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=1,
+            shuffle=False,
+            drop_last=True,
+            num_workers=4,
+            collate_fn=lambda batch: batch,
+        )
+        return train_loader
