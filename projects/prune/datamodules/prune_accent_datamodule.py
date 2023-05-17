@@ -38,14 +38,15 @@ class PruneAccentDataModule(pl.LightningDataModule):
                  libri_mask: bool = False,
                  **kwargs):
         """Initialize PruneAccentDataModule.
+        Currently only allow target = "speaker".
 
         Args:
             preprocess_config:
                 A dict at least containing paths required by MonolingualDataset.
             train_config:
                 A dict at least containing batch_size.
-            target:
-                speaker/region/accent.
+            target: speaker/region/accent.
+                Pruning task target. Only data of the same target would be in a task.
         """
         super().__init__()
 
