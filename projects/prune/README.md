@@ -35,7 +35,7 @@ python projects/prune/main_learnable_structured.py fit -c cli_config/prune_v1/le
 
 To get **"pruned" small model** instead of **"masked" large model** from checkpoint, checkout `ckpt_utils.py`, change the ckpt_path, then run:
 ```bash
-python projects/prune/ckpt_utils.py
+python projects/prune/ckpt_utils.py --ckpt_path <ckpt_path> --output_path <output_path>
 ```
 
 

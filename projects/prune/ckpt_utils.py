@@ -1,5 +1,6 @@
 import sys
 import os
+import argparse
 
 from collections import OrderedDict
 from copy import deepcopy
@@ -149,3 +150,27 @@ def prune_model(
 
     return model
 
+
+if __name__ == "__main__":
+    from src.utils.tools import load_yaml
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ckpt_path", type=str, required=True)
+    parser.add_argument("--output_path", type=str, default=None)
+    args = parser.parse_args()
+
+    ckpt_path = args.ckpt_path
+    ckpt = torch.load(ckpt_path)
+
+    preprocess_yaml: str = ckpt["hyper_parameters"]["preprocess_config"]
+    model_yaml: str = ckpt["hyper_parameters"]["model_config"]
+    algorithm_yaml: str = ckpt["hyper_parameters"]["algorithm_config"]
+
+    model = FastSpeech2(
+        load_yaml(preprocess_yaml),
+        load_yaml(model_yaml),
+        load_yaml(algorithm_yaml)
+    ).cuda()
+
+    pruned_model = prune_model(model, ckpt).eval()
+    output_path = args.output_path or ckpt_path.replace(".ckpt", "_pruned.pth")
+    torch.save(pruned_model, output_path)
