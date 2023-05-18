@@ -157,6 +157,10 @@ class GBML(l2l.algorithms.GBML):
         * **allow_nograd** (bool, *optional*, default=False) - Whether to allow adaptation with
             parameters that have `requires_grad = False`. Defaults to self.allow_nograd.
 
+        **Returns**
+
+        * **clone** (GBML) - A new `GBML` instance with the same parameters, submodules and functionalities as `self`.
+
         """
         if first_order is None:
             first_order = self.first_order
@@ -179,7 +183,13 @@ class GBML(l2l.algorithms.GBML):
             compute_update=update_clone,
         )
 
-    def copy(self, first_order=None, allow_unused=None, allow_nograd=None):
+    def copy(
+        self,
+        first_order=None,
+        allow_unused=None,
+        allow_nograd=None,
+        adapt_transform=None,
+    ):
         """
         Similar to `clone()`, but with original parameters instead of cloned parameters.
 

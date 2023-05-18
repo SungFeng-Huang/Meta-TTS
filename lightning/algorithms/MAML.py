@@ -162,22 +162,6 @@ class AdamWMAML(GBML):
             **kwargs
         )
 
-    def clone(
-        self,
-        first_order=None,
-        allow_unused=None,
-        allow_nograd=None,
-        adapt_transform=None,
-    ):
-        """
-        Return a GBML instance w/ all other behavior the same as a cloned AdaMAML.
-        """
-        return super().clone(
-            adapt_transform=adapt_transform,
-            first_order=first_order,
-            allow_unused=allow_unused,
-            allow_nograd=allow_nograd,
-        )
 
 class AdvancedParameterUpdate(ParameterUpdate):
     def __init__(
@@ -269,6 +253,7 @@ class AdvancedParameterUpdate(ParameterUpdate):
                 msg = 'learn2learn: Maybe try with allow_nograd=True and/or' +\
                       'allow_unused=True ?'
                 print(msg)
+                raise
 
         if self.clip_grad_norm > 0:
             updates = []
