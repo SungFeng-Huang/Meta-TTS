@@ -118,12 +118,12 @@ class AlphaMAML(GBML):
 class AdamWMAML(GBML):
     def __init__(
         self,
-        module,
-        lr=1.0,
-        adapt_transform=False,
-        first_order=False,
-        allow_unused=False,
-        allow_nograd=False,
+        module: Module,
+        lr: float = 1.0,
+        adapt_transform: bool = False,
+        first_order: bool = False,
+        allow_unused: bool = False,
+        allow_nograd: bool = False,
         betas: Tuple[float, float] = (0.9, 0.999),
         eps: float = 1e-8,
         weight_decay: float = 0.0,

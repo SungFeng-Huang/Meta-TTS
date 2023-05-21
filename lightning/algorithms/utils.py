@@ -119,6 +119,7 @@ class GBML(l2l.algorithms.GBML):
     - Change original in-place `adapt()` into `adapt_()`.
     - Add out-of-space `adapt()`.
     """
+    module: Module
 
     def inner_freeze(self, module_name=""):
         for p in self.module.get_submodule(module_name).parameters():
