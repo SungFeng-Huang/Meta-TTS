@@ -8,7 +8,8 @@ import pytorch_lightning as pl
 import learn2learn as l2l
 
 from src.utils.tools import get_mask_from_lengths
-from lightning.systems.new_base_adaptor import BaseAdaptorSystem
+# from lightning.systems.new_base_adaptor import BaseAdaptorSystem
+from lightning.systems.base_adapt import BaseAdaptorFitSystem as BaseAdaptorSystem
 from lightning.utils import loss2dict
 
 

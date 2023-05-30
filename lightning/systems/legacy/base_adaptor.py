@@ -11,9 +11,9 @@ from tqdm import tqdm
 from resemblyzer import VoiceEncoder
 # from learn2learn.algorithms import MAML
 
-from .utils import MAML
+from ..utils import MAML
 from utils.tools import get_mask_from_lengths
-from lightning.systems.system import System
+from lightning.systems.legacy.system import System
 from lightning.systems.utils import Task
 from lightning.utils import loss2dict
 
