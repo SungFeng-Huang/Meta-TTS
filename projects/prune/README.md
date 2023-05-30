@@ -40,3 +40,16 @@ python projects/prune/ckpt_utils.py --ckpt_path <ckpt_path> --output_path <outpu
 
 
 ## Results
+
+
+## Checkpoints
+Would continuously update to hugging face...
+
+Uploaded:
+```
+spk_id,repo_url
+s5,https://huggingface.co/sungfeng/learnable_structured_prune_s5
+p292,https://huggingface.co/sungfeng/learnable_structured_prune_p292
+p245,https://huggingface.co/sungfeng/learnable_structured_prune_p245
+p252,https://huggingface.co/sungfeng/learnable_structured_prune_p252
+```

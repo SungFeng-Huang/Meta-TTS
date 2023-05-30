@@ -30,28 +30,9 @@ class BoringModel(LightningModule):
         self.layer = torch.nn.Linear(32, 2)
 
     def forward(self, x):
-        output = self.layer(x)
-        # self.print(self.trainer.state.stage)
-        # self.print(self.layer.weight)
-        # self.print(self.layer.bias)
-        # self.print()
-        # print(self.layer.weight)
-        # print(self.layer.bias)
-        print()
-        return output
-
-    def training_step(self, batch, batch_idx):
-        loss = self(batch).sum()
+        loss = self.layer(x).sum()
         self.log("train_loss", loss)
         return {"loss": loss}
-
-    def validation_step(self, batch, batch_idx):
-        loss = self(batch).sum()
-        self.log("valid_loss", loss)
-
-    def test_step(self, batch, batch_idx):
-        loss = self(batch).sum()
-        self.log("test_loss", loss)
 
     def configure_optimizers(self):
         # return torch.optim.Adam(self.parameters(), lr=0.1, weight_decay=0.1)
@@ -116,8 +97,8 @@ def test_adam_construct(mode: str, weight_decay: float):
     _check_model_close(model_0, adam_1.module)
 
 def _forward(model_0: BoringModel, model_1: BoringModel, batch: torch.Tensor):
-    output_0: dict[str, torch.Tensor] = model_0.training_step(batch, 0)
-    output_1: dict[str, torch.Tensor] = model_1.training_step(batch, 0)
+    output_0: dict[str, torch.Tensor] = model_0(batch)
+    output_1: dict[str, torch.Tensor] = model_1(batch)
     return output_0['loss'], output_1['loss']
 
 
@@ -133,7 +114,7 @@ def test_adam_adapt(mode: str, weight_decay: float, steps: int):
         batch = dataset[i]
 
         # Test forward
-        loss_0, loss_1 = _forward(model_0, adam_1.module, batch)
+        loss_0, loss_1 = _forward(model_0, adam_1, batch)
         assert_close(loss_1, loss_0, atol=(1+i)*1e-5, rtol=1e-5)
 
         # Test backward + AdamW update
@@ -148,13 +129,13 @@ def test_adam_adapt(mode: str, weight_decay: float, steps: int):
 
     # Test query loss
     batch = dataset[steps]
-    loss_0, loss_1 = _forward(model_0, adam_1.module, batch)
+    loss_0, loss_1 = _forward(model_0, adam_1, batch)
     assert_close(loss_1, loss_0, atol=(1+steps)*1e-5, rtol=1e-5)
 
     # Test backward
-    grads_0 = torch.autograd.grad(loss_0, model_0.parameters(), allow_unused=True, retain_graph=True)
-    grads_1 = torch.autograd.grad(loss_1, model_1.parameters(), allow_unused=True, retain_graph=True)
-    grads_2 = torch.autograd.grad(loss_1, adam_1.module.parameters(), allow_unused=True, retain_graph=True)
+    grads_0 = torch.autograd.grad(loss_0, model_0.parameters(), retain_graph=True)
+    grads_1 = torch.autograd.grad(loss_1, model_1.parameters(), retain_graph=True)
+    grads_2 = torch.autograd.grad(loss_1, adam_1.module.parameters(), retain_graph=True)
     for g0, g1, g2 in zip(grads_0, grads_1, grads_2):
         # Test 1-step backward
         assert_close(g0, g2, atol=(1+steps)*1e-5, rtol=1e-5)
