@@ -41,8 +41,8 @@ if __name__ == "__main__":
 
     import os
     import traceback
-    from lightning.systems.prune.prune_accent import PruneAccentSystem
-    from lightning.datamodules.prune_accent_datamodule import PruneAccentDataModule
+    from projects.prune.systems.prune_accent import PruneAccentSystem
+    from projects.prune.datamodules.prune_accent_datamodule import PruneAccentDataModule
 
     cli = MyLightningCLI(
         PruneAccentSystem, PruneAccentDataModule,

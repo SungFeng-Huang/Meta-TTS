@@ -8,8 +8,8 @@ if __name__ == "__main__":
     root_dir = os.path.abspath(current_dir + "/../../")
     sys.path.insert(0, root_dir)
 
-    from lightning.systems.prune.prune_accent import PruneAccentSystem
-    from lightning.datamodules.prune_accent_datamodule import PruneAccentDataModule
+    from projects.prune.systems.prune_accent import PruneAccentSystem
+    from projects.prune.datamodules.prune_accent_datamodule import PruneAccentDataModule
 
     cli = LightningCLI(
         PruneAccentSystem, PruneAccentDataModule,

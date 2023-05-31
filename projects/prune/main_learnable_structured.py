@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     import traceback
     from projects.prune.systems.prune_accent import PruneAccentSystem
-    from lightning.datamodules.prune_accent_datamodule import PruneAccentDataModule
+    from projects.prune.datamodules.prune_accent_datamodule import PruneAccentDataModule
 
     # change dendrogram default for seaborn.clustermap
     from scipy.cluster.hierarchy import dendrogram
