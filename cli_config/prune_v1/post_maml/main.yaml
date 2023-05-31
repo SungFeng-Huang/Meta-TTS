@@ -1,0 +1,59 @@
+# log_dir: output/log/pretrain_LibriTTS.2
+# result_dir: output/result/dev.2
+
+seed_everything: 42
+model:
+  class_path: projects.prune.systems.post_maml.PrunedMetaSystem
+  init_args:
+    pruned_ckpt_path: output/libri_masked_pruned.pth
+    algorithm_config: &algorithm_config cli_config/prune_v1/post_maml/algorithm.yaml
+
+data:
+  class_path: lightning.datamodules.meta_datamodule.MetaDataModule
+  init_args:
+    preprocess_config: &preprocess_config config/preprocess/LibriTTS_VCTK.orig.yaml
+    # model_config: config/model/base.yaml
+    train_config: &train_config
+      - config/train/LibriTTS.yaml
+      - config/train/base.yaml
+    # preprocess_config: *preprocess_config
+    # train_config: *train_config
+    algorithm_config: *algorithm_config
+    stage: train
+
+trainer:
+  ### Train settings
+  max_steps: 100000
+  # gradient_clip_val: 1.0
+  # accumulate_grad_batches: 1
+
+  ### Logging and saving settings
+  enable_checkpointing: True
+  default_root_dir: output/pruned_maml
+  log_every_n_steps: 100
+  check_val_every_n_epoch: 10
+
+  ### GPU-related settings
+  accelerator: gpu
+  # devices: [0]
+  # strategy: ddp
+  # auto_select_gpus: True
+
+  ### Callbacks
+  # callbacks:
+  #   - class_path: pytorch_lightning.callbacks.DeviceStatsMonitor
+  #     init_args: {}
+  #   - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+  #     init_args:
+  #       save_top_k: -1
+  #       every_n_epochs: 100
+  #   #     save_weights_only: True
+  #   - class_path: pytorch_lightning.callbacks.LearningRateMonitor
+  #     init_args:
+  #       log_momentum: True
+
+  ### Malicious settings
+  profiler: simple
+
+  ### Depreciated settings
+  # deterministic: True
