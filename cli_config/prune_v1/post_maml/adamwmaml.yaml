@@ -8,13 +8,13 @@ _phn_emb_config:
 
 adapt:
   type: spk # spk/lang
-  #class: MAML # MAML/iMAML, not used
+  #class: AdamWMAML # MAML/iMAML, not used
   speaker_emb: table # shared/table/encoder
   phoneme_emb: *embedding  # *embedding/*codebook
   modules:
-    # - speaker_emb
-    # - variance_adaptor
-    # - decoder
+    - speaker_emb
+    - variance_adaptor
+    - decoder
     - mel_linear
     - postnet
 
@@ -22,7 +22,15 @@ adapt:
     ways: 1
     shots: 5
     queries: 5
-    lr: 0.001
+    lr: &lr 0.01
+
+  learner_config:
+    class_path: lightning.algorithms.MAML.AdamWMAML
+    init_args:
+      lr: *lr
+      weight_decay: 0.01
+      clip_grad_norm: 1.0
+      adapt_inner_lr: True
 
   train:
     << : *task

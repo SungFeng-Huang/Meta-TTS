@@ -6,7 +6,7 @@ model:
   class_path: projects.prune.systems.post_maml.PrunedMetaSystem
   init_args:
     pruned_ckpt_path: output/libri_masked_pruned.pth
-    algorithm_config: &algorithm_config cli_config/prune_v1/post_maml/algorithm.yaml
+    algorithm_config: &algorithm_config cli_config/prune_v1/post_maml/adamwmaml.yaml
 
 data:
   class_path: lightning.datamodules.meta_datamodule.MetaDataModule
@@ -54,6 +54,7 @@ trainer:
 
   ### Malicious settings
   profiler: simple
+  detect_anomaly: True
 
   ### Depreciated settings
   # deterministic: True

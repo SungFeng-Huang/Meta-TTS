@@ -128,6 +128,8 @@ class AdamWMAML(GBML):
         eps: float = 1e-8,
         weight_decay: float = 0.0,
         correct_bias: bool = True,
+        clip_grad_norm: float = 0.0,
+        adapt_inner_lr: bool = False,
         **kwargs
     ):
         if lr < 0.0:
@@ -149,6 +151,8 @@ class AdamWMAML(GBML):
             parameters=module.parameters(),
             transform=ModuleTransform(adamw_transform),
             weight_decay=weight_decay,
+            clip_grad_norm=clip_grad_norm,
+            adapt_inner_lr=adapt_inner_lr,
         )
         super().__init__(
             module,
@@ -170,6 +174,7 @@ class AdvancedParameterUpdate(ParameterUpdate):
         transform,
         weight_decay: float = 0.0,
         clip_grad_norm: float = 0.0,
+        adapt_inner_lr: bool = False,
     ):
         """
         Advanced ParameterUpdate with WD and clip_grad_norm available.
@@ -187,10 +192,12 @@ class AdvancedParameterUpdate(ParameterUpdate):
             transforms_indeces (list): List of transform ids (or None for non-transforms).
         """
         super().__init__(parameters=parameters, transform=transform)
-        # self.weight_decay = weight_decay
-        # self.clip_grad_norm = clip_grad_norm
         self.register_buffer("weight_decay", torch.tensor(weight_decay))
         self.register_buffer("clip_grad_norm", torch.tensor(clip_grad_norm))
+        
+        self.adapt_inner_lr = adapt_inner_lr
+        if adapt_inner_lr:
+            self.lr = torch.nn.Parameter(torch.tensor(1.0), requires_grad=True)
 
     def forward(
         self,
@@ -277,6 +284,8 @@ class AdvancedParameterUpdate(ParameterUpdate):
                 transform = self.transforms_modules[t]
                 update = transform(g)
                 wd_update = update + p * self.weight_decay
+            if wd_update is not None and self.adapt_inner_lr:
+                wd_update = wd_update * self.lr
             wd_updates.append(wd_update)
 
         return wd_updates
@@ -328,18 +337,18 @@ class AdamWTransform(Scale):
 
         exp_avg = beta1 * exp_avg + (1.0 - beta1) * grad
         exp_avg_sq = beta2 * exp_avg_sq + (1.0 - beta2) * grad * grad
-        denom = torch.sqrt(exp_avg_sq) + self.defaults["eps"]
+        denom = torch.sqrt(exp_avg_sq + self.defaults["eps"])
 
         step_size = 1
         if self.defaults["correct_bias"]:  # No bias correction for Bert
             bias_correction1 = 1.0 - beta1 ** step
             bias_correction2 = 1.0 - beta2 ** step
-            step_size = step_size * torch.sqrt(bias_correction2) / bias_correction1
+            step_size = step_size * torch.sqrt(bias_correction2 + self.defaults["eps"]) / bias_correction1
 
         update = step_size * exp_avg / denom
 
-        self.exp_avg = exp_avg
-        self.exp_avg_sq = exp_avg_sq
-        self.step = step
+        self.exp_avg = exp_avg#detach()
+        self.exp_avg_sq = exp_avg_sq#detach()
+        self.step = step.detach()
 
         return update * self.alpha

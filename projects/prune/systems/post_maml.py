@@ -5,15 +5,18 @@ import torch
 import torch.distributed as torch_distrib
 import pytorch_lightning as pl
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from pytorch_lightning.utilities.cli import instantiate_class
 
 from lightning.systems.base_adapt import BaseAdaptorSystem, BaselineFitSystem
-from lightning.algorithms.MAML import AdamWMAML
+from lightning.algorithms.MAML import AdamWMAML, MAML
 from lightning.model import FastSpeech2Loss, FastSpeech2
 from lightning.utils import loss2dict
 from projects.prune.ckpt_utils import prune_model
 from src.utils.tools import load_yaml
 from lightning.scheduler import get_scheduler
 from src.utils.tools import load_yaml
+
+import gc
 
 
 class PrunedMetaSystem(BaseAdaptorSystem):
@@ -53,12 +56,9 @@ class PrunedMetaSystem(BaseAdaptorSystem):
         self.result_dir = result_dir
 
         # All of the settings below are for few-shot validation
-        adaptation_lr: float = self.algorithm_config["adapt"]["task"]["lr"]
-        self.learner = AdamWMAML(
-            self.model,
-            lr=adaptation_lr,
-            weight_decay=self.algorithm_config["adapt"]["task"].get("weight_decay",  0.0),
-        )
+        self.learner = instantiate_class(self.model, self.algorithm_config["adapt"]["learner_config"])
+        if isinstance(self.learner, AdamWMAML):
+            self.learner.compute_update.transforms_modules.requires_grad_(False)
         self.adaptation_steps: int = self.algorithm_config["adapt"]["train"].get("steps", 5)
         # self.adaptation_steps: int = self.algorithm_config["adapt"]["test"].get("steps", 5)
 
@@ -78,7 +78,6 @@ class PrunedMetaSystem(BaseAdaptorSystem):
         """
         # TODO
         tts_opt = torch.optim.Adam(self.model.parameters(), lr=3e-4)
-        maml_opt = torch.optim.Adam(self.learner.compute_update.parameters(), lr=3e-4)
         tts_scheduler = get_scheduler(
             tts_opt,
             {
@@ -89,28 +88,33 @@ class PrunedMetaSystem(BaseAdaptorSystem):
                 },
             },
         )
-        maml_scheduler = get_scheduler(
-            maml_opt,
-            {
-                "optimizer": {
-                    "anneal_rate": 0.3,
-                    "anneal_steps": [1000, 2000, 3000],
-                    "warm_up_step": 600,
+        if isinstance(self.learner, MAML):
+            return [tts_opt], [tts_scheduler]
+        else:
+            maml_opt = torch.optim.Adam(self.learner.compute_update.parameters(), lr=3e-4)
+            maml_scheduler = get_scheduler(
+                maml_opt,
+                {
+                    "optimizer": {
+                        "anneal_rate": 0.3,
+                        "anneal_steps": [1000, 2000, 3000],
+                        "warm_up_step": 600,
+                    },
                 },
-            },
-        )
-        return [tts_opt, maml_opt], [tts_scheduler, maml_scheduler]
+            )
+            return [tts_opt, maml_opt], [tts_scheduler, maml_scheduler]
 
     def setup(self, stage=None):
         self.meta_batch_size = self.algorithm_config["adapt"]["train"].get("meta_batch_size", 1)
         self.accumulate_grad_batches = self.meta_batch_size // self.trainer.world_size
+        self.avg_spk_emb()
         return super().setup(stage)
 
     def forward(self, *args, **kwargs): return super().forward(*args, **kwargs)
 
     @torch.backends.cudnn.flags(enabled=False)
     @torch.enable_grad()
-    def meta_adapt(self, batch, adapt_steps=5, learner=None, train=True, multi_step_loss=True):
+    def meta_adapt(self, batch, adapt_steps=5, learner=None, train=True, multi_step_loss=False):
         """ Inner adaptation or fine-tuning. """
         if learner is None:
             learner = self.clone_learner(inference=not train)
@@ -146,20 +150,32 @@ class PrunedMetaSystem(BaseAdaptorSystem):
                 self.manual_backward(qry_loss[0], retain_graph=retain_graph)
             return qry_loss, preds
 
-
-        for i in enumerate(range(adapt_steps)):
+        for i in range(adapt_steps):
             sup_adapt(sup_batch)
             if multi_step_loss and i != adapt_steps - 1:
-                qry_loss, preds = qry_backward(sup_batch, qry_batch, retain_graph=train)
-        else:
-            qry_loss, preds = qry_backward(sup_batch, qry_batch, retain_graph=False)
+                qry_backward(sup_batch, qry_batch, retain_graph=train)
+            gc.collect()
+            torch.cuda.empty_cache()
+        qry_loss, preds = qry_backward(sup_batch, qry_batch, retain_graph=False)
         return learner, qry_loss, preds
+
+    def avg_spk_emb(self):
+        with torch.no_grad():
+            self.model.speaker_emb.model.weight[2311:] = \
+                self.model.speaker_emb.model.weight[:2311].mean(dim=0)
+
+    # def on_after_batch_transfer(self, batch: Any, dataloader_idx: int) -> Any:
+        # return super().on_after_batch_transfer(batch, dataloader_idx)
 
     def on_train_batch_start(self, batch, batch_idx):
         """Log global_step to progress bar instead of GlobalProgressBar
         callback.
         """
-        self.log("global_step", self.global_step, prog_bar=True)
+        # self.log("global_step", self.global_step, prog_bar=True)
+        try:
+            self.trainer.progress_bar_callback.train_progress_bar.set_description(f"Epoch: {self.current_epoch}, {self.global_step}/{self.trainer.progress_bar_callback.total_train_batches}")
+        except:
+            self.trainer.progress_bar_callback.main_progress_bar.set_description(f"Epoch: {self.current_epoch}, {self.global_step}/{self.trainer.progress_bar_callback.total_train_batches}")
 
     def training_step(self, batch, batch_idx):
         """ Normal forwarding.
@@ -167,33 +183,59 @@ class PrunedMetaSystem(BaseAdaptorSystem):
         Function:
             common_step(): Defined in `lightning.systems.system.System`
         """
-        tts_opt, maml_opt = self.optimizers()
-        tts_sch, maml_sch = self.lr_schedulers()
+        if isinstance(self.learner, MAML):
+            tts_opt = self.optimizers()
+            tts_sch = self.lr_schedulers()
+        else:
+            tts_opt, maml_opt = self.optimizers()
+            tts_sch, maml_sch = self.lr_schedulers()
 
         # DDP sync grads already done by self.manual_backward
         _, train_loss, predictions = self.meta_adapt(batch, adapt_steps=self.adaptation_steps, train=True, multi_step_loss=False)
 
-        if (self.global_step+1) % self.accumulate_grad_batches == 0:
-            # Clip gradients
-            self.clip_gradients(tts_opt, gradient_clip_val=1*self.accumulate_grad_batches, gradient_clip_algorithm="norm")
-            self.clip_gradients(maml_opt, gradient_clip_val=1*self.accumulate_grad_batches, gradient_clip_algorithm="norm")
-
+        # if (self.global_step+1) % self.accumulate_grad_batches == 0:
+        if (batch_idx+1) % self.accumulate_grad_batches == 0:
             # Update
+            self.clip_gradients(tts_opt, gradient_clip_val=1, gradient_clip_algorithm="norm")
             tts_opt.step()
-            maml_opt.step()
             tts_sch.step()
-            maml_sch.step()
+            if not isinstance(self.learner, MAML):
+                self.clip_gradients(maml_opt, gradient_clip_val=1, gradient_clip_algorithm="norm")
+                maml_opt.step()
+                maml_sch.step()
             self.learner.zero_grad()
+            self.avg_spk_emb()
 
         # Log metrics to CometLogger
         loss_dict = {f"Train/{k}": v for k, v in loss2dict(train_loss).items()}
-        self.log_dict(loss_dict, sync_dist=True, batch_size=1)
+        self.log_dict(loss_dict, sync_dist=True, batch_size=1, prog_bar=True)
         return {
             'loss': train_loss[0],
             'losses': [loss.detach() for loss in train_loss],
             'output': [p.detach() for p in predictions],
             '_batch': batch[0][1][0],   # qry_batch
         }
+        
+    def on_train_batch_end(self, outputs, batch, batch_idx: int, unused: int = 0) -> None:
+        metrics = self.trainer.progress_bar_callback.get_metrics(
+            self.trainer, self
+        )
+        key_map = {
+            "Train/Total Loss": "tot_L",
+            "Train/Mel Loss": "ms_L",
+            "Train/Mel-Postnet Loss": "_ms_L",
+            "Train/Duration Loss": "d_L",
+            "Train/Pitch Loss": "p_L",
+            "Train/Energy Loss": "e_L",
+        }
+        # print(metrics.keys())
+        for k in key_map:
+            metrics[key_map[k]] = metrics[k]
+            metrics.pop(k)
+        try:
+            self.trainer.progress_bar_callback.main_progress_bar.set_postfix(metrics)
+        except:
+            self.trainer.progress_bar_callback.train_progress_bar.set_postfix(metrics)
 
     def on_train_epoch_end(self):
         """Print logged metrics during on_train_epoch_end()."""
@@ -210,7 +252,7 @@ class PrunedMetaSystem(BaseAdaptorSystem):
             loss_dict[key_map[k]] = self.trainer.callback_metrics[k].item()
 
         df = pd.DataFrame([loss_dict]).set_index("step")
-        if (self.current_epoch + 1) % self.trainer.check_val_every_n_epoch == 0:
+        if (self.current_epoch ) % self.trainer.check_val_every_n_epoch == 0:
             self.print(df.to_string(header=True, index=True))
         else:
             self.print(df.to_string(header=True, index=True).split('\n')[-1])
