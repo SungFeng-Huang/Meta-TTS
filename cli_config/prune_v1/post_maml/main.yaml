@@ -2,11 +2,7 @@
 # result_dir: output/result/dev.2
 
 seed_everything: 42
-model:
-  class_path: projects.prune.systems.post_maml.PrunedMetaSystem
-  init_args:
-    pruned_ckpt_path: output/libri_masked_pruned.pth
-    algorithm_config: &algorithm_config cli_config/prune_v1/post_maml/adamwmaml.yaml
+model: cli_config/prune_v1/post_maml/maml.yaml
 
 data:
   class_path: lightning.datamodules.meta_datamodule.MetaDataModule
@@ -18,7 +14,49 @@ data:
       - config/train/base.yaml
     # preprocess_config: *preprocess_config
     # train_config: *train_config
-    algorithm_config: *algorithm_config
+    algorithm_config:
+      type: meta  # meta/baseline/imaml, get_system
+
+      _phn_emb_config:
+        embedding: &embedding
+          type: embedding
+          refresh: False
+
+      adapt:
+        type: spk # spk/lang
+        #class: MAML # MAML/iMAML, not used
+        speaker_emb: table # shared/table/encoder
+        phoneme_emb: *embedding  # *embedding/*codebook
+        modules:
+          - speaker_emb
+          - variance_adaptor
+          - decoder
+          - mel_linear
+          - postnet
+
+        task: &task
+          ways: 1
+          shots: 5
+          queries: 5
+          lr: &lr 0.001
+
+        learner_config:
+          class_path: lightning.algorithms.MAML.MAML
+          init_args:
+            lr: *lr
+
+        train:
+          << : *task
+          steps: 5
+          meta_batch_size: 8
+
+        test:
+          << : *task
+          queries: 1
+          steps: 100 # max adaptation steps for testing
+          saving_steps: [5, 10, 20, 50, 100, 200, 400, 600, 800, 1000]
+          avg_train_spk_emb: False
+          1-shot: False
     stage: train
 
 trainer:
